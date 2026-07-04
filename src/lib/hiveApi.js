@@ -29,7 +29,15 @@ export async function processReferralChat(messages, newInput, attachments = []) 
         patient_mrn: { type: "string" },
         presenting_complaint: { type: "string" },
         mechanism_of_injury: { type: "string" },
-        department: { type: "string", enum: ["orthopaedics", "general_surgery"] }
+        department: { type: "string", enum: ["orthopaedics", "general_surgery"] },
+        required_info: {
+          type: "object",
+          properties: {
+            history: { type: "array", items: { type: "string" }, description: "History items still needed" },
+            exam_findings: { type: "array", items: { type: "string" }, description: "Examination findings still needed" },
+            investigations_imaging: { type: "array", items: { type: "string" }, description: "Investigations/imaging still needed" }
+          }
+        }
       }
     }
   });

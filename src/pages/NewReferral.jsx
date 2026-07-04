@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { processReferralChat, uploadFile, transcribeAudio } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
+import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 const INPUT_MODES = [
@@ -48,7 +49,7 @@ export default function NewReferral() {
 
     try {
       const result = await processReferralChat(newMessages, userMessage.content, attachments);
-      const assistantMessage = { role: "assistant", content: result.response };
+      const assistantMessage = { role: "assistant", content: result.response, requiredInfo: result.required_info };
       setMessages(prev => [...prev, assistantMessage]);
 
       if (result.triage_decision && result.triage_decision !== "pending") {
@@ -184,6 +185,9 @@ export default function NewReferral() {
                   </div>
                 )}
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === "assistant" && msg.requiredInfo && (
+                  <RequiredInfoChecklist requiredInfo={msg.requiredInfo} />
+                )}
               </div>
             </div>
           ))}
