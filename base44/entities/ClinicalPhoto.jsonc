@@ -1,0 +1,31 @@
+{
+  "name": "ClinicalPhoto",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "photo_type": {
+      "type": "string",
+      "enum": [
+        "wound",
+        "xray",
+        "ecg",
+        "medication_list",
+        "patient_id",
+        "other"
+      ]
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "photo_type",
+    "photo_url"
+  ]
+}

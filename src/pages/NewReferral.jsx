@@ -1,0 +1,335 @@
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
+import { processReferralChat, uploadFile, transcribeAudio } from "@/lib/hiveApi";
+import AIBadge from "@/components/AIBadge";
+import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
+
+const INPUT_MODES = [
+  { id: "text", label: "Text", icon: FileText },
+  { id: "audio", label: "Audio", icon: Mic },
+  { id: "screenshot", label: "Screenshot", icon: Camera },
+  { id: "camera", label: "Camera", icon: Camera },
+];
+
+export default function NewReferral() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "Welcome to HIVE Surgical Assistant. I'm here to help you triage surgical referrals. Please provide the referral details — you can type, dictate, or upload a photo/screenshot of the referral note. I'll extract the key information and ask for anything missing.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState("text");
+  const [loading, setLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [triageResult, setTriageResult] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleSend = async () => {
+    if ((!input.trim() && attachments.length === 0) || loading) return;
+    const userMessage = { role: "user", content: input.trim() || "[Image attachment uploaded]" };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const result = await processReferralChat(newMessages, userMessage.content, attachments);
+      const assistantMessage = { role: "assistant", content: result.response };
+      setMessages(prev => [...prev, assistantMessage]);
+
+      if (result.triage_decision && result.triage_decision !== "pending") {
+        setTriageResult(result);
+      }
+      setAttachments([]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: "assistant", content: "I encountered an error processing that. Please try again or provide the information in a different format." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioFile = new File([audioBlob], "referral.webm", { type: "audio/webm" });
+        setLoading(true);
+        try {
+          const uploadResult = await uploadFile(audioFile);
+          const transcript = await transcribeAudio(uploadResult.file_url);
+          setInput(prev => prev + (prev ? " " : "") + transcript);
+        } catch (err) {
+          setMessages(prev => [...prev, { role: "assistant", content: "I couldn't process the audio. Please try typing the referral instead." }]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch (err) {
+      alert("Microphone access denied. Please allow microphone access or use text input.");
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+      setRecording(false);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const uploadResult = await uploadFile(file);
+      setAttachments(prev => [...prev, uploadResult.file_url]);
+      setMessages(prev => [...prev, { role: "user", content: `[Image uploaded: ${file.name}]` }]);
+    } catch (err) {
+      alert("Failed to upload file. Please try again.");
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
+  };
+
+  const handleCreateCase = async () => {
+    if (!triageResult) return;
+    setLoading(true);
+    try {
+      const caseData = {
+        patient_name: triageResult.patient_name || "Unknown Patient",
+        patient_dob: triageResult.patient_dob || null,
+        patient_mrn: triageResult.patient_mrn || "",
+        hospital: user?.hospital || "",
+        department: triageResult.department || user?.department || "orthopaedics",
+        status: triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
+        referral_mode: mode,
+        referral_summary: triageResult.referral_summary || messages.map(m => m.content).join("\n"),
+        presenting_complaint: triageResult.presenting_complaint || "",
+        mechanism_of_injury: triageResult.mechanism_of_injury || "",
+        triage_decision: triageResult.triage_decision,
+        triage_reasoning: triageResult.reasoning || "",
+        triage_guideline: triageResult.guideline_used || "",
+        pre_clerking_guidance: triageResult.pre_clerking_guidance || "",
+      };
+      const created = await base44.entities.CaseFile.create(caseData);
+      for (const msg of messages) {
+        await base44.entities.ChatMessage.create({
+          case_id: created.id,
+          role: msg.role,
+          content: msg.content,
+          message_type: "text",
+        });
+      }
+      navigate(`/cases/${created.id}`);
+    } catch (err) {
+      alert("Failed to create case. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="border-b border-border px-4 md:px-8 py-4 bg-card/50">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div>
+            <h1 className="text-lg font-bold text-foreground">New Referral</h1>
+            <p className="text-xs text-muted-foreground">AI-powered triage & decision support</p>
+          </div>
+          <AIBadge />
+        </div>
+      </div>
+
+      {/* Chat */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-8 py-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                msg.role === "user"
+                  ? "bg-accent/15 border border-accent/30 text-foreground"
+                  : "bg-card border border-border text-foreground"
+              }`}>
+                {msg.role === "assistant" && (
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-5 h-5 hex-clip bg-hive-gold flex items-center justify-center">
+                      <span className="text-[8px] font-bold text-hive-gold-foreground">H</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-hive-gold">HIVE Assistant</span>
+                  </div>
+                )}
+                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-card border border-border rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-hive-gold" />
+                  <span className="text-sm text-muted-foreground">Processing...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Triage Result */}
+          {triageResult && (
+            <div className="bg-card border-2 border-hive-gold/30 rounded-2xl p-5 animate-slide-up">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle2 className="w-5 h-5 text-hive-gold" />
+                <h3 className="font-bold text-foreground">Triage Decision</h3>
+              </div>
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-3 ${
+                triageResult.triage_decision === "accept" ? "bg-success/15 text-success" :
+                triageResult.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
+                "bg-warning/15 text-warning"
+              }`}>
+                <span className="font-bold text-sm uppercase">{triageResult.triage_decision.replace("_", " ")}</span>
+              </div>
+              {triageResult.reasoning && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
+                  <p className="text-sm text-foreground">{triageResult.reasoning}</p>
+                </div>
+              )}
+              {triageResult.guideline_used && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Guideline Applied</p>
+                  <p className="text-sm text-foreground">{triageResult.guideline_used}</p>
+                </div>
+              )}
+              {triageResult.pre_clerking_guidance && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Pre-Clerking Guidance</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{triageResult.pre_clerking_guidance}</p>
+                </div>
+              )}
+              <button
+                onClick={handleCreateCase}
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Create Case File & Continue
+              </button>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+      </div>
+
+      {/* Input Bar */}
+      <div className="border-t border-border px-4 md:px-8 py-4 bg-card/50">
+        <div className="max-w-4xl mx-auto">
+          {/* Attachments preview */}
+          {attachments.length > 0 && (
+            <div className="flex gap-2 mb-2">
+              {attachments.map((url, i) => (
+                <div key={i} className="relative">
+                  <img src={url} alt="attachment" className="w-16 h-16 rounded-lg object-cover border border-border" />
+                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Mode selector */}
+          <div className="flex gap-1 mb-2">
+            {INPUT_MODES.map((m) => {
+              const Icon = m.icon;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setMode(m.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    mode === m.id ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Input area */}
+          <div className="flex items-end gap-2">
+            {(mode === "screenshot" || mode === "camera") && (
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+                <button
+                  onClick={() => mode === "camera" ? cameraInputRef.current?.click() : fileInputRef.current?.click()}
+                  className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
+                  title={mode === "camera" ? "Take photo" : "Upload screenshot"}
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {mode === "audio" && (
+              <button
+                onClick={recording ? handleStopRecording : handleStartRecording}
+                className={`p-3 rounded-lg flex-shrink-0 transition-colors ${recording ? "bg-destructive text-destructive-foreground animate-pulse-gold" : "bg-secondary text-foreground hover:bg-secondary/80"}`}
+                title={recording ? "Stop recording" : "Start recording"}
+              >
+                {recording ? <div className="w-5 h-5 rounded bg-destructive-foreground" /> : <Mic className="w-5 h-5" />}
+              </button>
+            )}
+
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Type referral details or AI responses..."
+              rows={1}
+              className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none max-h-32"
+            />
+
+            <button
+              onClick={handleSend}
+              disabled={loading || (!input.trim() && attachments.length === 0)}
+              className="p-3 rounded-lg bg-hive-gold text-hive-gold-foreground hover:bg-hive-gold/90 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

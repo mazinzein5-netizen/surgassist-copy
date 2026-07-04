@@ -1,0 +1,57 @@
+{
+  "name": "TheatreLog",
+  "type": "object",
+  "properties": {
+    "patient_name": {
+      "type": "string"
+    },
+    "patient_mrn": {
+      "type": "string"
+    },
+    "procedure_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "procedure_name": {
+      "type": "string"
+    },
+    "procedure_role": {
+      "type": "string",
+      "enum": [
+        "primary_surgeon",
+        "first_assistant",
+        "second_assistant",
+        "observing"
+      ]
+    },
+    "supervisor_name": {
+      "type": "string"
+    },
+    "supervisor_imc": {
+      "type": "string"
+    },
+    "supervisor_signed": {
+      "type": "boolean",
+      "default": false
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "learning_points": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "patient_name",
+    "procedure_name",
+    "procedure_date",
+    "department"
+  ]
+}

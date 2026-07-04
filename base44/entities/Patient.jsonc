@@ -1,0 +1,37 @@
+{
+  "name": "Patient",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "dob": {
+      "type": "string",
+      "format": "date"
+    },
+    "mrn": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ]
+    },
+    "hospital": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

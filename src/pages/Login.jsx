@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import AppleIcon from "@/components/AppleIcon";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -32,11 +33,15 @@ export default function Login() {
     base44.auth.loginWithProvider("google", "/");
   };
 
+  const handleApple = () => {
+    base44.auth.loginWithProvider("apple", "/");
+  };
+
   return (
     <AuthLayout
       icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
+      title="Sign in to HIVE"
+      subtitle="Surgical Assistant for on-call NCHDs"
       footer={
         <>
           Don't have an account?{" "}
@@ -46,21 +51,31 @@ export default function Login() {
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <Button
+          variant="outline"
+          className="h-12 text-sm font-medium"
+          onClick={handleGoogle}
+        >
+          <GoogleIcon className="w-4 h-4 mr-2" />
+          Google
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12 text-sm font-medium"
+          onClick={handleApple}
+        >
+          <AppleIcon className="w-4 h-4 mr-2" />
+          Apple
+        </Button>
+      </div>
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
+          <span className="bg-card px-3 text-muted-foreground">or sign in with email</span>
         </div>
       </div>
 

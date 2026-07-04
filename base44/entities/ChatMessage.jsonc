@@ -1,0 +1,36 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant"
+      ]
+    },
+    "content": {
+      "type": "string"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "audio",
+        "image"
+      ],
+      "default": "text"
+    },
+    "attachment_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "role",
+    "content"
+  ]
+}

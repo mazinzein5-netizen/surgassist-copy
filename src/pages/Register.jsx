@@ -4,16 +4,22 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, BadgeCheck, Building2, Stethoscope } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import AppleIcon from "@/components/AppleIcon";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [imcNumber, setImcNumber] = useState("");
+  const [clinicalGrade, setClinicalGrade] = useState("nchd");
+  const [hospital, setHospital] = useState("");
+  const [department, setDepartment] = useState("orthopaedics");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
@@ -44,6 +50,17 @@ export default function Register() {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
+        try {
+          await base44.auth.updateMe({
+            full_name: fullName,
+            imc_number: imcNumber,
+            clinical_grade: clinicalGrade,
+            hospital,
+            department,
+          });
+        } catch (e) {
+          console.error("Failed to save profile:", e);
+        }
       }
       window.location.href = "/";
     } catch (err) {
@@ -68,6 +85,10 @@ export default function Register() {
 
   const handleGoogle = () => {
     base44.auth.loginWithProvider("google", "/");
+  };
+
+  const handleApple = () => {
+    base44.auth.loginWithProvider("apple", "/");
   };
 
   if (showOtp) {
@@ -127,8 +148,8 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title="Join HIVE"
+      subtitle="Create your surgical assistant account"
       footer={
         <>
           Already have an account?{" "}
@@ -138,21 +159,31 @@ export default function Register() {
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <Button
+          variant="outline"
+          className="h-12 text-sm font-medium"
+          onClick={handleGoogle}
+        >
+          <GoogleIcon className="w-4 h-4 mr-2" />
+          Google
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12 text-sm font-medium"
+          onClick={handleApple}
+        >
+          <AppleIcon className="w-4 h-4 mr-2" />
+          Apple
+        </Button>
+      </div>
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
+          <span className="bg-card px-3 text-muted-foreground">or register with email</span>
         </div>
       </div>
 
@@ -164,6 +195,78 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
+          <Label htmlFor="fullname">Full Name</Label>
+          <div className="relative">
+            <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="fullname"
+              type="text"
+              autoComplete="name"
+              autoFocus
+              placeholder="Dr. John Smith"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="pl-10 h-12"
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="imc">IMC Number</Label>
+          <div className="relative">
+            <BadgeCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="imc"
+              type="text"
+              placeholder="123456"
+              value={imcNumber}
+              onChange={(e) => setImcNumber(e.target.value)}
+              className="pl-10 h-12"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="grade">Grade</Label>
+            <select
+              id="grade"
+              value={clinicalGrade}
+              onChange={(e) => setClinicalGrade(e.target.value)}
+              className="w-full h-12 bg-background border border-border rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="nchd">NCHD</option>
+              <option value="registrar">Registrar</option>
+              <option value="consultant">Consultant</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dept">Department</Label>
+            <select
+              id="dept"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="w-full h-12 bg-background border border-border rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="orthopaedics">Orthopaedics</option>
+              <option value="general_surgery">General Surgery</option>
+            </select>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="hospital">Hospital</Label>
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="hospital"
+              type="text"
+              placeholder="e.g. St. Vincent's University Hospital"
+              value={hospital}
+              onChange={(e) => setHospital(e.target.value)}
+              className="pl-10 h-12"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -171,8 +274,7 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
-              placeholder="you@example.com"
+              placeholder="you@hospital.ie"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"

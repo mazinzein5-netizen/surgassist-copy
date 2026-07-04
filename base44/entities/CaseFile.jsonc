@@ -1,0 +1,161 @@
+{
+  "name": "CaseFile",
+  "type": "object",
+  "properties": {
+    "patient_name": {
+      "type": "string"
+    },
+    "patient_dob": {
+      "type": "string",
+      "format": "date"
+    },
+    "patient_mrn": {
+      "type": "string"
+    },
+    "patient_gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ]
+    },
+    "hospital": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "referral_intake",
+        "triage",
+        "accepted",
+        "declined",
+        "clerking",
+        "investigations",
+        "admitted",
+        "discharged",
+        "inews_consult"
+      ],
+      "default": "referral_intake"
+    },
+    "referral_mode": {
+      "type": "string",
+      "enum": [
+        "audio",
+        "text",
+        "screenshot",
+        "camera"
+      ]
+    },
+    "referral_summary": {
+      "type": "string"
+    },
+    "presenting_complaint": {
+      "type": "string"
+    },
+    "mechanism_of_injury": {
+      "type": "string"
+    },
+    "referring_team": {
+      "type": "string"
+    },
+    "triage_decision": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accept",
+        "decline",
+        "needs_more_info"
+      ]
+    },
+    "triage_reasoning": {
+      "type": "string"
+    },
+    "triage_guideline": {
+      "type": "string"
+    },
+    "classification_used": {
+      "type": "string"
+    },
+    "pre_clerking_guidance": {
+      "type": "string"
+    },
+    "clerking_data": {
+      "type": "object"
+    },
+    "investigation_recommendations": {
+      "type": "string"
+    },
+    "admission_recommendation": {
+      "type": "string"
+    },
+    "admission_department": {
+      "type": "string"
+    },
+    "kardex_data": {
+      "type": "object"
+    },
+    "iv_fluid_plan": {
+      "type": "string"
+    },
+    "treatment_plan": {
+      "type": "string"
+    },
+    "discharge_pathway": {
+      "type": "string",
+      "enum": [
+        "not_discharged",
+        "opd_followup",
+        "no_followup"
+      ]
+    },
+    "gp_letter": {
+      "type": "string"
+    },
+    "patient_education_sheet": {
+      "type": "string"
+    },
+    "consent_checklist": {
+      "type": "string"
+    },
+    "inews_score": {
+      "type": "number"
+    },
+    "inews_data": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reviewed",
+        "countersigned"
+      ],
+      "default": "pending"
+    },
+    "reviewed_by_id": {
+      "type": "string"
+    },
+    "reviewer_imc": {
+      "type": "string"
+    },
+    "review_notes": {
+      "type": "string"
+    },
+    "countersigned_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "patient_name",
+    "department"
+  ]
+}

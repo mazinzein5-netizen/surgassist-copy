@@ -1,0 +1,36 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "clinical_grade": {
+      "type": "string",
+      "enum": [
+        "nchd",
+        "registrar",
+        "consultant"
+      ],
+      "default": "nchd"
+    },
+    "imc_number": {
+      "type": "string"
+    },
+    "hospital": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    }
+  }
+}

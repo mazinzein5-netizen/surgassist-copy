@@ -1,0 +1,40 @@
+{
+  "name": "ReviewLog",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "reviewer_name": {
+      "type": "string"
+    },
+    "reviewer_imc": {
+      "type": "string"
+    },
+    "reviewer_grade": {
+      "type": "string",
+      "enum": [
+        "nchd",
+        "registrar",
+        "consultant"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "viewed",
+        "annotated",
+        "edited",
+        "countersigned"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "reviewer_name",
+    "action"
+  ]
+}
