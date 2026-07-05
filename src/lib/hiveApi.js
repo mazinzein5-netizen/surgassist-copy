@@ -4,6 +4,7 @@ import {
   DISCHARGE_SYSTEM_PROMPT, CONSENT_SYSTEM_PROMPT, INEWS_SYSTEM_PROMPT,
   DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT, COMPLETENESS_CHECK_SYSTEM_PROMPT
 } from "./hivePrompts";
+import { compileProformaLines } from "@/components/OrthoProforma";
 
 export async function processReferralChat(messages, newInput, attachments = []) {
   const conversationHistory = messages.map(m =>
@@ -241,20 +242,11 @@ export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, 
 }
 
 export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities) {
-  // Build concise proforma summary from yes/no answers
+  // Build concise proforma summary from yes/no answers using tailored generic statements
   let proformaSummary = "No proforma data";
   if (caseData.proforma_data) {
-    const lines = [];
-    for (const [key, entry] of Object.entries(caseData.proforma_data)) {
-      if (entry.answer === null) continue;
-      const [section, question] = key.split("::");
-      const q = question.replace(/\?$/, "");
-      if (entry.answer === "no") {
-        lines.push(`No ${q.toLowerCase()}`);
-      } else if (entry.answer === "yes") {
-        lines.push(entry.detail?.trim() ? `${q}: ${entry.detail.trim()}` : `${q} present`);
-      }
-    }
+    const compiled = compileProformaLines(caseData.proforma_data, caseData);
+    const lines = compiled.flatMap(g => g.lines);
     proformaSummary = lines.length > 0 ? lines.join("; ") : "No proforma data";
   }
 

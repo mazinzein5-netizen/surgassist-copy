@@ -137,7 +137,7 @@ export default function CaseDetail() {
 }
 
 function SummaryTab({ caseData }) {
-  const proformaLines = compileProformaLines(caseData.proforma_data);
+  const proformaLines = compileProformaLines(caseData.proforma_data, caseData);
 
   return (
     <div className="space-y-4">

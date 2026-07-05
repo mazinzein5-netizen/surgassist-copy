@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Save, Check, X, AlertTriangle, Zap } from "lucide-react";
+import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles } from "lucide-react";
+import { detectBodyRegion, getGenericStatement } from "@/lib/genericStatements";
 
-const PROFORMA_SECTIONS = [
+const ORTHO_SECTIONS = [
   {
     title: "Key Clinical Queries",
     icon: Zap,
@@ -56,9 +57,64 @@ const PROFORMA_SECTIONS = [
   },
 ];
 
-function buildInitialAnswers(existing) {
+const GEN_SURG_SECTIONS = [
+  {
+    title: "Key Clinical Queries",
+    icon: Zap,
+    items: [
+      "Vomiting?",
+      "Nausea?",
+      "Fever?",
+      "Jaundice?",
+      "Bowel changes?",
+      "Abdominal distension?",
+    ],
+  },
+  {
+    title: "Abdominal Examination",
+    items: [
+      "Abdomen soft and non-tender?",
+      "Guarding?",
+      "Rigidity?",
+      "Rebound tenderness?",
+      "Bowel sounds present?",
+      "Palpable mass?",
+      "Murphy sign?",
+      "Rovsing sign?",
+      "Psoas sign?",
+      "Hernia orifices intact?",
+    ],
+  },
+  {
+    title: "Red Flags",
+    icon: AlertTriangle,
+    items: [
+      "Peritonitis signs?",
+      "Sepsis signs?",
+      "Bowel obstruction signs?",
+      "Airway compromise?",
+    ],
+  },
+  {
+    title: "PMH & Social",
+    items: [
+      "On anticoagulants?",
+      "Diabetic?",
+      "Smoker?",
+      "Known allergies?",
+      "Previous abdominal surgery?",
+    ],
+  },
+];
+
+function getSections(department) {
+  return department === "general_surgery" ? GEN_SURG_SECTIONS : ORTHO_SECTIONS;
+}
+
+function buildInitialAnswers(existing, department) {
+  const sections = getSections(department);
   const answers = {};
-  for (const section of PROFORMA_SECTIONS) {
+  for (const section of sections) {
     for (const item of section.items) {
       const key = `${section.title}::${item}`;
       if (existing && existing[key]) {
@@ -71,23 +127,44 @@ function buildInitialAnswers(existing) {
   return answers;
 }
 
-export function compileProformaLines(answers) {
+export function compileProformaLines(answers, caseData) {
   if (!answers) return [];
+  const department = caseData?.department;
+  const bodyRegion = detectBodyRegion(
+    `${caseData?.presenting_complaint || ""} ${caseData?.referral_summary || ""} ${caseData?.mechanism_of_injury || ""}`
+  );
+
   const lines = [];
-  for (const section of PROFORMA_SECTIONS) {
+  const sections = getSections(department);
+
+  for (const section of sections) {
     const sectionLines = [];
     for (const item of section.items) {
       const key = `${section.title}::${item}`;
       const entry = answers[key];
       if (!entry || entry.answer === null) continue;
+
       const question = item.replace(/\?$/, "");
-      if (entry.answer === "no") {
-        sectionLines.push(`No ${question.toLowerCase()}`);
-      } else if (entry.answer === "yes") {
-        if (entry.detail?.trim()) {
-          sectionLines.push(`${question}: ${entry.detail.trim()}`);
+
+      if (entry.detail?.trim()) {
+        // User provided detail — use it
+        if (entry.answer === "no") {
+          sectionLines.push(`No ${question.toLowerCase()}`);
         } else {
-          sectionLines.push(`${question} present`);
+          sectionLines.push(`${question}: ${entry.detail.trim()}`);
+        }
+      } else {
+        // No detail — try generic statement
+        const generic = getGenericStatement(item, entry.answer, bodyRegion, department);
+        if (generic) {
+          sectionLines.push(generic);
+        } else {
+          // Fallback
+          if (entry.answer === "no") {
+            sectionLines.push(`No ${question.toLowerCase()}`);
+          } else {
+            sectionLines.push(`${question} present`);
+          }
         }
       }
     }
@@ -99,17 +176,28 @@ export function compileProformaLines(answers) {
 }
 
 export default function OrthoProforma({ caseData, caseId, onUpdate }) {
-  const [answers, setAnswers] = useState(() => buildInitialAnswers(caseData.proforma_data));
+  const department = caseData.department;
+  const [answers, setAnswers] = useState(() => buildInitialAnswers(caseData.proforma_data, department));
   const [saving, setSaving] = useState(false);
 
+  const bodyRegion = detectBodyRegion(
+    `${caseData.presenting_complaint || ""} ${caseData.referral_summary || ""} ${caseData.mechanism_of_injury || ""}`
+  );
+
   useEffect(() => {
-    setAnswers(buildInitialAnswers(caseData.proforma_data));
-  }, [caseData.proforma_data]);
+    setAnswers(buildInitialAnswers(caseData.proforma_data, department));
+  }, [caseData.proforma_data, department]);
+
+  const sections = getSections(department);
 
   const handleAnswer = (key, answer) => {
     setAnswers(prev => ({
       ...prev,
-      [key]: { ...prev[key], answer: prev[key]?.answer === answer ? null : answer, detail: answer === "no" ? "" : prev[key]?.detail || "" },
+      [key]: {
+        ...prev[key],
+        answer: prev[key]?.answer === answer ? null : answer,
+        detail: answer === "no" ? "" : prev[key]?.detail || "",
+      },
     }));
   };
 
@@ -135,16 +223,18 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
     }
   };
 
-  const compiled = compileProformaLines(answers);
+  const compiled = compileProformaLines(answers, caseData);
   const answeredCount = Object.values(answers).filter(a => a.answer !== null).length;
   const totalCount = Object.keys(answers).length;
 
   return (
     <div className="space-y-4">
-      {/* Progress */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Ortho Yes/No Proforma</h3>
+          <h3 className="text-sm font-semibold text-foreground">
+            {department === "general_surgery" ? "General Surgery" : "Orthopaedic"} Proforma
+          </h3>
           <span className="text-xs text-muted-foreground">{answeredCount}/{totalCount} answered</span>
         </div>
         <button
@@ -157,8 +247,15 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
         </button>
       </div>
 
+      {bodyRegion !== 'default' && (
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-[11px] font-medium">
+          <Sparkles className="w-3 h-3" />
+          Auto-tailoring to: {bodyRegion.replace('_', ' ')} injury
+        </div>
+      )}
+
       {/* Proforma sections */}
-      {PROFORMA_SECTIONS.map((section) => {
+      {sections.map((section) => {
         const SectionIcon = section.icon;
         return (
           <div key={section.title} className="bg-card border border-border rounded-xl p-4">
@@ -170,6 +267,11 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
               {section.items.map((item) => {
                 const key = `${section.title}::${item}`;
                 const entry = answers[key] || { answer: null, detail: "" };
+                const hasDetail = entry.detail?.trim();
+                const generic = !hasDetail && entry.answer !== null
+                  ? getGenericStatement(item, entry.answer, bodyRegion, department)
+                  : null;
+
                 return (
                   <div key={key}>
                     <div className="flex items-center justify-between gap-3">
@@ -197,12 +299,22 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
                         </button>
                       </div>
                     </div>
+
+                    {/* Auto-generated generic statement preview */}
+                    {generic && (
+                      <div className="mt-1.5 flex items-start gap-1.5 px-3 py-1.5 bg-accent/5 rounded-md border border-accent/15">
+                        <Sparkles className="w-3 h-3 text-accent mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-accent italic">{generic}</p>
+                      </div>
+                    )}
+
+                    {/* Detail input (only for "yes" answers) */}
                     {entry.answer === "yes" && (
                       <input
                         type="text"
                         value={entry.detail}
                         onChange={(e) => handleDetail(key, e.target.value)}
-                        placeholder="Brief detail..."
+                        placeholder="Add detail (optional — leave blank for auto-statement)..."
                         className="mt-1.5 w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50"
                       />
                     )}
