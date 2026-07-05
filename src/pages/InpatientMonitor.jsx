@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import InpatientCard from "@/components/InpatientCard";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import BloodTrendChart, { LAB_RANGES, getAbnormalStatus } from "@/components/BloodTrendChart";
-import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown, Building2 } from "lucide-react";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 
@@ -105,6 +105,26 @@ export default function InpatientMonitor() {
     return flags;
   }, [trendData]);
 
+  // Group filtered patients by ward, sorted by INEWS score within each group
+  const wardGroups = useMemo(() => {
+    const grouped = {};
+    for (const c of filteredCases) {
+      const ward = c.ward?.trim() || "Unassigned Ward";
+      if (!grouped[ward]) grouped[ward] = [];
+      grouped[ward].push(c);
+    }
+    return Object.entries(grouped)
+      .sort(([a], [b]) => {
+        if (a === "Unassigned Ward") return 1;
+        if (b === "Unassigned Ward") return -1;
+        return a.localeCompare(b);
+      })
+      .map(([ward, patients]) => ({
+        ward,
+        patients: [...patients].sort((a, b) => (b.inews_score || 0) - (a.inews_score || 0)),
+      }));
+  }, [filteredCases]);
+
   const selectedCase = cases.find(c => c.id === selectedCaseId);
 
   return (
@@ -181,8 +201,30 @@ export default function InpatientMonitor() {
               {cases.length === 0 && <Link to="/new-referral" className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground font-medium text-sm hover:bg-hive-gold/90">Process New Admission</Link>}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filteredCases.map(c => <InpatientCard key={c.id} caseFile={c} onPrint={setPrintCase} />)}
+            <div className="space-y-6">
+              {wardGroups.map(({ ward, patients }) => (
+                <div key={ward}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="w-4 h-4 text-hive-gold" />
+                    <h3 className="text-sm font-bold text-foreground">{ward}</h3>
+                    <span className="text-xs text-muted-foreground">{patients.length} patient{patients.length !== 1 ? "s" : ""}</span>
+                    {patients.filter(c => c.inews_score != null && c.inews_score >= 7).length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-destructive/15 text-destructive">
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        {patients.filter(c => c.inews_score != null && c.inews_score >= 7).length} critical
+                      </span>
+                    )}
+                    {patients.filter(c => c.inews_score != null && c.inews_score >= 3 && c.inews_score < 7).length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-warning/15 text-warning">
+                        {patients.filter(c => c.inews_score != null && c.inews_score >= 3 && c.inews_score < 7).length} warning
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {patients.map(c => <InpatientCard key={c.id} caseFile={c} onPrint={setPrintCase} />)}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </>
