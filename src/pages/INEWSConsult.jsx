@@ -12,6 +12,14 @@ import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
+const COMORBIDITY_OPTIONS = [
+  "T2DM", "Type 1 DM", "Hypertension", "Atrial Fibrillation", "IHD", "Heart Failure",
+  "CKD", "COPD", "Asthma", "OSA", "Dementia", "Parkinson's",
+  "Stroke/TIA", "Cirrhosis", "PUD", "IBD", "Hypothyroid", "Osteoporosis",
+  "Active Cancer", "Immunosuppressed", "Smoker", "Ex-smoker", "Alcohol excess",
+  "Anticoagulated", "Steroid-dependent", "Obesity", "Frailty",
+];
+
 const SYMPTOM_GROUPS = [
   {
     title: "Post-Op Complications",
@@ -110,6 +118,7 @@ export default function INEWSConsult() {
   const [onCallTeam, setOnCallTeam] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState({});
   const [comorbidities, setComorbidities] = useState("");
+  const [selectedComorbidities, setSelectedComorbidities] = useState([]);
   const [geriatricOptimized, setGeriatricOptimized] = useState("");
   const [sections, setSections] = useState({ narrative: true, vitals: true, labs: false, kardex: false });
   const fileRef = useRef(null);
@@ -131,6 +140,14 @@ export default function INEWSConsult() {
 
   const toggleSymptom = (symptom) => {
     setSelectedSymptoms(prev => prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]);
+  };
+
+  const toggleComorbidity = (c) => {
+    setSelectedComorbidities(prev => {
+      const next = prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c];
+      setComorbidities(next.join(", "));
+      return next;
+    });
   };
 
   const handleVitalsOCR = (result) => {
@@ -281,11 +298,26 @@ export default function INEWSConsult() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">Key Comorbidities</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {COMORBIDITY_OPTIONS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => toggleComorbidity(c)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                        selectedComorbidities.includes(c)
+                          ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
+                          : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
                 <input
                   type="text"
                   value={comorbidities}
-                  onChange={(e) => setComorbidities(e.target.value)}
-                  placeholder="e.g. T2DM, AF, CKD3, dementia"
+                  onChange={(e) => { setComorbidities(e.target.value); setSelectedComorbidities([]); }}
+                  placeholder="Or type custom comorbidities…"
                   className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50"
                 />
               </div>
