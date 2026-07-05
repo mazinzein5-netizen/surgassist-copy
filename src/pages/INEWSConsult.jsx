@@ -150,6 +150,21 @@ export default function INEWSConsult() {
     });
   };
 
+  const selectAllSymptoms = (group) => {
+    setSelectedSymptoms(prev => {
+      const set = new Set(prev);
+      group.items.forEach(s => set.add(s));
+      return Array.from(set);
+    });
+  };
+
+  const clearSymptoms = (group) => {
+    setSelectedSymptoms(prev => {
+      const groupSet = new Set(group.items);
+      return prev.filter(s => !groupSet.has(s));
+    });
+  };
+
   const handleVitalsOCR = (result) => {
     if (result.vitals) {
       setVitals(prev => ({
@@ -344,9 +359,30 @@ export default function INEWSConsult() {
           <Section title="Nurse Referral — What's the concern?" icon={Phone} open={sections.narrative} onToggle={() => toggleSection("narrative")}>
             <p className="text-xs text-muted-foreground mb-3">Document what the nurse is reporting — symptoms grouped by system. Tap relevant symptoms or type the narrative.</p>
             <div className="space-y-3 mb-3">
-              {SYMPTOM_GROUPS.map(group => (
+              {SYMPTOM_GROUPS.map(group => {
+                const allSelected = group.items.every(s => selectedSymptoms.includes(s));
+                const noneSelected = group.items.every(s => !selectedSymptoms.includes(s));
+                return (
                 <div key={group.title}>
-                  <p className="text-[11px] font-bold text-accent uppercase tracking-wider mb-1.5">{group.title}</p>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-bold text-accent uppercase tracking-wider">{group.title}</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => selectAllSymptoms(group)}
+                        disabled={allSelected}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 disabled:opacity-30 transition-colors"
+                      >
+                        All Yes
+                      </button>
+                      <button
+                        onClick={() => clearSymptoms(group)}
+                        disabled={noneSelected}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-success/10 text-success border border-success/20 hover:bg-success/20 disabled:opacity-30 transition-colors"
+                      >
+                        All No
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {group.items.map(s => (
                       <button
@@ -363,7 +399,8 @@ export default function INEWSConsult() {
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             <textarea
               value={nurseNarrative}
