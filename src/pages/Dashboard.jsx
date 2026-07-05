@@ -63,7 +63,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground [font-family:'Fascinate_Inline',_system-ui]">
+        <h1 className="text-2xl md:text-3xl text-foreground font-medium [font-family:'Titan_One',_system-ui]">
           Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
