@@ -4,6 +4,7 @@ import { uploadFile } from "@/lib/hiveApi";
 import { Loader2, Camera, Stethoscope, Activity, Eye, Hand, AlertTriangle } from "lucide-react";
 import OrthoProforma from "@/components/OrthoProforma";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
+import PeriopAlertsPanel from "@/components/PeriopAlertsPanel";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
 
 export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
@@ -36,6 +37,9 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) 
     <div className="space-y-4">
       {/* Yes/No Proforma */}
       <OrthoProforma caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
+
+      {/* Perioperative Safety Alerts */}
+      <PeriopAlertsWrapper caseData={caseData} />
 
       {/* Clinical Photos quick upload */}
       <div className="bg-card border border-border rounded-xl p-4">
@@ -104,4 +108,45 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) 
       </div>
     </div>
   );
+}
+
+function PeriopAlertsWrapper({ caseData }) {
+  // Extract anticoagulant meds from proforma_data
+  let meds = [];
+  let comorbidities = "";
+
+  if (caseData.proforma_data) {
+    for (const [key, entry] of Object.entries(caseData.proforma_data)) {
+      if (key.includes("On anticoagulants") && entry.answer === "yes" && entry.meds) {
+        meds = entry.meds;
+      }
+    }
+  }
+
+  // Extract comorbidities from proforma answers
+  const pmhFlags = [];
+  for (const [key, entry] of Object.entries(caseData.proforma_data || {})) {
+    if (entry.answer === "yes") {
+      if (key.includes("Diabetic")) pmhFlags.push("T2DM");
+      if (key.includes("Smoker")) pmhFlags.push("smoker");
+      if (key.includes("Osteoporosis")) pmhFlags.push("osteoporosis");
+    }
+  }
+
+  // Also check kardex_data for medication info
+  if (caseData.kardex_data?.medications) {
+    const kardexMeds = caseData.kardex_data.medications
+      .map(m => `${m.drug} ${m.dose}`)
+      .join(", ");
+    comorbidities = [pmhFlags.join(", "), kardexMeds].filter(Boolean).join("; ");
+  } else {
+    comorbidities = pmhFlags.join(", ");
+  }
+
+  // Also include admission note comorbidities if available
+  if (caseData.kardex_data?.treatment_plan) {
+    comorbidities += ` ${caseData.kardex_data.treatment_plan}`;
+  }
+
+  return <PeriopAlertsPanel meds={meds} comorbidities={comorbidities} caseData={caseData} />;
 }
