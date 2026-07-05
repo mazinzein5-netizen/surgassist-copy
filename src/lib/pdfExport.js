@@ -1,6 +1,14 @@
 import jsPDF from "jspdf";
 
 export function exportTextToPDF(title, text, patientName = "") {
+  // Strip markdown symbols for clean presentation
+  const cleanText = text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/`(.+?)`/g, "$1");
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -33,7 +41,7 @@ export function exportTextToPDF(title, text, patientName = "") {
   // Body
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  const lines = doc.splitTextToSize(text, maxWidth);
+  const lines = doc.splitTextToSize(cleanText, maxWidth);
   const lineHeight = 5;
 
   lines.forEach((line) => {
