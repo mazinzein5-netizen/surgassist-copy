@@ -22,9 +22,11 @@ export default function Dashboard() {
   const loadCases = async () => {
     try {
       const data = await base44.entities.CaseFile.filter({}, "-created_date", 50);
-      setCases(data);
+      // Sanitize to plain JSON — the SDK may attach non-cloneable wrapper props
+      // that break the dev-preview telemetry (postMessage structured clone).
+      setCases(JSON.parse(JSON.stringify(data)));
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard loadCases failed:", err?.message || String(err));
     } finally {
       setLoading(false);
     }
