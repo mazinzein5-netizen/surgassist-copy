@@ -18,7 +18,7 @@ export default function HiveLogo({ size = 40, showText = false, className = "" }
       {showText && (
         <div className="leading-none">
           <div className="text-[9px] font-semibold tracking-[0.22em] text-white/90 uppercase">Health HIVE Ecosystem</div>
-          <div className="text-xl font-extrabold text-white tracking-tight">HIVE</div>
+          <div className="text-xl font-extrabold text-white tracking-tight">HIVE Surgical Assistant</div>
           <div className="text-[9px] text-hive-gold/70">IbnCeena Ltd.</div>
         </div>
       )}
