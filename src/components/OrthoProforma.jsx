@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles } from "lucide-react";
 import { detectBodyRegion, getGenericStatement } from "@/lib/genericStatements";
+import AnticoagulantSelector, { formatAnticoagulants } from "@/components/AnticoagulantSelector";
 
 const ORTHO_SECTIONS = [
   {
@@ -146,6 +147,17 @@ export function compileProformaLines(answers, caseData) {
 
       const question = item.replace(/\?$/, "");
 
+      // Special handling for anticoagulants — use meds array with classification
+      if (question.toLowerCase() === "on anticoagulants") {
+        if (entry.answer === "no") {
+          sectionLines.push("Not on anticoagulants");
+        } else if (entry.answer === "yes") {
+          const formatted = formatAnticoagulants(entry.meds);
+          sectionLines.push(formatted || "On anticoagulation (type and dose to be documented)");
+        }
+        continue;
+      }
+
       if (entry.detail?.trim()) {
         // User provided detail — use it
         if (entry.answer === "no") {
@@ -205,6 +217,13 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
     setAnswers(prev => ({
       ...prev,
       [key]: { ...prev[key], detail },
+    }));
+  };
+
+  const handleMeds = (key, meds) => {
+    setAnswers(prev => ({
+      ...prev,
+      [key]: { ...prev[key], meds },
     }));
   };
 
@@ -308,8 +327,16 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
                       </div>
                     )}
 
-                    {/* Detail input (only for "yes" answers) */}
-                    {entry.answer === "yes" && (
+                    {/* Anticoagulant quick-tick selector */}
+                    {entry.answer === "yes" && item === "On anticoagulants?" && (
+                      <AnticoagulantSelector
+                        selected={entry.meds || []}
+                        onChange={(meds) => handleMeds(key, meds)}
+                      />
+                    )}
+
+                    {/* Detail input for other "yes" answers */}
+                    {entry.answer === "yes" && item !== "On anticoagulants?" && (
                       <input
                         type="text"
                         value={entry.detail}
