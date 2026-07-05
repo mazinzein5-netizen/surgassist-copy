@@ -94,18 +94,52 @@
     "clerking_data": {
       "type": "object"
     },
+    "proforma_data": {
+      "type": "object",
+      "description": "Yes/no toggle proforma answers for orthopedic clerking"
+    },
     "investigation_recommendations": {
       "type": "string"
     },
     "admission_note": {
       "type": "string",
-      "description": "Generated admission note with plan incorporating investigations"
+      "description": "Generated concise admission note with plan"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the patient was admitted"
     },
     "admission_recommendation": {
       "type": "string"
     },
     "admission_department": {
       "type": "string"
+    },
+    "pre_op_status": {
+      "type": "string",
+      "enum": [
+        "not_listed",
+        "listed",
+        "in_theatre",
+        "post_op",
+        "not_applicable"
+      ],
+      "default": "not_listed",
+      "description": "Current surgical pathway status"
+    },
+    "procedure_name": {
+      "type": "string",
+      "description": "Planned or performed procedure"
+    },
+    "procedure_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of procedure"
+    },
+    "pod": {
+      "type": "number",
+      "description": "Post-operative day number"
     },
     "kardex_data": {
       "type": "object"

@@ -2,19 +2,23 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { generateClerkingProforma, generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, checkClerkingCompleteness, uploadFile } from "@/lib/hiveApi";
+import { generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, uploadFile } from "@/lib/hiveApi";
 
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
-import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks } from "lucide-react";
+
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
+import ClerkingTab from "@/components/ClerkingTab";
+import ImagingReports from "@/components/ImagingReports";
+import { compileProformaLines } from "@/components/OrthoProforma";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
   { id: "clerking", label: "Clerking", icon: Stethoscope },
+  { id: "imaging", label: "Imaging", icon: Scan },
   { id: "kardex", label: "Kardex", icon: Pill },
   { id: "discharge", label: "Discharge", icon: FileCheck },
   { id: "consent", label: "Consent", icon: ShieldCheck },
@@ -89,6 +93,9 @@ export default function CaseDetail() {
               </div>
             </div>
           </div>
+
+          {/* Admission Info Bar */}
+          <AdmissionInfoBar caseData={caseData} />
         </div>
       </div>
 
@@ -118,6 +125,7 @@ export default function CaseDetail() {
         <div className="max-w-5xl mx-auto">
           {activeTab === "summary" && <SummaryTab caseData={caseData} />}
           {activeTab === "clerking" && <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
+          {activeTab === "imaging" && <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
           {activeTab === "kardex" && <KardexTab caseData={caseData} onUpdate={loadCase} />}
           {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} />}
           {activeTab === "consent" && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
@@ -129,14 +137,50 @@ export default function CaseDetail() {
 }
 
 function SummaryTab({ caseData }) {
+  const proformaLines = compileProformaLines(caseData.proforma_data);
+
   return (
     <div className="space-y-4">
+      {proformaLines.length > 0 && (
+        <Section title="Key Clinical Highlights" icon={Activity}>
+          <div className="space-y-2">
+            {proformaLines.map((group, gi) => (
+              <div key={gi}>
+                <p className="text-xs font-semibold text-accent uppercase mb-0.5">{group.section}</p>
+                {group.lines.map((line, li) => (
+                  <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section title="Referral Summary" icon={FileText}>
         <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary || "No referral summary recorded."}</p>
         {caseData.referral_mode && (
           <p className="text-xs text-muted-foreground mt-2">Input mode: <span className="capitalize">{caseData.referral_mode}</span></p>
         )}
       </Section>
+
+      {caseData.admission_note && (
+        <Section title="Admission Note" icon={FileText}>
+          <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{caseData.admission_note}</pre>
+          <button
+            onClick={() => {
+              const el = document.createElement("textarea");
+              el.value = caseData.admission_note;
+              document.body.appendChild(el);
+              el.select();
+              document.execCommand("copy");
+              document.body.removeChild(el);
+            }}
+            className="mt-2 text-xs text-hive-gold hover:underline"
+          >
+            Copy to clipboard
+          </button>
+        </Section>
+      )}
 
       {caseData.triage_decision && caseData.triage_decision !== "pending" && (
         <Section title="Triage Decision" icon={CheckCircle2}>
@@ -182,331 +226,6 @@ function SummaryTab({ caseData }) {
   );
 }
 
-function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
-  const [proforma, setProforma] = useState(caseData.clerking_data || null);
-  const [generating, setGenerating] = useState(false);
-  const [photoType, setPhotoType] = useState("wound");
-  const fileRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [completeness, setCompleteness] = useState(null);
-  const [checking, setChecking] = useState(false);
-  const [admissionNote, setAdmissionNote] = useState(caseData.admission_note || "");
-  const [generatingNote, setGeneratingNote] = useState(false);
-
-  // Initialize field values from existing proforma
-  const initFieldValues = (pf) => {
-    const vals = {};
-    pf?.sections?.forEach((s, si) => {
-      s.fields?.forEach((f, fi) => {
-        vals[`${si}-${fi}`] = f.value ?? f.pre_filled ?? "";
-      });
-    });
-    return vals;
-  };
-  const [fieldValues, setFieldValues] = useState(() => initFieldValues(caseData.clerking_data));
-
-  const handleFieldChange = (key, value) => {
-    setFieldValues(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleGenerateProforma = async () => {
-    setGenerating(true);
-    try {
-      const result = await generateClerkingProforma(caseData.presenting_complaint || caseData.referral_summary, caseData.referral_summary);
-      setProforma(result);
-      setFieldValues(initFieldValues(result));
-      await base44.entities.CaseFile.update(caseId, { clerking_data: result, status: "clerking" });
-      onPhotoAdded();
-    } catch (err) {
-      alert("Failed to generate proforma. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // Save field values into proforma structure + persist to entity
-  const saveClerking = async () => {
-    setSaving(true);
-    try {
-      const updated = { ...proforma };
-      updated.sections = updated.sections.map((section, si) => ({
-        ...section,
-        fields: section.fields?.map((field, fi) => ({
-          ...field,
-          value: fieldValues[`${si}-${fi}`] ?? field.pre_filled ?? "",
-        })),
-      }));
-      setProforma(updated);
-      await base44.entities.CaseFile.update(caseId, { clerking_data: updated });
-      onPhotoAdded();
-      return updated;
-    } catch (err) {
-      alert("Failed to save clerking data.");
-      return null;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Save + check completeness + auto-generate admission note
-  const handleSaveAndCheck = async () => {
-    const savedProforma = await saveClerking();
-    if (!savedProforma) return;
-
-    // Run completeness check
-    setChecking(true);
-    try {
-      const result = await checkClerkingCompleteness(savedProforma, caseData.presenting_complaint || caseData.referral_summary, caseData.referral_summary);
-      setCompleteness(result);
-    } catch {
-      alert("Failed to check completeness.");
-    } finally {
-      setChecking(false);
-    }
-
-    // Auto-generate admission note from current clerking data
-    setGeneratingNote(true);
-    try {
-      const updatedCase = { ...caseData, clerking_data: savedProforma };
-      const result = await generateAdmissionNote(updatedCase, [], [], "");
-      const note = typeof result === "string" ? result : (result.admission_note || "");
-      setAdmissionNote(note);
-      await base44.entities.CaseFile.update(caseId, { admission_note: note });
-      onPhotoAdded();
-    } catch {
-      // Silently fail — note generation is secondary to the save
-    } finally {
-      setGeneratingNote(false);
-    }
-  };
-
-  // Re-generate admission note with latest info (keeps input open for updates)
-  const handleRegenerateNote = async () => {
-    const savedProforma = await saveClerking();
-    if (!savedProforma) return;
-    setGeneratingNote(true);
-    try {
-      const updatedCase = { ...caseData, clerking_data: savedProforma };
-      const result = await generateAdmissionNote(updatedCase, [], [], "");
-      const note = typeof result === "string" ? result : (result.admission_note || "");
-      setAdmissionNote(note);
-      await base44.entities.CaseFile.update(caseId, { admission_note: note });
-      onPhotoAdded();
-    } catch {
-      alert("Failed to generate admission note.");
-    } finally {
-      setGeneratingNote(false);
-    }
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const uploadResult = await uploadFile(file);
-      await base44.entities.ClinicalPhoto.create({
-        case_id: caseId,
-        photo_type: photoType,
-        photo_url: uploadResult.file_url,
-        caption: "",
-      });
-      onPhotoAdded();
-    } catch (err) {
-      alert("Failed to upload photo.");
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Generate Proforma */}
-      {!proforma && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
-          <Stethoscope className="w-10 h-10 text-hive-gold mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground mb-4">Generate an AI-tailored clerking proforma for this presentation.</p>
-          <AIBadge />
-          <button
-            onClick={handleGenerateProforma}
-            disabled={generating}
-            className="mt-3 px-4 py-2.5 rounded-lg bg-hive-gold text-hive-gold-foreground font-medium text-sm hover:bg-hive-gold/90 transition-colors flex items-center gap-2 mx-auto"
-          >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
-            Generate Clerking Proforma
-          </button>
-        </div>
-      )}
-
-      {/* Proforma */}
-      {proforma?.sections && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Clerking Proforma</h3>
-            <AIBadge />
-          </div>
-          {proforma.sections.map((section, si) => (
-            <Section key={si} title={section.title} icon={FileText}>
-              <div className="space-y-3">
-                {section.fields?.map((field, fi) => {
-                  const key = `${si}-${fi}`;
-                  const val = fieldValues[key] ?? "";
-                  const isPrefilled = !val && field.pre_filled;
-                  return (
-                    <div key={fi}>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1">
-                        {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={val}
-                        onChange={(e) => handleFieldChange(key, e.target.value)}
-                        placeholder={field.pre_filled ? field.pre_filled : `Enter ${field.label.toLowerCase()}...`}
-                        className={`w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-hive-gold/50 resize-none ${isPrefilled ? "italic text-muted-foreground" : "text-foreground placeholder:text-muted-foreground"}`}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </Section>
-          ))}
-          {proforma.auto_summary && (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
-              <p className="text-xs font-semibold text-warning uppercase mb-1">Auto-Certified Statement</p>
-              <p className="text-sm text-foreground italic whitespace-pre-wrap">{proforma.auto_summary}</p>
-            </div>
-          )}
-
-          {/* Save & Check button */}
-          <button
-            onClick={handleSaveAndCheck}
-            disabled={saving || checking || generatingNote}
-            className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
-          >
-            {saving || checking || generatingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
-            Save, Check Completeness & Generate Admission Note
-          </button>
-        </div>
-      )}
-
-      {/* Completeness Check Results */}
-      {completeness && (
-        <div className={`bg-card border-2 rounded-xl p-4 ${completeness.is_complete ? "border-success/30" : "border-warning/30"}`}>
-          <div className="flex items-center gap-2 mb-3">
-            {completeness.is_complete ? <CheckCircle2 className="w-4 h-4 text-success" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
-            <h4 className="font-bold text-foreground text-sm">
-              {completeness.is_complete ? "Clerking Complete" : "Missing Information"}
-            </h4>
-            <AIBadge />
-          </div>
-          {completeness.missing_items?.length > 0 && (
-            <ul className="space-y-1 mb-3">
-              {completeness.missing_items.map((item, i) => (
-                <li key={i} className="text-sm text-warning flex items-start gap-2">
-                  <span className="text-warning mt-0.5">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          )}
-          {completeness.standards_note && (
-            <p className="text-xs text-muted-foreground whitespace-pre-wrap">{completeness.standards_note}</p>
-          )}
-        </div>
-      )}
-
-      {/* Admission Note */}
-      {admissionNote && (
-        <div className="bg-card border-2 border-hive-gold/30 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-hive-gold" />
-              <h4 className="font-bold text-foreground text-sm">Admission Note with Plan</h4>
-            </div>
-            <div className="flex items-center gap-2">
-              <AIBadge />
-              <ShareNoteButtons
-                note={admissionNote}
-                patientName={caseData.patient_name}
-                onRegenerate={handleRegenerateNote}
-                generating={generatingNote}
-              />
-            </div>
-          </div>
-          <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{admissionNote}</pre>
-        </div>
-      )}
-
-      {/* Exam Guides */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Clinical Examination Guides</h3>
-        <p className="text-xs text-muted-foreground">Interactive reference diagrams validated against RCSI curriculum.</p>
-        <ExamGuideSection title="Dermatome Map — Sensory Testing" icon={Eye}>
-          <DermatomeMap />
-        </ExamGuideSection>
-        <ExamGuideSection title="Myotome Guide — Motor Testing" icon={Hand}>
-          <MyotomeGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Deep Tendon Reflexes" icon={Activity}>
-          <ReflexGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Abdominal Examination" icon={Stethoscope}>
-          <AbdominalExamGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Vascular Examination" icon={Activity}>
-          <VascularExamGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Wound Assessment" icon={AlertTriangle}>
-          <WoundAssessmentGuide />
-        </ExamGuideSection>
-      </div>
-
-      {/* Clinical Photos */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Clinical Photos</h3>
-        <div className="flex items-center gap-2">
-          <select
-            value={photoType}
-            onChange={(e) => setPhotoType(e.target.value)}
-            className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-          >
-            <option value="wound">Wound</option>
-            <option value="xray">X-Ray</option>
-            <option value="ecg">ECG</option>
-            <option value="medication_list">Medication List</option>
-            <option value="other">Other</option>
-          </select>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
-          >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-            Add Photo
-          </button>
-        </div>
-        {photos.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {photos.map(p => (
-              <div key={p.id} className="relative group">
-                <img src={p.photo_url} alt={p.photo_type} className="w-full h-32 rounded-lg object-cover border border-border" />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm rounded-b-lg px-2 py-1">
-                  <span className="text-[10px] text-white capitalize">{p.photo_type.replace("_", " ")}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <InvestigationPrompts caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
-    </div>
-  );
-}
-
 function KardexTab({ caseData, onUpdate }) {
   const [kardex, setKardex] = useState(caseData.kardex_data || null);
   const [generating, setGenerating] = useState(false);
@@ -535,6 +254,7 @@ function KardexTab({ caseData, onUpdate }) {
         iv_fluid_plan: result.iv_fluids,
         treatment_plan: result.treatment_plan,
         status: "admitted",
+        admission_date: caseData.admission_date || new Date().toISOString(),
       });
       onUpdate();
     } catch {
@@ -868,6 +588,52 @@ function ReviewTab({ caseData, onUpdate, user }) {
           Countersign with IMC: {user?.imc_number || "N/A"}
         </button>
       )}
+    </div>
+  );
+}
+
+const PREOP_LABELS = {
+  not_listed: "Not Listed",
+  listed: "Listed",
+  in_theatre: "In Theatre",
+  post_op: "Post-Op",
+  not_applicable: "N/A",
+};
+
+function AdmissionInfoBar({ caseData }) {
+  const admitted = caseData.admission_date ? new Date(caseData.admission_date) : null;
+  const procDate = caseData.procedure_date ? new Date(caseData.procedure_date) : null;
+  const pod = procDate ? Math.floor((new Date() - procDate) / (1000 * 60 * 60 * 24)) : null;
+
+  const items = [
+    {
+      label: "Admitted",
+      value: admitted ? admitted.toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" }) : "Not admitted",
+      highlight: !admitted,
+    },
+    {
+      label: "Pre-Op Status",
+      value: PREOP_LABELS[caseData.pre_op_status] || "Not Listed",
+      highlight: caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre",
+    },
+    {
+      label: "POD",
+      value: pod !== null ? `Day ${pod}` : "—",
+    },
+    {
+      label: "Procedure",
+      value: caseData.procedure_name || "Not listed",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+      {items.map((item) => (
+        <div key={item.label} className={`rounded-lg px-3 py-2 border ${item.highlight ? "bg-hive-gold/10 border-hive-gold/30" : "bg-background border-border"}`}>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
+          <p className={`text-sm font-medium ${item.highlight ? "text-hive-gold" : "text-foreground"}`}>{item.value}</p>
+        </div>
+      ))}
     </div>
   );
 }

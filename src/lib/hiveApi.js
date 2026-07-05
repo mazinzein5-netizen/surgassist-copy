@@ -241,8 +241,37 @@ export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, 
 }
 
 export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities) {
+  // Build concise proforma summary from yes/no answers
+  let proformaSummary = "No proforma data";
+  if (caseData.proforma_data) {
+    const lines = [];
+    for (const [key, entry] of Object.entries(caseData.proforma_data)) {
+      if (entry.answer === null) continue;
+      const [section, question] = key.split("::");
+      const q = question.replace(/\?$/, "");
+      if (entry.answer === "no") {
+        lines.push(`No ${q.toLowerCase()}`);
+      } else if (entry.answer === "yes") {
+        lines.push(entry.detail?.trim() ? `${q}: ${entry.detail.trim()}` : `${q} present`);
+      }
+    }
+    proformaSummary = lines.length > 0 ? lines.join("; ") : "No proforma data";
+  }
+
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}\n\nPATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}\nDEPARTMENT: ${caseData.department}\nPRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}\nREFERRAL SUMMARY: ${caseData.referral_summary || "N/A"}\nCLERKING DATA: ${JSON.stringify(caseData.clerking_data || {})}\nKARDEX/TREATMENT PLAN: ${JSON.stringify(caseData.kardex_data || {})}\nSELECTED BLOOD INVESTIGATIONS: ${selectedBloods.join(", ") || "None selected"}\nSELECTED IMAGING: ${selectedImaging.join(", ") || "None selected"}\nCOMORBIDITIES: ${comorbidities || "Not specified"}\n\nGenerate a complete admission note with plan.`,
+    prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}
+
+PATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}
+DEPARTMENT: ${caseData.department}
+PRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}
+REFERRAL SUMMARY: ${caseData.referral_summary || "N/A"}
+PROFORMA ANSWERS (yes/no clinical queries): ${proformaSummary}
+KARDEX/TREATMENT PLAN: ${caseData.kardex_data ? JSON.stringify(caseData.kardex_data.medications?.map(m => `${m.drug} ${m.dose} ${m.frequency}`).join(", ") || "N/A") : "N/A"}
+SELECTED BLOOD INVESTIGATIONS: ${selectedBloods.join(", ") || "None selected"}
+SELECTED IMAGING: ${selectedImaging.join(", ") || "None selected"}
+COMORBIDITIES: ${comorbidities || "Not specified"}
+
+Generate the SHORT admission note. Maximum 20 lines. Use the proforma answers for the EXAM and KEY FINDINGS sections.`,
     response_json_schema: {
       type: "object",
       properties: {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight } from "lucide-react";
+import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight, Calendar, Stethoscope, FileText } from "lucide-react";
 
 function getAbnormalFindings(inewsData, inewsScore) {
   const flags = [];
@@ -80,6 +80,37 @@ export default function InpatientCard({ caseFile }) {
         {caseFile.inews_score != null && (
           <span className={`px-2 py-0.5 rounded text-xs font-bold ${scoreColor(caseFile.inews_score)}`}>
             {caseFile.inews_score}
+          </span>
+        )}
+      </div>
+
+      {/* Admission / Pre-op info */}
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        {caseFile.admission_date && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Calendar className="w-3 h-3" />
+            Adm {new Date(caseFile.admission_date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
+          </span>
+        )}
+        {caseFile.pre_op_status && caseFile.pre_op_status !== "not_listed" && (
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+            caseFile.pre_op_status === "in_theatre" ? "bg-destructive/15 text-destructive" :
+            caseFile.pre_op_status === "listed" ? "bg-hive-gold/15 text-hive-gold" :
+            caseFile.pre_op_status === "post_op" ? "bg-success/15 text-success" : "bg-secondary text-muted-foreground"
+          }`}>
+            <Stethoscope className="w-2.5 h-2.5" />
+            {caseFile.pre_op_status === "in_theatre" ? "In Theatre" :
+             caseFile.pre_op_status === "listed" ? "Listed" :
+             caseFile.pre_op_status === "post_op" ? "Post-Op" : caseFile.pre_op_status}
+          </span>
+        )}
+        {caseFile.procedure_date && (() => {
+          const pod = Math.floor((new Date() - new Date(caseFile.procedure_date)) / (1000 * 60 * 60 * 24));
+          return <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">POD {pod}</span>;
+        })()}
+        {caseFile.admission_note && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-hive-gold">
+            <FileText className="w-2.5 h-2.5" /> Note ready
           </span>
         )}
       </div>
