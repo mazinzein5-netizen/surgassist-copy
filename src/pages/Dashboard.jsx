@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HexBadge from "@/components/HexBadge";
 import { INEWSAlertCard, PendingReferralCard } from "@/components/DashboardAlertCard";
+import HoneycombTitle from "@/components/HoneycombTitle";
 import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren } from "lucide-react";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
@@ -59,16 +60,20 @@ export default function Dashboard() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
+      <div className="mb-8 relative overflow-hidden rounded-xl border border-hive-gold/15">
+        <div className="absolute inset-0 hex-pattern-dense opacity-70 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/60 to-transparent pointer-events-none" />
+        <div className="relative p-5 md:p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl text-foreground font-medium [font-family:'Titan_One',_system-ui]">
+            Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {GRADE_LABELS[user?.clinical_grade] || "NCHD"} · {DEPT_LABELS[user?.department] || "Surgery"} · {user?.hospital || "HSE Hospital"}
+          </p>
         </div>
-        <h1 className="text-2xl md:text-3xl text-foreground font-medium [font-family:'Titan_One',_system-ui]">
-          Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {GRADE_LABELS[user?.clinical_grade] || "NCHD"} · {DEPT_LABELS[user?.department] || "Surgery"} · {user?.hospital || "HSE Hospital"}
-        </p>
       </div>
 
       {/* Priority: INEWS Alerts & Pending Referrals */}
@@ -141,7 +146,7 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</h2>
+        <HoneycombTitle className="mb-3" icon={ClipboardList} iconClassName="text-hive-gold">Quick Actions</HoneycombTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -159,7 +164,7 @@ export default function Dashboard() {
       {/* Recent Cases */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Cases</h2>
+          <HoneycombTitle icon={FolderOpen} iconClassName="text-hive-gold">Recent Cases</HoneycombTitle>
           <Link to="/cases" className="text-xs text-hive-gold hover:underline">View all →</Link>
         </div>
         {loading ?
