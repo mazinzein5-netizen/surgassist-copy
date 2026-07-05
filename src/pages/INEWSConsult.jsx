@@ -11,6 +11,7 @@ import ComorbiditySelector from "@/components/ComorbiditySelector";
 import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
+import ReasoningBullets from "@/components/ReasoningBullets";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
 const TOP_10 = [
@@ -494,7 +495,7 @@ export default function INEWSConsult() {
                 <Stethoscope className="w-4 h-4 text-hive-gold" />
                 <h4 className="font-bold text-foreground text-sm">Clinical Impression</h4>
               </div>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{result.clinical_impression}</p>
+              <ReasoningBullets text={result.clinical_impression} />
             </div>
           )}
 
@@ -542,11 +543,11 @@ export default function INEWSConsult() {
           )}
 
           {result.sbar_summary && <ResultSection title={inewsScore === 0 ? "Summary" : "SBAR Summary"} icon={Send} content={result.sbar_summary} />}
-          {result.differentials && <ResultSection title="Differential Diagnoses" icon={Stethoscope} content={result.differentials} />}
-          {result.immediate_management && <ResultSection title="Immediate Management" icon={Activity} content={result.immediate_management} />}
-          {result.investigation_recommendations && <ResultSection title="Investigations" icon={Activity} content={result.investigation_recommendations} />}
-          {result.plan && <ResultSection title="Management Plan" icon={ClipboardList} content={result.plan} />}
-          {result.recommendations && <ResultSection title="Recommendations for Ward Team" icon={Activity} content={result.recommendations} />}
+          {result.differentials && <ResultSectionBullets title="Differential Diagnoses" icon={Stethoscope} content={result.differentials} />}
+          {result.immediate_management && <ResultSectionBullets title="Immediate Management" icon={Activity} content={result.immediate_management} />}
+          {result.investigation_recommendations && <ResultSectionBullets title="Investigations" icon={Activity} content={result.investigation_recommendations} />}
+          {result.plan && <ResultSectionBullets title="Management Plan" icon={ClipboardList} content={result.plan} />}
+          {result.recommendations && <ResultSectionBullets title="Recommendations for Ward Team" icon={Activity} content={result.recommendations} />}
 
           {result.required_info && (
             <div className="bg-card border border-border rounded-xl p-4">
@@ -584,6 +585,18 @@ function ResultSection({ title, icon: Icon, content }) {
         <h4 className="font-semibold text-foreground text-sm">{title}</h4>
       </div>
       <p className="text-sm text-foreground whitespace-pre-wrap">{content}</p>
+    </div>
+  );
+}
+
+function ResultSectionBullets({ title, icon: Icon, content }) {
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-4 h-4 text-hive-gold" />
+        <h4 className="font-semibold text-foreground text-sm">{title}</h4>
+      </div>
+      <ReasoningBullets text={content} />
     </div>
   );
 }

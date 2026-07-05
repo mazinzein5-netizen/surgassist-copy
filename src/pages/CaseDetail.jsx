@@ -13,6 +13,7 @@ import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import ClerkingTab from "@/components/ClerkingTab";
+import ReasoningBullets from "@/components/ReasoningBullets";
 import ImagingReports from "@/components/ImagingReports";
 import { compileProformaLines } from "@/components/OrthoProforma";
 
@@ -513,7 +514,7 @@ function DischargeTab({ caseData, onUpdate }) {
 function ReviewTab({ caseData, onUpdate, user }) {
   const [notes, setNotes] = useState(caseData.review_notes || "");
   const [signing, setSigning] = useState(false);
-  const canReview = user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
+  const canReview = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
 
   const handleCountersign = async () => {
     setSigning(true);
@@ -546,7 +547,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
       {!canReview && (
         <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
-          <p className="text-sm text-warning">Only Registrars and Consultants can countersign. You can view the case but cannot approve.</p>
+          <p className="text-sm text-warning">Only SHOs, Registrars, and Consultants can countersign. You can view the case but cannot approve.</p>
         </div>
       )}
 
@@ -559,19 +560,19 @@ function ReviewTab({ caseData, onUpdate, user }) {
           {caseData.triage_reasoning && (
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
-              <p className="text-sm text-foreground">{caseData.triage_reasoning}</p>
+              <ReasoningBullets text={caseData.triage_reasoning} />
             </div>
           )}
           {caseData.investigation_recommendations && (
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Investigations</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.investigation_recommendations}</p>
+              <ReasoningBullets text={caseData.investigation_recommendations} />
             </div>
           )}
           {caseData.treatment_plan && (
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Treatment Plan</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.treatment_plan}</p>
+              <ReasoningBullets text={caseData.treatment_plan} />
             </div>
           )}
         </div>
