@@ -4,13 +4,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "./HiveLogo";
 import HexBadge from "./HexBadge";
-import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle, Activity } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/new-referral", label: "New Referral", icon: FilePlus2 },
   { to: "/cases", label: "My Cases", icon: FolderOpen },
   { to: "/inews-consult", label: "INEWS Consult", icon: AlertTriangle },
+  { to: "/inpatient-monitor", label: "Inpatient Monitor", icon: Activity },
   { to: "/theatre-log", label: "Theatre Log", icon: ClipboardList },
   { to: "/handover", label: "Handover", icon: Users },
   { to: "/drug-calculator", label: "Drug Calculator", icon: Calculator },

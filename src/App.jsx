@@ -14,6 +14,7 @@ import NewReferral from '@/pages/NewReferral';
 import CaseList from '@/pages/CaseList';
 import CaseDetail from '@/pages/CaseDetail';
 import INEWSConsult from '@/pages/INEWSConsult';
+import InpatientMonitor from '@/pages/InpatientMonitor';
 import TheatreLogPage from '@/pages/TheatreLogPage';
 import Handover from '@/pages/Handover';
 import DrugCalculator from '@/pages/DrugCalculator';
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
           <Route path="/cases" element={<CaseList />} />
           <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/inews-consult" element={<INEWSConsult />} />
+          <Route path="/inpatient-monitor" element={<InpatientMonitor />} />
           <Route path="/theatre-log" element={<TheatreLogPage />} />
           <Route path="/handover" element={<Handover />} />
           <Route path="/drug-calculator" element={<DrugCalculator />} />
