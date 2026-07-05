@@ -4,17 +4,22 @@ export default function HiveLogo({ size = 40, showText = false, className = "" }
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       <svg viewBox="0 0 100 100" style={{ width: size, height: size }} fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="50,4 84,23 84,62 50,81 16,62 16,23" fill="#F9D342" fillOpacity="0.95" />
-        <polygon points="50,4 84,23 84,62 50,81 16,62 16,23" stroke="#D99C25" strokeWidth="2" />
-        <polygon points="50,20 70,31 70,54 50,65 30,54 30,31" fill="#132482" />
-        <polygon points="50,28 64,35 64,50 50,57 36,50 36,35" fill="#F9D342" fillOpacity="0.9" />
-        <polygon points="50,81 84,62 84,77 50,96 16,77 16,62" fill="#D99C25" fillOpacity="0.4" />
+        {/* Top-left: solid hexagon */}
+        <polygon points="22,8 44,20 44,46 22,58 0,46 0,20" fill="#FBC02D" />
+        {/* Top-right: translucent overlapping hexagon */}
+        <polygon points="56,8 78,20 78,46 56,58 34,46 34,20" fill="#FBC02D" fillOpacity="0.35" />
+        {/* Bottom-center-left: translucent hexagon */}
+        <polygon points="40,42 62,54 62,80 40,92 18,80 18,54" fill="#FBC02D" fillOpacity="0.25" />
+        {/* Bottom-center-right: translucent hexagon */}
+        <polygon points="72,42 94,54 94,80 72,92 50,80 50,54" fill="#FBC02D" fillOpacity="0.45" />
+        {/* Small inner accent on solid hexagon */}
+        <polygon points="22,20 34,26 34,38 22,44 10,38 10,26" fill="#0D2275" fillOpacity="0.3" />
       </svg>
       {showText && (
         <div className="leading-none">
-          <div className="text-[10px] font-semibold tracking-[0.2em] text-hive-gold/80 uppercase">Health HIVE</div>
+          <div className="text-[9px] font-semibold tracking-[0.22em] text-white/90 uppercase">Health HIVE Ecosystem</div>
           <div className="text-xl font-extrabold text-white tracking-tight">HIVE</div>
-          <div className="text-[9px] text-muted-foreground">IbnCeena Ltd.</div>
+          <div className="text-[9px] text-hive-gold/70">IbnCeena Ltd.</div>
         </div>
       )}
     </div>
