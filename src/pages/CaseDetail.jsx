@@ -104,6 +104,7 @@ export default function CaseDetail() {
         <div className="max-w-5xl mx-auto flex gap-1 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const Icon = tab.icon;
+            const showConsentWarning = tab.id === "consent" && isConsentIncomplete(caseData);
             return (
               <button
                 key={tab.id}
@@ -114,6 +115,9 @@ export default function CaseDetail() {
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
+                {showConsentWarning && (
+                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse-gold" />
+                )}
               </button>
             );
           })}
@@ -590,6 +594,22 @@ function ReviewTab({ caseData, onUpdate, user }) {
       )}
     </div>
   );
+}
+
+function isConsentIncomplete(caseData) {
+  const theatreBound = caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre" ||
+    caseData.status === "accepted" || caseData.status === "admitted" || caseData.status === "investigations";
+  if (!theatreBound) return false;
+  if (!caseData.consent_checklist) return true;
+  try {
+    const parsed = typeof caseData.consent_checklist === "string"
+      ? JSON.parse(caseData.consent_checklist)
+      : caseData.consent_checklist;
+    const checked = parsed.checked || {};
+    return !Object.values(checked).every(Boolean);
+  } catch {
+    return true;
+  }
 }
 
 const PREOP_LABELS = {

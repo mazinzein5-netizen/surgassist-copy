@@ -166,13 +166,24 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
       </div>
 
       {/* Theatre clearance warning */}
-      {!isComplete && (caseData.status === "accepted" || caseData.status === "admitted" || caseData.status === "investigations") && (
+      {!isComplete && (caseData.status === "accepted" || caseData.status === "admitted" || caseData.status === "investigations" || caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre") && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
           <p className="text-sm text-destructive">
             <strong>Theatre clearance blocked.</strong> All checklist items must be verified before this case proceeds to theatre.
             Complete outstanding items and save to clear for surgery.
           </p>
+        </div>
+      )}
+
+      {/* Theatre cleared badge */}
+      {isComplete && (caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre") && (
+        <div className="bg-success/10 border border-success/30 rounded-xl p-4 flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-success flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-success">Consent verified — Cleared for theatre</p>
+            <p className="text-xs text-muted-foreground mt-0.5">All risks, benefits, and HSE requirements documented. Ready for procedural list.</p>
+          </div>
         </div>
       )}
 
