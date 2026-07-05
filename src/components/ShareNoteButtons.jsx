@@ -76,6 +76,14 @@ export default function ShareNoteButtons({ note, patientName, onRegenerate, gene
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      <button
+        onClick={() => exportTextToPDF(title, note, patientName)}
+        disabled={!note}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-semibold hover:bg-hive-gold/90 transition-colors"
+      >
+        <Download className="w-4 h-4" />
+        Export PDF
+      </button>
       {onRegenerate && (
         <button onClick={onRegenerate} disabled={generating} title="Re-generate" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
@@ -83,9 +91,6 @@ export default function ShareNoteButtons({ note, patientName, onRegenerate, gene
       )}
       <button onClick={() => window.print()} title="Print" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
         <Printer className="w-4 h-4" />
-      </button>
-      <button onClick={() => exportTextToPDF(title, note, patientName)} title="Download PDF" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-        <Download className="w-4 h-4" />
       </button>
       {SERVICES.map(svc => {
         const Icon = svc.icon;
