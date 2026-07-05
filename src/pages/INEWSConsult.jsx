@@ -6,6 +6,7 @@ import HandwritingOCR from "@/components/HandwritingOCR";
 import LabResultsCapture from "@/components/LabResultsCapture";
 import KardexCapture from "@/components/KardexCapture";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
+import ReferrerDetails from "@/components/ReferrerDetails";
 import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
@@ -107,6 +108,9 @@ export default function INEWSConsult() {
   const [kardexData, setKardexData] = useState(null);
   const [result, setResult] = useState(null);
   const [onCallTeam, setOnCallTeam] = useState(null);
+  const [referrerInfo, setReferrerInfo] = useState({});
+  const [comorbidities, setComorbidities] = useState("");
+  const [geriatricOptimized, setGeriatricOptimized] = useState("");
   const [sections, setSections] = useState({ narrative: true, vitals: true, labs: false, kardex: false });
   const fileRef = useRef(null);
 
@@ -148,9 +152,9 @@ export default function INEWSConsult() {
     setLoading(true);
     try {
       const inewsData = { ...vitals, calculated_score: calculateINEWS(vitals) };
-      const info = `${patientInfo.name}, MRN: ${patientInfo.mrn}, DOB: ${patientInfo.dob}, Ward: ${patientInfo.ward}, Procedure: ${patientInfo.procedure || "N/A"}, POD: ${patientInfo.pod || "N/A"}`;
+      const info = `${patientInfo.name}, MRN: ${patientInfo.mrn}, DOB: ${patientInfo.dob}, Ward: ${patientInfo.ward}, Procedure: ${patientInfo.procedure || "N/A"}, POD: ${patientInfo.pod || "N/A"}${comorbidities ? `, Comorbidities: ${comorbidities}` : ""}${geriatricOptimized ? `, Geriatric Status: ${geriatricOptimized}` : ""}`;
       const fullNarrative = [nurseNarrative.trim(), selectedSymptoms.length > 0 ? `Reported symptoms: ${selectedSymptoms.join(", ")}` : ""].filter(Boolean).join("\n");
-      const result = await processINEWSConsult(inewsData, info, patientPhoto ? [patientPhoto] : [], labResults, kardexData, fullNarrative);
+      const result = await processINEWSConsult(inewsData, info, patientPhoto ? [patientPhoto] : [], labResults, kardexData, fullNarrative, referrerInfo, comorbidities, geriatricOptimized);
       setResult(result);
 
       const mrn = patientInfo.mrn || "";
@@ -205,6 +209,10 @@ export default function INEWSConsult() {
         on_call_consultant: onCallTeam?.consultant_name || "",
         on_call_registrar: onCallTeam?.registrar_name || "",
         on_call_sho: onCallTeam?.sho_name || "",
+        referrer_name: referrerInfo.referrer_name || "",
+        referrer_grade: referrerInfo.referrer_grade || "",
+        referrer_department: referrerInfo.referrer_department || "",
+        referrer_contact: referrerInfo.referrer_contact || "",
       };
       const createdCase = await base44.entities.CaseFile.create(caseData);
 
@@ -244,6 +252,10 @@ export default function INEWSConsult() {
         <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
       </div>
 
+      <div className="mb-4">
+        <ReferrerDetails value={referrerInfo} onChange={setReferrerInfo} />
+      </div>
+
       {step === "input" && (
         <div className="space-y-4">
           {/* Patient Identity */}
@@ -265,6 +277,34 @@ export default function INEWSConsult() {
               <Input label="Ward" value={patientInfo.ward} onChange={v => setPatientInfo(p => ({ ...p, ward: v }))} />
               <Input label="Procedure (if post-op)" value={patientInfo.procedure} onChange={v => setPatientInfo(p => ({ ...p, procedure: v }))} />
               <Input label="Post-Op Day" value={patientInfo.pod} onChange={v => setPatientInfo(p => ({ ...p, pod: v }))} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Key Comorbidities</label>
+                <input
+                  type="text"
+                  value={comorbidities}
+                  onChange={(e) => setComorbidities(e.target.value)}
+                  placeholder="e.g. T2DM, AF, CKD3, dementia"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Geriatric Optimization</label>
+                <select
+                  value={geriatricOptimized}
+                  onChange={(e) => setGeriatricOptimized(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
+                >
+                  <option value="">Select if applicable…</option>
+                  <option value="Not applicable — not geriatric">Not applicable — not geriatric</option>
+                  <option value="Orthogeriatric review completed">Orthogeriatric review completed</option>
+                  <option value="Pre-op optimization in progress">Pre-op optimization in progress</option>
+                  <option value="Optimized — awaiting surgery">Optimized — awaiting surgery</option>
+                  <option value="Not yet optimized">Not yet optimized</option>
+                  <option value="Post-op — under orthogeriatric care">Post-op — under orthogeriatric care</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -324,12 +364,12 @@ export default function INEWSConsult() {
               />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Input label="HR (bpm)" value={vitals.hr} onChange={v => setVitals(p => ({ ...p, hr: v }))} />
-              <Input label="BP Sys" value={vitals.bp_sys} onChange={v => setVitals(p => ({ ...p, bp_sys: v }))} />
-              <Input label="BP Dia" value={vitals.bp_dia} onChange={v => setVitals(p => ({ ...p, bp_dia: v }))} />
-              <Input label="RR (/min)" value={vitals.rr} onChange={v => setVitals(p => ({ ...p, rr: v }))} />
-              <Input label="SpO₂ (%)" value={vitals.spO2} onChange={v => setVitals(p => ({ ...p, spO2: v }))} />
-              <Input label="Temp (°C)" value={vitals.temp} onChange={v => setVitals(p => ({ ...p, temp: v }))} />
+              <VitalsInput label="HR (bpm)" value={vitals.hr} onChange={v => setVitals(p => ({ ...p, hr: v }))} quickValues={["60", "80", "100", "120", "140"]} />
+              <VitalsInput label="BP Sys" value={vitals.bp_sys} onChange={v => setVitals(p => ({ ...p, bp_sys: v }))} quickValues={["100", "120", "140", "160", "180"]} />
+              <VitalsInput label="BP Dia" value={vitals.bp_dia} onChange={v => setVitals(p => ({ ...p, bp_dia: v }))} quickValues={["60", "70", "80", "90", "100"]} />
+              <VitalsInput label="RR (/min)" value={vitals.rr} onChange={v => setVitals(p => ({ ...p, rr: v }))} quickValues={["12", "16", "20", "24", "30"]} />
+              <VitalsInput label="SpO₂ (%)" value={vitals.spO2} onChange={v => setVitals(p => ({ ...p, spO2: v }))} quickValues={["88", "92", "94", "96", "98"]} />
+              <VitalsInput label="Temp (°C)" value={vitals.temp} onChange={v => setVitals(p => ({ ...p, temp: v }))} quickValues={["36.0", "36.5", "37.5", "38.5", "39.5"]} />
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">AVPU</label>
                 <select value={vitals.avpu} onChange={e => setVitals(p => ({ ...p, avpu: e.target.value }))} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50">
@@ -490,6 +530,35 @@ function Input({ label, value, onChange, type = "text" }) {
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
       />
+    </div>
+  );
+}
+
+function VitalsInput({ label, value, onChange, quickValues = [] }) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground block mb-1">{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
+      />
+      <div className="flex flex-wrap gap-1 mt-1">
+        {quickValues.map(qv => (
+          <button
+            key={qv}
+            onClick={() => onChange(qv)}
+            className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+              value === qv
+                ? "bg-hive-gold/20 text-hive-gold border border-hive-gold/30"
+                : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
+            }`}
+          >
+            {qv}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

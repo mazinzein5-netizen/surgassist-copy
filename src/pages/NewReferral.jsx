@@ -6,6 +6,7 @@ import { processReferralChat, uploadFile, transcribeAudio } from "@/lib/hiveApi"
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
+import ReferrerDetails from "@/components/ReferrerDetails";
 import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users } from "lucide-react";
 
 const INPUT_MODES = [
@@ -31,6 +32,7 @@ export default function NewReferral() {
   const [attachments, setAttachments] = useState([]);
   const [triageResult, setTriageResult] = useState(null);
   const [onCallTeam, setOnCallTeam] = useState(null);
+  const [referrerInfo, setReferrerInfo] = useState({});
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
@@ -50,7 +52,7 @@ export default function NewReferral() {
     setLoading(true);
 
     try {
-      const result = await processReferralChat(newMessages, userMessage.content, attachments);
+      const result = await processReferralChat(newMessages, userMessage.content, attachments, referrerInfo);
       const assistantMessage = { role: "assistant", content: result.response, requiredInfo: result.required_info };
       setMessages(prev => [...prev, assistantMessage]);
 
@@ -176,6 +178,10 @@ export default function NewReferral() {
         on_call_consultant: onCallTeam?.consultant_name || "",
         on_call_registrar: onCallTeam?.registrar_name || "",
         on_call_sho: onCallTeam?.sho_name || "",
+        referrer_name: referrerInfo.referrer_name || "",
+        referrer_grade: referrerInfo.referrer_grade || "",
+        referrer_department: referrerInfo.referrer_department || "",
+        referrer_contact: referrerInfo.referrer_contact || "",
       };
       const created = await base44.entities.CaseFile.create(caseData);
       for (const msg of messages) {
@@ -210,6 +216,11 @@ export default function NewReferral() {
       {/* On-Call Team Bar */}
       <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
         <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
+      </div>
+
+      {/* Referrer Details */}
+      <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
+        <ReferrerDetails value={referrerInfo} onChange={setReferrerInfo} />
       </div>
 
       {/* Chat */}

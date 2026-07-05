@@ -64,6 +64,30 @@
       "type": "string",
       "description": "Name of the senior house officer on-call at time of referral"
     },
+    "referrer_name": {
+      "type": "string",
+      "description": "Name of the person making the referral"
+    },
+    "referrer_grade": {
+      "type": "string",
+      "enum": [
+        "intern",
+        "sho",
+        "registrar",
+        "consultant",
+        "nursing",
+        "other"
+      ],
+      "description": "Professional grade of the referrer"
+    },
+    "referrer_department": {
+      "type": "string",
+      "description": "Department/team of the referrer (e.g. ED, Ward 3B, Orthopaedics)"
+    },
+    "referrer_contact": {
+      "type": "string",
+      "description": "Direct contact: phone, WhatsApp, or extension"
+    },
     "status": {
       "type": "string",
       "enum": [

@@ -6,12 +6,16 @@ import {
 } from "./hivePrompts";
 import { compileProformaLines } from "@/components/OrthoProforma";
 
-export async function processReferralChat(messages, newInput, attachments = []) {
+export async function processReferralChat(messages, newInput, attachments = [], referrerInfo = null) {
   const conversationHistory = messages.map(m =>
     `${m.role === 'user' ? 'NCHD' : 'HIVE Assistant'}: ${m.content}`
   ).join('\n');
 
-  const prompt = `${TRIAGE_SYSTEM_PROMPT}\n\nCONVERSATION HISTORY:\n${conversationHistory}\n\nNEW INPUT FROM NCHD:\n${newInput}`;
+  const referrerBlock = referrerInfo && referrerInfo.referrer_name
+    ? `\nREFERRER: ${referrerInfo.referrer_name}, Grade: ${referrerInfo.referrer_grade || "N/A"}, Department: ${referrerInfo.referrer_department || "N/A"}, Contact: ${referrerInfo.referrer_contact || "N/A"}\n`
+    : "";
+
+  const prompt = `${TRIAGE_SYSTEM_PROMPT}${referrerBlock}\n\nCONVERSATION HISTORY:\n${conversationHistory}\n\nNEW INPUT FROM NCHD:\n${newInput}`;
 
   const result = await base44.integrations.Core.InvokeLLM({
     prompt,
@@ -138,17 +142,24 @@ export async function generateConsentChecklist(procedure, diagnosis, caseSummary
   return result;
 }
 
-export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls = [], labResults = [], kardexData = null, nurseNarrative = "") {
-  const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${INEWS_SYSTEM_PROMPT}
+export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls = [], labResults = [], kardexData = null, nurseNarrative = "", referrerInfo = null, comorbidities = "", geriatricOptimized = "") {
+  const referrerBlock = referrerInfo && referrerInfo.referrer_name
+    ? `\nREFERRER: ${referrerInfo.referrer_name}, Grade: ${referrerInfo.referrer_grade || "N/A"}, Department: ${referrerInfo.referrer_department || "N/A"}, Contact: ${referrerInfo.referrer_contact || "N/A"}\n`
+    : "";
 
-PATIENT: ${patientInfo}
+  const comorbiditiesBlock = comorbidities ? `\nCOMORBIDITIES: ${comorbidities}\n` : "\nCOMORBIDITIES: Not provided\n";
+  const geriatricBlock = geriatricOptimized ? `\nGERIATRIC OPTIMIZATION STATUS: ${geriatricOptimized}\n` : "";
+
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `${INEWS_SYSTEM_PROMPT}${referrerBlock}
+
+PATIENT: ${patientInfo}${comorbiditiesBlock}${geriatricBlock}
 NURSE NARRATIVE (what the nurse reported): ${nurseNarrative || "No narrative provided — assess based on vitals and available data."}
 INEWS DATA: ${JSON.stringify(inewsData)}
-LAB RESULTS: ${labResults.length > 0 ? JSON.stringify(labResults) : "No lab results available"}
+LAB RESULTS: ${labResults.length > 0 ? JSON.stringify(labResults) : "No lab results available — PROACTIVELY suggest key bloods to request (FBC, UEC, CRP, lactate, coagulation) based on the clinical picture."}
 KARDEX/MEDICATIONS: ${kardexData ? JSON.stringify(kardexData) : "No kardex data available"}
 
-Generate the assessment. CRITICAL: If the INEWS calculated_score is 0, generate a GENERIC assessment with routine review — do NOT recommend ICU/consultant escalation unless there are specific clinical red flags in the nurse narrative.`,
+Generate the assessment. CRITICAL: If the INEWS calculated_score is 0, generate a GENERIC assessment with routine review — do NOT recommend ICU/consultant escalation unless there are specific clinical red flags in the nurse narrative. Even with INEWS 0, PROACTIVELY suggest investigations and imaging that may be needed based on the presenting concern. Consider electrolyte, fluid, and endocrine derangement as potential causes.`,
     file_urls: attachmentUrls.length > 0 ? attachmentUrls : undefined,
     response_json_schema: {
       type: "object",
