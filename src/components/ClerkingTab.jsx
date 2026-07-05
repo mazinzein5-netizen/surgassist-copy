@@ -120,6 +120,9 @@ function PeriopAlertsWrapper({ caseData }) {
       if (key.includes("On anticoagulants") && entry.answer === "yes" && entry.meds) {
         meds = entry.meds;
       }
+      if (key.includes("Diabetic") && entry.answer === "yes" && entry.meds) {
+        meds = [...meds, ...entry.meds];
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles, CheckCheck } from "lucide-react";
 import { detectBodyRegion, getGenericStatement } from "@/lib/genericStatements";
 import AnticoagulantSelector, { formatAnticoagulants } from "@/components/AnticoagulantSelector";
+import DiabeticMedSelector, { formatDiabeticMeds } from "@/components/DiabeticMedSelector";
 
 const ORTHO_SECTIONS = [
   {
@@ -154,6 +155,17 @@ export function compileProformaLines(answers, caseData) {
         } else if (entry.answer === "yes") {
           const formatted = formatAnticoagulants(entry.meds);
           sectionLines.push(formatted || "On anticoagulation (type and dose to be documented)");
+        }
+        continue;
+      }
+
+      // Special handling for diabetic medications
+      if (question.toLowerCase() === "diabetic") {
+        if (entry.answer === "no") {
+          sectionLines.push("Non-diabetic");
+        } else if (entry.answer === "yes") {
+          const formatted = formatDiabeticMeds(entry.meds);
+          sectionLines.push(formatted || "Diabetic (medications to be documented)");
         }
         continue;
       }
@@ -387,8 +399,16 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
                       />
                     )}
 
+                    {/* Diabetic medication quick-tick selector */}
+                    {entry.answer === "yes" && item === "Diabetic?" && (
+                      <DiabeticMedSelector
+                        selected={entry.meds || []}
+                        onChange={(meds) => handleMeds(key, meds)}
+                      />
+                    )}
+
                     {/* Detail input for other "yes" answers */}
-                    {entry.answer === "yes" && item !== "On anticoagulants?" && (
+                    {entry.answer === "yes" && item !== "On anticoagulants?" && item !== "Diabetic?" && (
                       <input
                         type="text"
                         value={entry.detail}
