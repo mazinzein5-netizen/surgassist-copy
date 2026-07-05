@@ -6,13 +6,15 @@ import { generateClerkingProforma, generateKardex, generateDischargeDocuments, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3 } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck } from "lucide-react";
+import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
   { id: "clerking", label: "Clerking", icon: Stethoscope },
   { id: "kardex", label: "Kardex", icon: Pill },
   { id: "discharge", label: "Discharge", icon: FileCheck },
+  { id: "consent", label: "Consent", icon: ShieldCheck },
   { id: "review", label: "Review", icon: ClipboardCheck },
 ];
 
@@ -115,6 +117,7 @@ export default function CaseDetail() {
           {activeTab === "clerking" && <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
           {activeTab === "kardex" && <KardexTab caseData={caseData} onUpdate={loadCase} />}
           {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} />}
+          {activeTab === "consent" && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
           {activeTab === "review" && <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />}
         </div>
       </div>
