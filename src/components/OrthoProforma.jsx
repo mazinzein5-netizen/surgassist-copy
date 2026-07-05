@@ -321,6 +321,12 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
                   <span className="text-[10px] text-success font-medium">✓ All clear</span>
                 )}
                 <button
+                  onClick={() => handleTickAllYes(section)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                >
+                  <CheckCheck className="w-3 h-3" /> All Yes
+                </button>
+                <button
                   onClick={() => handleTickAllNo(section)}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors"
                 >
