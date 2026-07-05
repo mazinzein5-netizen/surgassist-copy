@@ -7,17 +7,22 @@ import LabResultsCapture from "@/components/LabResultsCapture";
 import KardexCapture from "@/components/KardexCapture";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
 import ReferrerDetails from "@/components/ReferrerDetails";
+import ComorbiditySelector from "@/components/ComorbiditySelector";
 import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
-const COMORBIDITY_OPTIONS = [
-  "T2DM", "Type 1 DM", "Hypertension", "Atrial Fibrillation", "IHD", "Heart Failure",
-  "CKD", "COPD", "Asthma", "OSA", "Dementia", "Parkinson's",
-  "Stroke/TIA", "Cirrhosis", "PUD", "IBD", "Hypothyroid", "Osteoporosis",
-  "Active Cancer", "Immunosuppressed", "Smoker", "Ex-smoker", "Alcohol excess",
-  "Anticoagulated", "Steroid-dependent", "Obesity", "Frailty",
+const TOP_10 = [
+  "T2DM", "Hypertension", "Atrial Fibrillation", "IHD", "CKD",
+  "COPD", "Dementia", "Frailty", "Anticoagulated", "Steroid-dependent",
+];
+
+const FULL_LIST = [
+  "Type 1 DM", "Heart Failure", "Asthma", "OSA", "Parkinson's",
+  "Stroke/TIA", "Cirrhosis", "PUD", "IBD", "Hypothyroid",
+  "Osteoporosis", "Active Cancer", "Immunosuppressed", "Smoker",
+  "Ex-smoker", "Alcohol excess", "Obesity",
 ];
 
 const SYMPTOM_GROUPS = [
@@ -312,28 +317,22 @@ export default function INEWSConsult() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">Key Comorbidities</label>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {COMORBIDITY_OPTIONS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => toggleComorbidity(c)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                        selectedComorbidities.includes(c)
-                          ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
-                          : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+                <ComorbiditySelector
+                  selected={selectedComorbidities}
+                  onToggle={toggleComorbidity}
+                  onClearAll={() => { setSelectedComorbidities([]); setComorbidities(""); }}
+                  onSelectAll={() => {
+                    const all = [...TOP_10, ...FULL_LIST];
+                    setSelectedComorbidities(all);
+                    setComorbidities(all.join(", "));
+                  }}
+                />
                 <input
                   type="text"
                   value={comorbidities}
                   onChange={(e) => { setComorbidities(e.target.value); setSelectedComorbidities([]); }}
                   placeholder="Or type custom comorbidities…"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50"
+                  className="mt-2 w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50"
                 />
               </div>
               <div>
