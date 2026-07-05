@@ -353,6 +353,23 @@ export default function INEWSConsult() {
                 </select>
               </div>
             </div>
+
+            {/* Key Comorbidities — prominent visible summary */}
+            {(selectedComorbidities.length > 0 || comorbidities.trim()) && (
+              <div className="mt-4 rounded-xl border-2 border-hive-gold/25 bg-hive-gold/5 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-hive-gold" />
+                  <p className="text-xs font-bold text-hive-gold uppercase tracking-wider">Key Comorbidities</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedComorbidities.length > 0 ? selectedComorbidities : comorbidities.split(",").map(s => s.trim()).filter(Boolean)).map((c, i) => (
+                    <span key={i} className="inline-flex items-center px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive border border-destructive/30 text-sm font-semibold">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Nurse Referral Narrative */}
