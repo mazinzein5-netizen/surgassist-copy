@@ -214,7 +214,9 @@ Search for the latest guideline algorithm from NICE, HSE, SIGN, BOA/BOAST, NICE 
 
 export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, diagnosis = "") {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${DRUG_DOSE_SYSTEM_PROMPT}\n\nDRUG: ${drugName}\nWEIGHT: ${weight}kg\nAGE: ${age}\neGFR: ${eGFR}\nALLERGIES: ${allergies}\nDIAGNOSIS/INDICATION: ${diagnosis || "Not provided"}\n\nCalculate the recommended dose and provide full drug info, warnings, guideline protocol, and supportive care.`,
+    prompt: `${DRUG_DOSE_SYSTEM_PROMPT}\n\nDRUG: ${drugName}\nWEIGHT: ${weight}kg\nAGE: ${age}\neGFR: ${eGFR}\nALLERGIES: ${allergies}\nDIAGNOSIS/INDICATION: ${diagnosis || "Not provided"}\n\nCalculate the recommended dose and provide full drug info, warnings, guideline protocol, and supportive care. Search current NICE, HSE, BNF, and SIGN guidelines online for the most up-to-date prescribing protocols and safety information.`,
+    add_context_from_internet: true,
+    model: "gemini_3_flash",
     response_json_schema: {
       type: "object",
       properties: {
