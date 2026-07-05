@@ -29,32 +29,32 @@ export default function Dashboard() {
     }
   };
 
-  const activeCases = cases.filter(c => !["discharged", "declined"].includes(c.status));
-  const pendingReview = cases.filter(c => c.review_status === "pending" && c.status === "admitted");
+  const activeCases = cases.filter((c) => !["discharged", "declined"].includes(c.status));
+  const pendingReview = cases.filter((c) => c.review_status === "pending" && c.status === "admitted");
 
   // Critical INEWS alerts — admitted/inews_consult patients with INEWS >= 3, sorted by score desc
-  const inewsAlerts = cases
-    .filter(c => ["admitted", "inews_consult"].includes(c.status) && c.inews_score != null && c.inews_score >= 3)
-    .sort((a, b) => b.inews_score - a.inews_score);
+  const inewsAlerts = cases.
+  filter((c) => ["admitted", "inews_consult"].includes(c.status) && c.inews_score != null && c.inews_score >= 3).
+  sort((a, b) => b.inews_score - a.inews_score);
 
   // Pending referrals — not yet accepted/declined
-  const pendingReferrals = cases
-    .filter(c => ["referral_intake", "triage"].includes(c.status))
-    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  const pendingReferrals = cases.
+  filter((c) => ["referral_intake", "triage"].includes(c.status)).
+  sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
   const stats = [
-    { label: "Active Cases", value: activeCases.length, icon: FolderOpen, color: "text-accent", to: "/cases" },
-    { label: "INEWS Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor" },
-    { label: "Pending Referrals", value: pendingReferrals.length, icon: Clock, color: "text-warning", to: "/cases" },
-    { label: "Pending Review", value: pendingReview.length, icon: Activity, color: "text-hive-gold", to: "/cases" },
-  ];
+  { label: "Active Cases", value: activeCases.length, icon: FolderOpen, color: "text-accent", to: "/cases" },
+  { label: "INEWS Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor" },
+  { label: "Pending Referrals", value: pendingReferrals.length, icon: Clock, color: "text-warning", to: "/cases" },
+  { label: "Pending Review", value: pendingReview.length, icon: Activity, color: "text-hive-gold", to: "/cases" }];
+
 
   const quickActions = [
-    { label: "New Referral", desc: "Process a new surgical referral", icon: FilePlus2, to: "/new-referral", color: "bg-hive-gold/10 border-hive-gold/20 text-hive-gold" },
-    { label: "INEWS Consult", desc: "Rapid inpatient consult for INEWS > 2", icon: AlertTriangle, to: "/inews-consult", color: "bg-destructive/10 border-destructive/20 text-destructive" },
-    { label: "Handover", desc: "Generate ISBAR handover sheet", icon: Users, to: "/handover", color: "bg-accent/10 border-accent/20 text-accent" },
-    { label: "Drug Calculator", desc: "Weight & renal-adjusted dosing", icon: Calculator, to: "/drug-calculator", color: "bg-success/10 border-success/20 text-success" },
-  ];
+  { label: "New Referral", desc: "Process a new surgical referral", icon: FilePlus2, to: "/new-referral", color: "bg-hive-gold/10 border-hive-gold/20 text-hive-gold" },
+  { label: "INEWS Consult", desc: "Rapid inpatient consult for INEWS > 2", icon: AlertTriangle, to: "/inews-consult", color: "bg-destructive/10 border-destructive/20 text-destructive" },
+  { label: "Handover", desc: "Generate ISBAR handover sheet", icon: Users, to: "/handover", color: "bg-accent/10 border-accent/20 text-accent" },
+  { label: "Drug Calculator", desc: "Weight & renal-adjusted dosing", icon: Calculator, to: "/drug-calculator", color: "bg-success/10 border-success/20 text-success" }];
+
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -63,7 +63,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground [font-family:'Fascinate_Inline',_system-ui]">
           Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -72,12 +72,12 @@ export default function Dashboard() {
       </div>
 
       {/* Priority: INEWS Alerts & Pending Referrals */}
-      {loading ? (
-        <div className="flex justify-center py-8">
+      {loading ?
+      <div className="flex justify-center py-8">
           <div className="w-8 h-8 border-4 border-border border-t-hive-gold rounded-full animate-spin" />
-        </div>
-      ) : (inewsAlerts.length > 0 || pendingReferrals.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        </div> :
+      (inewsAlerts.length > 0 || pendingReferrals.length > 0) &&
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* INEWS Alerts */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -87,17 +87,17 @@ export default function Dashboard() {
               </div>
               <Link to="/inpatient-monitor" className="text-xs text-hive-gold hover:underline">Monitor →</Link>
             </div>
-            {inewsAlerts.length > 0 ? (
-              <div className="space-y-2">
-                {inewsAlerts.slice(0, 5).map(c => <INEWSAlertCard key={c.id} caseFile={c} />)}
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-lg p-4 text-center">
+            {inewsAlerts.length > 0 ?
+          <div className="space-y-2">
+                {inewsAlerts.slice(0, 5).map((c) => <INEWSAlertCard key={c.id} caseFile={c} />)}
+              </div> :
+
+          <div className="bg-card border border-border rounded-lg p-4 text-center">
                 <p className="text-xs text-success flex items-center justify-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-success" /> No active INEWS alerts
                 </p>
               </div>
-            )}
+          }
           </div>
 
           {/* Pending Referrals */}
@@ -109,18 +109,18 @@ export default function Dashboard() {
               </div>
               <Link to="/cases" className="text-xs text-hive-gold hover:underline">All cases →</Link>
             </div>
-            {pendingReferrals.length > 0 ? (
-              <div className="space-y-2">
-                {pendingReferrals.slice(0, 5).map(c => <PendingReferralCard key={c.id} caseFile={c} />)}
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-lg p-4 text-center">
+            {pendingReferrals.length > 0 ?
+          <div className="space-y-2">
+                {pendingReferrals.slice(0, 5).map((c) => <PendingReferralCard key={c.id} caseFile={c} />)}
+              </div> :
+
+          <div className="bg-card border border-border rounded-lg p-4 text-center">
                 <p className="text-xs text-muted-foreground">No pending referrals</p>
               </div>
-            )}
+          }
           </div>
         </div>
-      )}
+      }
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
@@ -134,8 +134,8 @@ export default function Dashboard() {
               </div>
               <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
-            </Link>
-          );
+            </Link>);
+
         })}
       </div>
 
@@ -150,8 +150,8 @@ export default function Dashboard() {
                 <Icon className="w-6 h-6 mb-3" />
                 <div className="font-semibold text-sm">{action.label}</div>
                 <div className="text-xs opacity-80 mt-1">{action.desc}</div>
-              </Link>
-            );
+              </Link>);
+
           })}
         </div>
       </div>
@@ -162,23 +162,23 @@ export default function Dashboard() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Cases</h2>
           <Link to="/cases" className="text-xs text-hive-gold hover:underline">View all →</Link>
         </div>
-        {loading ? (
-          <div className="flex justify-center py-12">
+        {loading ?
+        <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-4 border-border border-t-hive-gold rounded-full animate-spin" />
-          </div>
-        ) : cases.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-12 text-center">
+          </div> :
+        cases.length === 0 ?
+        <div className="bg-card border border-border rounded-xl p-12 text-center">
             <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">No cases yet. Start by processing a new referral.</p>
             <Link to="/new-referral" className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground font-medium text-sm hover:bg-hive-gold/90 transition-colors">
               <FilePlus2 className="w-4 h-4" />
               New Referral
             </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {cases.slice(0, 5).map((c) => (
-              <Link key={c.id} to={`/cases/${c.id}`} className="flex items-center justify-between bg-card border border-border rounded-lg p-4 hover:border-hive-gold/30 transition-colors">
+          </div> :
+
+        <div className="space-y-2">
+            {cases.slice(0, 5).map((c) =>
+          <Link key={c.id} to={`/cases/${c.id}`} className="flex items-center justify-between bg-card border border-border rounded-lg p-4 hover:border-hive-gold/30 transition-colors">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 hex-clip bg-hive-gold/10 flex items-center justify-center flex-shrink-0">
                     <span className="text-hive-gold font-bold text-sm">{c.patient_name?.charAt(0)?.toUpperCase() || "?"}</span>
@@ -195,10 +195,10 @@ export default function Dashboard() {
                   </span>
                 </div>
               </Link>
-            ))}
+          )}
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
