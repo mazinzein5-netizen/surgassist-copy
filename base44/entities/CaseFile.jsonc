@@ -155,6 +155,10 @@
     "investigation_recommendations": {
       "type": "string"
     },
+    "investigation_data": {
+      "type": "object",
+      "description": "Structured investigations: { bloods: string[], imaging: string[] }"
+    },
     "admission_note": {
       "type": "string",
       "description": "Generated concise admission note with plan"

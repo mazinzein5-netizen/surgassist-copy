@@ -2,7 +2,7 @@ import { base44 } from "@/api/base44Client";
 import {
   TRIAGE_SYSTEM_PROMPT, CLERKING_SYSTEM_PROMPT, KARDEX_SYSTEM_PROMPT,
   DISCHARGE_SYSTEM_PROMPT, CONSENT_SYSTEM_PROMPT, INEWS_SYSTEM_PROMPT,
-  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT, COMPLETENESS_CHECK_SYSTEM_PROMPT
+  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT, COMPLETENESS_CHECK_SYSTEM_PROMPT, INVESTIGATION_SUGGESTION_PROMPT
 } from "./hivePrompts";
 import { compileProformaLines } from "@/components/OrthoProforma";
 
@@ -432,6 +432,32 @@ export async function generateInvestigationPlan(diagnosis, caseSummary) {
 
 export async function transcribeAudio(audioUrl) {
   const result = await base44.integrations.Core.TranscribeAudio({ audio_url: audioUrl });
+  return result;
+}
+
+export async function suggestInvestigations(caseData) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `${INVESTIGATION_SUGGESTION_PROMPT}
+
+PATIENT: ${caseData.patient_name || "Unknown"}
+DEPARTMENT: ${caseData.department || "N/A"}
+PRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}
+REFERRAL SUMMARY: ${caseData.referral_summary || "N/A"}
+CLINICAL IMPRESSION: ${caseData.triage_reasoning || "N/A"}
+INEWS SCORE: ${caseData.inews_score ?? "N/A"}
+POST-OP STATUS: ${caseData.pre_op_status || "N/A"}
+PROCEDURE: ${caseData.procedure_name || "N/A"}
+POD: ${caseData.pod ?? "N/A"}
+
+Suggest the most appropriate blood investigations and imaging for this patient.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        bloods: { type: "array", items: { type: "string" } },
+        imaging: { type: "array", items: { type: "string" } }
+      }
+    }
+  });
   return result;
 }
 

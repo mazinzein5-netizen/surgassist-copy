@@ -154,7 +154,7 @@ export default function CaseDetail() {
       </div>
 
       {showPrintNote && (
-        <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} />
+        <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />
       )}
     </div>
   );

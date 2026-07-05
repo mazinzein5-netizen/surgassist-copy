@@ -200,7 +200,48 @@ export function exportCallNoteToPDF(caseData) {
 
   // Sections
   writeSection("Clinical Impression", caseData.triage_reasoning);
-  writeSection("Investigations", caseData.investigation_recommendations);
+
+  // Structured investigations (bloods + imaging)
+  const invData = caseData.investigation_data || {};
+  if (invData.bloods?.length || invData.imaging?.length) {
+    if (invData.bloods?.length) {
+      ensureSpace(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text("BLOOD INVESTIGATIONS", margin, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      for (const b of invData.bloods) {
+        ensureSpace(5);
+        doc.text(`- ${b}`, margin + 3, y);
+        y += 5;
+      }
+      y += 3;
+    }
+    if (invData.imaging?.length) {
+      ensureSpace(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text("IMAGING", margin, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      for (const im of invData.imaging) {
+        ensureSpace(5);
+        doc.text(`- ${im}`, margin + 3, y);
+        y += 5;
+      }
+      y += 3;
+    }
+  } else if (caseData.investigation_recommendations) {
+    writeSection("Investigations", caseData.investigation_recommendations);
+  }
+
   writeSection("Plan", caseData.treatment_plan);
   writeSection("IV Fluids", caseData.iv_fluid_plan);
 

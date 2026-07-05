@@ -258,7 +258,7 @@ export default function InpatientMonitor() {
       )}
 
       {printCase && (
-        <PrintPlanNote caseData={printCase} onClose={() => setPrintCase(null)} />
+        <PrintPlanNote caseData={printCase} onClose={() => setPrintCase(null)} onUpdate={loadInpatients} />
       )}
     </div>
   );
