@@ -19,6 +19,7 @@ import TheatreLogPage from '@/pages/TheatreLogPage';
 import Handover from '@/pages/Handover';
 import PatientHistory from '@/pages/PatientHistory';
 import DrugCalculator from '@/pages/DrugCalculator';
+import Contacts from '@/pages/Contacts';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
           <Route path="/handover" element={<Handover />} />
           <Route path="/patient-history" element={<PatientHistory />} />
           <Route path="/drug-calculator" element={<DrugCalculator />} />
+          <Route path="/contacts" element={<Contacts />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>

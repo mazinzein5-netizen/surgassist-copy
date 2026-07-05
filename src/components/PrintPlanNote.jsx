@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { downloadCallNotePDF } from "@/lib/pdfExport";
 import { suggestInvestigations } from "@/lib/hiveApi";
 import ReasoningBullets from "@/components/ReasoningBullets";
+import ShareCallNote from "@/components/ShareCallNote";
 
 export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
   const [reasoning, setReasoning] = useState(caseData.triage_reasoning || "");
@@ -112,9 +113,7 @@ export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
           <button onClick={handleDownloadPDF} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80">
             <Download className="w-3.5 h-3.5" /> PDF
           </button>
-          <button onClick={handleEmail} disabled={emailing} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 disabled:opacity-50">
-            {emailing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Email
-          </button>
+          <ShareCallNote caseData={mergedData} patientName={caseData.patient_name} />
           <button onClick={handlePrint} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90">
             <Printer className="w-3.5 h-3.5" /> Print
           </button>

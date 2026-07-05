@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "./HiveLogo";
 import HexBadge from "./HexBadge";
-import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch } from "lucide-react";
+import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch, MessageSquare } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: "/handover", label: "Handover", icon: Users },
   { to: "/patient-history", label: "Patient Memory", icon: FolderSearch },
   { to: "/drug-calculator", label: "Drug Calculator", icon: Calculator },
+  { to: "/contacts", label: "Contacts", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];
 

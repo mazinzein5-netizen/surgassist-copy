@@ -1,0 +1,39 @@
+{
+  "name": "StaffProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Links to User entity"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "grade": {
+      "type": "string",
+      "enum": [
+        "nchd",
+        "sho",
+        "registrar",
+        "consultant"
+      ]
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    },
+    "hospital": {
+      "type": "string"
+    },
+    "contact_number": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "full_name"
+  ]
+}
