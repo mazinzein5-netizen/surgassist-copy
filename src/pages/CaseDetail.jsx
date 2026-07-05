@@ -8,6 +8,7 @@ import HexBadge from "@/components/HexBadge";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
 import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
+import InvestigationPrompts from "@/components/InvestigationPrompts";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -142,7 +143,11 @@ function SummaryTab({ caseData }) {
             caseData.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
             "bg-warning/15 text-warning"
           }`}>
-            <span className="font-bold text-sm uppercase">{caseData.triage_decision.replace("_", " ")}</span>
+            <span className="font-bold text-sm uppercase">
+              {caseData.triage_decision === "accept" && caseData.accepting_specialty
+                ? `Accepted — ${caseData.accepting_specialty}`
+                : caseData.triage_decision.replace("_", " ")}
+            </span>
           </div>
           {caseData.triage_reasoning && (
             <div className="mb-2">
@@ -253,14 +258,21 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
                     </label>
                     <textarea
                       rows={2}
+                      defaultValue={field.pre_filled || ""}
                       placeholder={`Enter ${field.label.toLowerCase()}...`}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
+                      className={`w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-hive-gold/50 resize-none ${field.pre_filled ? "italic text-muted-foreground" : "text-foreground placeholder:text-muted-foreground"}`}
                     />
                   </div>
                 ))}
               </div>
             </Section>
           ))}
+          {proforma.auto_summary && (
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+              <p className="text-xs font-semibold text-warning uppercase mb-1">Auto-Certified Statement</p>
+              <p className="text-sm text-foreground italic whitespace-pre-wrap">{proforma.auto_summary}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -326,6 +338,8 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
           </div>
         )}
       </div>
+
+      <InvestigationPrompts caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
     </div>
   );
 }
@@ -334,6 +348,7 @@ function KardexTab({ caseData, onUpdate }) {
   const [kardex, setKardex] = useState(caseData.kardex_data || null);
   const [generating, setGenerating] = useState(false);
   const [medUrl, setMedUrl] = useState(null);
+  const [comorbidities, setComorbidities] = useState("");
   const fileRef = useRef(null);
 
   const handleUpload = async (e) => {
@@ -350,7 +365,7 @@ function KardexTab({ caseData, onUpdate }) {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const result = await generateKardex(medUrl, caseData.referral_summary, "", caseData.presenting_complaint);
+      const result = await generateKardex(medUrl, caseData.referral_summary, comorbidities, caseData.presenting_complaint);
       setKardex(result);
       await base44.entities.CaseFile.update(caseData.id, {
         kardex_data: result,
@@ -375,10 +390,20 @@ function KardexTab({ caseData, onUpdate }) {
       {!kardex && (
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="font-semibold text-foreground mb-2">Generate Inpatient Kardex</h3>
-          <p className="text-sm text-muted-foreground mb-4">Upload a photo/screenshot of the patient's current medications, and AI will generate a tailored inpatient Kardex.</p>
+          <p className="text-sm text-muted-foreground mb-4">Upload a photo of the patient's medications for a tailored kardex, or generate a generic baseline kardex based on demographics and comorbidities.</p>
           <AIBadge />
+          <div className="mt-3 mb-4">
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Known Comorbidities</label>
+            <textarea
+              value={comorbidities}
+              onChange={(e) => setComorbidities(e.target.value)}
+              rows={2}
+              placeholder="e.g. T2DM, HTN, AF on warfarin, CKD stage 3"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
+            />
+          </div>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleUpload} />
-          <div className="flex items-center gap-3 mt-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80">
               <Camera className="w-4 h-4" /> Upload Medication List
             </button>
@@ -386,9 +411,14 @@ function KardexTab({ caseData, onUpdate }) {
               <>
                 <img src={medUrl} alt="meds" className="w-16 h-16 rounded-lg object-cover border border-border" />
                 <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90">
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Kardex
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Tailored Kardex
                 </button>
               </>
+            )}
+            {!medUrl && (
+              <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90">
+                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Generic Kardex
+              </button>
             )}
           </div>
         </div>

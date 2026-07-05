@@ -30,6 +30,10 @@
         "general_surgery"
       ]
     },
+    "accepting_specialty": {
+      "type": "string",
+      "description": "The specific specialty that accepted the referral (e.g., Orthopaedics, General Surgery)"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -92,6 +96,10 @@
     },
     "investigation_recommendations": {
       "type": "string"
+    },
+    "admission_note": {
+      "type": "string",
+      "description": "Generated admission note with plan incorporating investigations"
     },
     "admission_recommendation": {
       "type": "string"

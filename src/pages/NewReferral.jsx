@@ -132,6 +132,7 @@ export default function NewReferral() {
         presenting_complaint: triageResult.presenting_complaint || "",
         mechanism_of_injury: triageResult.mechanism_of_injury || "",
         triage_decision: triageResult.triage_decision,
+        accepting_specialty: triageResult.accepting_specialty || "",
         triage_reasoning: triageResult.reasoning || "",
         triage_guideline: triageResult.guideline_used || "",
         pre_clerking_guidance: triageResult.pre_clerking_guidance || "",
@@ -214,7 +215,11 @@ export default function NewReferral() {
                 triageResult.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
                 "bg-warning/15 text-warning"
               }`}>
-                <span className="font-bold text-sm uppercase">{triageResult.triage_decision.replace("_", " ")}</span>
+                <span className="font-bold text-sm uppercase">
+                  {triageResult.triage_decision === "accept" && triageResult.accepting_specialty
+                    ? `Accepted — ${triageResult.accepting_specialty}`
+                    : triageResult.triage_decision.replace("_", " ")}
+                </span>
               </div>
               {triageResult.reasoning && (
                 <div className="mb-3">

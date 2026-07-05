@@ -2,7 +2,7 @@ import { base44 } from "@/api/base44Client";
 import {
   TRIAGE_SYSTEM_PROMPT, CLERKING_SYSTEM_PROMPT, KARDEX_SYSTEM_PROMPT,
   DISCHARGE_SYSTEM_PROMPT, CONSENT_SYSTEM_PROMPT, INEWS_SYSTEM_PROMPT,
-  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT
+  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT
 } from "./hivePrompts";
 
 export async function processReferralChat(messages, newInput, attachments = []) {
@@ -30,6 +30,7 @@ export async function processReferralChat(messages, newInput, attachments = []) 
         presenting_complaint: { type: "string" },
         mechanism_of_injury: { type: "string" },
         department: { type: "string", enum: ["orthopaedics", "general_surgery"] },
+        accepting_specialty: { type: "string", description: "The specific specialty accepting the referral (e.g., Orthopaedics, General Surgery)" },
         required_info: {
           type: "object",
           properties: {
@@ -47,7 +48,7 @@ export async function processReferralChat(messages, newInput, attachments = []) 
 
 export async function generateClerkingProforma(diagnosis, caseSummary) {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${CLERKING_SYSTEM_PROMPT}\n\nDIAGNOSIS/CONDITION: ${diagnosis}\n\nCASE SUMMARY: ${caseSummary}\n\nGenerate a structured clerking proforma as a JSON object with sections array, each containing title and fields array (each field has label, type, and required).`,
+    prompt: `${CLERKING_SYSTEM_PROMPT}\n\nDIAGNOSIS/CONDITION: ${diagnosis}\n\nCASE SUMMARY: ${caseSummary}\n\nGenerate a pathology-specific clerking proforma. Tailor the sections, fields, and pre_filled statements to the exact diagnosis. For trauma/fractures use "Mode of Injury" instead of "Presenting Complaint". Pre-fill generic certified statements for examinations that are not clinically appropriate. Include an auto_summary for any critical fields left blank.`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -64,13 +65,15 @@ export async function generateClerkingProforma(diagnosis, caseSummary) {
                   properties: {
                     label: { type: "string" },
                     type: { type: "string" },
-                    required: { type: "boolean" }
+                    required: { type: "boolean" },
+                    pre_filled: { type: "string", description: "Pre-completed generic certified statement the NCHD can override" }
                   }
                 }
               }
             }
           }
-        }
+        },
+        auto_summary: { type: "string", description: "Generic certified statement for critical fields left blank" }
       }
     }
   });
@@ -79,7 +82,7 @@ export async function generateClerkingProforma(diagnosis, caseSummary) {
 
 export async function generateKardex(medicationImageUrl, caseSummary, comorbidities, diagnosis) {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${KARDEX_SYSTEM_PROMPT}\n\nDIAGNOSIS: ${diagnosis}\nCOMORBIDITIES: ${comorbidities}\nCASE SUMMARY: ${caseSummary}\n\nRead the medication list from the attached image and generate the inpatient Kardex.`,
+    prompt: `${KARDEX_SYSTEM_PROMPT}\n\nDIAGNOSIS: ${diagnosis}\nCOMORBIDITIES: ${comorbidities}\nCASE SUMMARY: ${caseSummary}\n\n${medicationImageUrl ? "Read the medication list from the attached image and generate the inpatient Kardex incorporating the patient's current medications." : "No medication image provided. Generate a GENERIC BASELINE KARDEX appropriate for this patient's demographic, comorbidities, and diagnosis."}`,
     file_urls: medicationImageUrl ? [medicationImageUrl] : undefined,
     response_json_schema: {
       type: "object",
@@ -231,6 +234,19 @@ export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, 
         guideline_protocol: { type: "string" },
         supportive_care: { type: "string" },
         reference: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}\n\nPATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}\nDEPARTMENT: ${caseData.department}\nPRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}\nREFERRAL SUMMARY: ${caseData.referral_summary || "N/A"}\nCLERKING DATA: ${JSON.stringify(caseData.clerking_data || {})}\nKARDEX/TREATMENT PLAN: ${JSON.stringify(caseData.kardex_data || {})}\nSELECTED BLOOD INVESTIGATIONS: ${selectedBloods.join(", ") || "None selected"}\nSELECTED IMAGING: ${selectedImaging.join(", ") || "None selected"}\nCOMORBIDITIES: ${comorbidities || "Not specified"}\n\nGenerate a complete admission note with plan.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        admission_note: { type: "string" }
       }
     }
   });
