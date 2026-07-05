@@ -16,6 +16,7 @@ import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
 import ImagingReports from "@/components/ImagingReports";
 import { compileProformaLines } from "@/components/OrthoProforma";
+import { downloadCallNotePDF } from "@/lib/pdfExport";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -513,8 +514,26 @@ function DischargeTab({ caseData, onUpdate }) {
 
 function ReviewTab({ caseData, onUpdate, user }) {
   const [notes, setNotes] = useState(caseData.review_notes || "");
+  const [plan, setPlan] = useState(caseData.treatment_plan || "");
   const [signing, setSigning] = useState(false);
+  const [savingPlan, setSavingPlan] = useState(false);
   const canReview = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
+
+  const handleSavePlan = async () => {
+    setSavingPlan(true);
+    try {
+      await base44.entities.CaseFile.update(caseData.id, { treatment_plan: plan });
+      onUpdate();
+    } catch {
+      alert("Failed to save plan.");
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
+  const handlePrintPDF = () => {
+    downloadCallNotePDF({ ...caseData, treatment_plan: plan });
+  };
 
   const handleCountersign = async () => {
     setSigning(true);
@@ -569,12 +588,27 @@ function ReviewTab({ caseData, onUpdate, user }) {
               <ReasoningBullets text={caseData.investigation_recommendations} />
             </div>
           )}
-          {caseData.treatment_plan && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Treatment Plan</p>
-              <ReasoningBullets text={caseData.treatment_plan} />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Treatment Plan</p>
+              <button
+                onClick={handleSavePlan}
+                disabled={savingPlan || !canReview}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 disabled:opacity-40"
+              >
+                {savingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
+                Save Plan
+              </button>
             </div>
-          )}
+            <textarea
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              rows={6}
+              placeholder="Edit the management plan..."
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
+              disabled={!canReview}
+            />
+          </div>
         </div>
       </Section>
 
@@ -603,13 +637,32 @@ function ReviewTab({ caseData, onUpdate, user }) {
       )}
 
       {canReview && caseData.review_status !== "countersigned" && (
+        <div className="flex gap-2">
+          <button
+            onClick={handleCountersign}
+            disabled={signing}
+            className="flex-1 px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
+          >
+            {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
+            Countersign (IMC: {user?.imc_number || "N/A"})
+          </button>
+          <button
+            onClick={handlePrintPDF}
+            className="px-4 py-3 rounded-lg bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80 flex items-center justify-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Print PDF
+          </button>
+        </div>
+      )}
+
+      {caseData.review_status === "countersigned" && (
         <button
-          onClick={handleCountersign}
-          disabled={signing}
-          className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
+          onClick={handlePrintPDF}
+          className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80 flex items-center justify-center gap-2"
         >
-          {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
-          Countersign with IMC: {user?.imc_number || "N/A"}
+          <Printer className="w-4 h-4" />
+          Print Signed Note (PDF)
         </button>
       )}
     </div>
