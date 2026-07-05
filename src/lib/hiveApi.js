@@ -138,9 +138,17 @@ export async function generateConsentChecklist(procedure, diagnosis, caseSummary
   return result;
 }
 
-export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls = []) {
+export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls = [], labResults = [], kardexData = null, nurseNarrative = "") {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${INEWS_SYSTEM_PROMPT}\n\nPATIENT: ${patientInfo}\nINEWS DATA: ${JSON.stringify(inewsData)}\n\nGenerate the escalation assessment.`,
+    prompt: `${INEWS_SYSTEM_PROMPT}
+
+PATIENT: ${patientInfo}
+NURSE NARRATIVE (what the nurse reported): ${nurseNarrative || "No narrative provided — assess based on vitals and available data."}
+INEWS DATA: ${JSON.stringify(inewsData)}
+LAB RESULTS: ${labResults.length > 0 ? JSON.stringify(labResults) : "No lab results available"}
+KARDEX/MEDICATIONS: ${kardexData ? JSON.stringify(kardexData) : "No kardex data available"}
+
+Generate the assessment. CRITICAL: If the INEWS calculated_score is 0, generate a GENERIC assessment with routine review — do NOT recommend ICU/consultant escalation unless there are specific clinical red flags in the nurse narrative.`,
     file_urls: attachmentUrls.length > 0 ? attachmentUrls : undefined,
     response_json_schema: {
       type: "object",
@@ -150,6 +158,93 @@ export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls
         immediate_management: { type: "string" },
         investigation_recommendations: { type: "string" },
         escalation_recommendation: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function recognizeLabResults(imageUrl) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical handwriting recognition AI. Read the handwritten lab results / bloods from this image carefully. Extract each test result with the test name, numeric value, and unit if visible.
+
+Map test names to these standard keys: haemoglobin (Hb/Haemoglobin), wcc (WBC/WCC/White cell count), platelets (Plt/Platelets), sodium (Na/Sodium), potassium (K+/Potassium), urea (Urea/BUN), creatinine (Creat/Creatinine), crp (CRP/C-reactive protein), egfr (eGFR), bilirubin (Bili/Bilirubin), alt (ALT/Alanine transaminase), albumin (Alb/Albumin), inr (INR).
+
+Only include results where the numeric value is clearly legible. If the image does not contain lab results, return an empty results array. Always provide raw_text with the full transcription of all handwritten content.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        results: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              test_type: { type: "string", enum: ["haemoglobin", "wcc", "platelets", "sodium", "potassium", "urea", "creatinine", "crp", "egfr", "bilirubin", "alt", "albumin", "inr"] },
+              value: { type: "number" },
+              unit: { type: "string" },
+              collected_at: { type: "string" }
+            }
+          }
+        },
+        raw_text: { type: "string", description: "Full raw transcription of all handwritten text visible in the image" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function recognizeKardex(imageUrl) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical handwriting recognition AI. Read the handwritten medication kardex / drug chart from this image carefully. Extract each medication with the drug name (use generic/INN name if possible), dose, route, frequency, and any notes or indications written.
+
+Only include medications where at least the drug name and dose are legible. If the image does not contain a medication chart, return an empty medications array. Always provide raw_text with the full transcription of all handwritten content.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        medications: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              drug: { type: "string" },
+              dose: { type: "string" },
+              route: { type: "string" },
+              frequency: { type: "string" },
+              notes: { type: "string" }
+            }
+          }
+        },
+        raw_text: { type: "string", description: "Full raw transcription of all handwritten text visible in the image" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function recognizeVitals(imageUrl) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical handwriting recognition AI. Read the handwritten observation chart / vital signs from this image carefully. Extract the latest set of vital signs: heart rate (HR), blood pressure systolic (BP systolic), blood pressure diastolic (BP diastolic), respiratory rate (RR), oxygen saturation (SpO2), temperature (Temp in °C), and AVPU level (Alert/Voice/Pain/Unresponsive).
+
+Only include values that are clearly legible. If the image does not contain vital signs, return null values. Always provide raw_text with the full transcription of all handwritten content.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        vitals: {
+          type: "object",
+          properties: {
+            hr: { type: "string" },
+            bp_sys: { type: "string" },
+            bp_dia: { type: "string" },
+            rr: { type: "string" },
+            spO2: { type: "string" },
+            temp: { type: "string" },
+            avpu: { type: "string", enum: ["A", "V", "P", "U", ""] }
+          }
+        },
+        raw_text: { type: "string", description: "Full raw transcription of all handwritten text visible in the image" }
       }
     }
   });
