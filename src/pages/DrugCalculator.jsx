@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { calculateDrugDose } from "@/lib/hiveApi";
+import { calculateDrugDose, generateGuidelineDrugProtocol } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
-import { Calculator, Loader2, AlertTriangle, Pill, Info, Ban, Activity, Stethoscope, HeartPulse, ClipboardList, Eye, BookOpen } from "lucide-react";
+import { Calculator, Loader2, AlertTriangle, Pill, Info, Ban, Activity, Stethoscope, HeartPulse, ClipboardList, Eye, BookOpen, Search, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const DRUG_CATEGORIES = {
   antibiotics: ["Co-amoxiclav", "Ceftriaxone", "Metronidazole", "Gentamicin", "Vancomycin", "Piperacillin-tazobactam", "Cefuroxime", "Clarithromycin"],
@@ -21,6 +21,8 @@ export default function DrugCalculator() {
   const [drug, setDrug] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [protocol, setProtocol] = useState(null);
+  const [protocolLoading, setProtocolLoading] = useState(false);
 
   const handleCalculate = async () => {
     if (!drug) return;
@@ -32,6 +34,19 @@ export default function DrugCalculator() {
       alert("Failed to calculate dose.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFindProtocol = async () => {
+    if (!diagnosis) return;
+    setProtocolLoading(true);
+    try {
+      const res = await generateGuidelineDrugProtocol(diagnosis, weight, age, eGFR, allergies);
+      setProtocol(res);
+    } catch {
+      alert("Failed to fetch guideline protocol.");
+    } finally {
+      setProtocolLoading(false);
     }
   };
 
@@ -80,6 +95,21 @@ export default function DrugCalculator() {
           </select>
         </div>
       </div>
+
+      {/* Guideline Protocol Lookup */}
+      {diagnosis && (
+        <div className="mb-4">
+          <button
+            onClick={handleFindProtocol}
+            disabled={protocolLoading}
+            className="w-full px-4 py-3 rounded-lg bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/90 flex items-center justify-center gap-2"
+          >
+            {protocolLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            Find Updated Guideline Algorithm for "{diagnosis}"
+          </button>
+          <p className="text-[10px] text-muted-foreground text-center mt-1">Searches current NICE / HSE / SIGN / BOA guidelines online</p>
+        </div>
+      )}
 
       <button onClick={handleCalculate} disabled={loading || !drug} className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2 mb-4">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
@@ -164,6 +194,113 @@ export default function DrugCalculator() {
               <div className="flex items-center gap-1.5 pt-1">
                 <BookOpen className="w-3 h-3 text-muted-foreground" />
                 <p className="text-[10px] text-muted-foreground italic">Reference: {result.reference}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Guideline Protocol Results */}
+      {protocol && (
+        <div className="bg-card border-2 border-accent/30 rounded-xl p-5 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-foreground">Guideline Algorithm — {diagnosis}</h3>
+            <AIBadge />
+          </div>
+          <div className="space-y-3">
+            {/* First-line drugs */}
+            {protocol.first_line_drugs?.length > 0 && (
+              <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                  <p className="text-xs font-semibold text-success uppercase">First-Line Prescribing</p>
+                </div>
+                <div className="space-y-2">
+                  {protocol.first_line_drugs.map((d, i) => (
+                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-background/50">
+                      <ArrowRight className="w-3 h-3 text-success flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{d.drug} — {d.dose}</p>
+                        <p className="text-xs text-muted-foreground">{d.route} · {d.frequency}</p>
+                        {d.rationale && <p className="text-xs text-muted-foreground mt-0.5">{d.rationale}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Alternative drugs */}
+            {protocol.alternative_drugs?.length > 0 && (
+              <div className="p-3 rounded-lg bg-accent/10 border border-accent/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Pill className="w-4 h-4 text-accent" />
+                  <p className="text-xs font-semibold text-accent uppercase">Alternative Options</p>
+                </div>
+                <div className="space-y-2">
+                  {protocol.alternative_drugs.map((d, i) => (
+                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-background/50">
+                      <ArrowRight className="w-3 h-3 text-accent flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{d.drug} — {d.dose}</p>
+                        <p className="text-xs text-muted-foreground">{d.route} · {d.frequency}</p>
+                        {d.rationale && <p className="text-xs text-muted-foreground mt-0.5">{d.rationale}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Guideline algorithm */}
+            {protocol.guideline_algorithm && (
+              <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                <div className="flex items-center gap-2 mb-1">
+                  <ClipboardList className="w-4 h-4 text-hive-gold" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Treatment Algorithm</p>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.guideline_algorithm}</p>
+              </div>
+            )}
+
+            {/* Duration */}
+            {protocol.duration && (
+              <div className="p-3 rounded-lg bg-secondary/30 border border-border flex items-center gap-2">
+                <Clock className="w-4 h-4 text-hive-gold flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Treatment Duration</p>
+                  <p className="text-sm text-foreground">{protocol.duration}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Supportive care */}
+            {protocol.supportive_care && (
+              <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <HeartPulse className="w-4 h-4 text-success" />
+                  <p className="text-xs font-semibold text-success uppercase">Supportive Care</p>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.supportive_care}</p>
+              </div>
+            )}
+
+            {/* Red flags */}
+            {protocol.red_flags && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-destructive uppercase">Red Flags — Escalate / Change Therapy</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.red_flags}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Guideline source */}
+            {protocol.guideline_source && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <BookOpen className="w-3 h-3 text-muted-foreground" />
+                <p className="text-[10px] text-muted-foreground italic">Source: {protocol.guideline_source}</p>
               </div>
             )}
           </div>

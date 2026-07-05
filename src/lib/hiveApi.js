@@ -152,6 +152,66 @@ export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls
   return result;
 }
 
+export async function generateGuidelineDrugProtocol(diagnosis, weight, age, eGFR, allergies) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are HIVE Surgical Assistant. Search current clinical guidelines for the following diagnosis/indication and return the most up-to-date prescribing algorithm.
+
+DIAGNOSIS/INDICATION: ${diagnosis}
+PATIENT WEIGHT: ${weight}kg
+AGE: ${age}
+eGFR: ${eGFR} mL/min
+ALLERGIES: ${allergies || "None known"}
+
+Search for the latest guideline algorithm from NICE, HSE, SIGN, BOA/BOAST, NICE antimicrobial guidance, BNF, and other relevant bodies. Return:
+- first_line_drugs: array of {drug, dose, route, frequency, rationale} for the recommended first-line prescribing
+- alternative_drugs: array of {drug, dose, route, frequency, rationale} for alternative options (e.g. penicillin allergy, renal impairment, resistant organisms)
+- guideline_algorithm: step-by-step treatment algorithm/decision tree for this diagnosis, citing the source guideline
+- guideline_source: the specific guideline(s) referenced with version/year
+- supportive_care: adjunctive measures (fluids, VTE prophylaxis, monitoring, etc.)
+- duration: recommended treatment duration
+- red_flags: when to escalate or change therapy`,
+    add_context_from_internet: true,
+    model: "gemini_3_flash",
+    response_json_schema: {
+      type: "object",
+      properties: {
+        first_line_drugs: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              drug: { type: "string" },
+              dose: { type: "string" },
+              route: { type: "string" },
+              frequency: { type: "string" },
+              rationale: { type: "string" }
+            }
+          }
+        },
+        alternative_drugs: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              drug: { type: "string" },
+              dose: { type: "string" },
+              route: { type: "string" },
+              frequency: { type: "string" },
+              rationale: { type: "string" }
+            }
+          }
+        },
+        guideline_algorithm: { type: "string" },
+        guideline_source: { type: "string" },
+        supportive_care: { type: "string" },
+        duration: { type: "string" },
+        red_flags: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
 export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, diagnosis = "") {
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `${DRUG_DOSE_SYSTEM_PROMPT}\n\nDRUG: ${drugName}\nWEIGHT: ${weight}kg\nAGE: ${age}\neGFR: ${eGFR}\nALLERGIES: ${allergies}\nDIAGNOSIS/INDICATION: ${diagnosis || "Not provided"}\n\nCalculate the recommended dose and provide full drug info, warnings, guideline protocol, and supportive care.`,
