@@ -143,6 +143,12 @@ export function exportCallNoteToPDF(caseData) {
   doc.text(dobLine, margin, y);
   doc.text(wardLine, pageWidth - margin - 60, y);
   y += 5;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text(`Referral Time: ${caseData.created_date ? new Date(caseData.created_date).toLocaleString("en-IE") : "—"}`, margin, y);
+  doc.text(`Note Time: ${caseData.countersigned_at ? new Date(caseData.countersigned_at).toLocaleString("en-IE") : new Date().toLocaleString("en-IE")}`, pageWidth - margin - 60, y);
+  y += 5;
+  doc.setTextColor(0);
   doc.setDrawColor(200);
   doc.line(margin, y, pageWidth - margin, y);
   y += 6;

@@ -9,6 +9,8 @@ export function buildCallNoteText(caseData) {
     `MRN: ${caseData.patient_mrn || "—"}`,
     `DOB: ${caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"}`,
     `Ward/Bed: ${caseData.ward || "—"}${caseData.bed_number ? ` / ${caseData.bed_number}` : ""}`,
+    `Referral Time: ${caseData.created_date ? new Date(caseData.created_date).toLocaleString("en-IE") : "—"}`,
+    `Note Time: ${caseData.countersigned_at ? new Date(caseData.countersigned_at).toLocaleString("en-IE") : new Date().toLocaleString("en-IE")}`,
     "",
     "MAIN CONCERN (REFERRER):",
     caseData.presenting_complaint || caseData.referral_summary || "—",

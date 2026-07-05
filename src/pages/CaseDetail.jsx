@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, uploadFile } from "@/lib/hiveApi";
+import { generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, uploadFile, suggestManagementPlan } from "@/lib/hiveApi";
 
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
@@ -17,6 +17,7 @@ import ReasoningBullets from "@/components/ReasoningBullets";
 import ImagingReports from "@/components/ImagingReports";
 import { compileProformaLines } from "@/components/OrthoProforma";
 import { downloadCallNotePDF } from "@/lib/pdfExport";
+import ReviewInvestigations from "@/components/ReviewInvestigations";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -517,6 +518,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
   const [plan, setPlan] = useState(caseData.treatment_plan || "");
   const [signing, setSigning] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
+  const [suggestingPlan, setSuggestingPlan] = useState(false);
   const canReview = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
 
   const handleSavePlan = async () => {
@@ -528,6 +530,20 @@ function ReviewTab({ caseData, onUpdate, user }) {
       alert("Failed to save plan.");
     } finally {
       setSavingPlan(false);
+    }
+  };
+
+  const handleSuggestPlan = async () => {
+    setSuggestingPlan(true);
+    try {
+      const suggested = await suggestManagementPlan(caseData);
+      setPlan(suggested);
+      await base44.entities.CaseFile.update(caseData.id, { treatment_plan: suggested });
+      onUpdate();
+    } catch {
+      alert("Failed to generate plan.");
+    } finally {
+      setSuggestingPlan(false);
     }
   };
 
@@ -572,6 +588,16 @@ function ReviewTab({ caseData, onUpdate, user }) {
 
       <Section title="Case Review" icon={ClipboardCheck}>
         <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Referral Time</p>
+              <p className="text-sm text-foreground">{new Date(caseData.created_date).toLocaleString("en-IE")}</p>
+            </div>
+            <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Note Time</p>
+              <p className="text-sm text-foreground">{caseData.countersigned_at ? new Date(caseData.countersigned_at).toLocaleString("en-IE") : new Date().toLocaleString("en-IE")}</p>
+            </div>
+          </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Triage Decision</p>
             <p className="text-sm text-foreground capitalize">{caseData.triage_decision?.replace("_", " ") || "N/A"}</p>
@@ -582,15 +608,26 @@ function ReviewTab({ caseData, onUpdate, user }) {
               <ReasoningBullets text={caseData.triage_reasoning} />
             </div>
           )}
-          {caseData.investigation_recommendations && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Investigations</p>
-              <ReasoningBullets text={caseData.investigation_recommendations} />
-            </div>
-          )}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase">Treatment Plan</p>
+        </div>
+      </Section>
+
+      <Section title="Investigations" icon={FlaskConical}>
+        <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canReview} />
+      </Section>
+
+      <Section title="Management Plan" icon={ClipboardCheck}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <AIBadge />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSuggestPlan}
+                disabled={suggestingPlan || !canReview}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 disabled:opacity-40"
+              >
+                {suggestingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                AI Suggest Plan
+              </button>
               <button
                 onClick={handleSavePlan}
                 disabled={savingPlan || !canReview}
@@ -600,15 +637,15 @@ function ReviewTab({ caseData, onUpdate, user }) {
                 Save Plan
               </button>
             </div>
-            <textarea
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-              rows={6}
-              placeholder="Edit the management plan..."
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-              disabled={!canReview}
-            />
           </div>
+          <textarea
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            rows={6}
+            placeholder="Edit the management plan, or click AI Suggest Plan..."
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
+            disabled={!canReview}
+          />
         </div>
       </Section>
 

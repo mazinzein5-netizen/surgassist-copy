@@ -465,3 +465,28 @@ export async function uploadFile(file) {
   const result = await base44.integrations.Core.UploadFile({ file });
   return result;
 }
+
+export async function suggestManagementPlan(caseData) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a senior surgical registrar. Generate a concise, bulleted management plan for this inpatient.
+
+PATIENT: ${caseData.patient_name || "Unknown"}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}
+DEPARTMENT: ${caseData.department || "N/A"}
+PRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}
+REFERRAL SUMMARY: ${caseData.referral_summary || "N/A"}
+CLINICAL IMPRESSION: ${caseData.triage_reasoning || "N/A"}
+INEWS SCORE: ${caseData.inews_score ?? "N/A"}
+POST-OP STATUS: ${caseData.pre_op_status || "N/A"}
+PROCEDURE: ${caseData.procedure_name || "N/A"}
+INVESTIGATIONS: Bloods — ${(caseData.investigation_data?.bloods || []).join(", ") || "None"}; Imaging — ${(caseData.investigation_data?.imaging || []).join(", ") || "None"}
+
+Provide a practical, actionable management plan as bullet points. Include: immediate actions, monitoring, medications/fluids, and escalation criteria. Keep it concise for an on-call NCHD.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        plan: { type: "string" }
+      }
+    }
+  });
+  return result.plan;
+}
