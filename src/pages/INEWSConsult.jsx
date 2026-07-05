@@ -11,22 +11,87 @@ import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
-const POST_OP_SYMPTOMS = [
-  "Fever / pyrexia",
-  "Tachycardia",
-  "Hypotension",
-  "Reduced urine output",
-  "Abdominal pain / distension",
-  "Wound concern (erythema, discharge, dehiscence)",
-  "Shortness of breath",
-  "Chest pain",
-  "Unilateral leg swelling",
-  "Confusion / delirium",
-  "Nausea / vomiting",
-  "Not passing flatus / stool",
-  "Severe pain (out of proportion)",
-  "Oozing from wound / drain",
-  "Oliguria / dark urine",
+const SYMPTOM_GROUPS = [
+  {
+    title: "Post-Op Complications",
+    items: [
+      "Fever / pyrexia",
+      "Wound erythema / discharge",
+      "Wound dehiscence",
+      "Oozing from wound / drain",
+      "Surgical site pain (increasing)",
+      "Severe pain (out of proportion)",
+      "Haematoma / swelling",
+      "Anastomotic leak concern",
+      "Ileus / not passing flatus",
+      "Bowel obstruction signs",
+    ],
+  },
+  {
+    title: "Cardiopulmonary",
+    items: [
+      "Tachycardia",
+      "Hypotension",
+      "Shortness of breath",
+      "Chest pain",
+      "Unilateral leg swelling (DVT)",
+      "Reduced SpO₂",
+      "Calf tenderness",
+      "New AF / arrhythmia",
+    ],
+  },
+  {
+    title: "Renal / Fluids",
+    items: [
+      "Reduced urine output",
+      "Oliguria / dark urine",
+      "Dehydration signs",
+      "Fluid overload / oedema",
+      " catheter not draining",
+    ],
+  },
+  {
+    title: "Geriatric-Specific",
+    items: [
+      "Acute confusion / delirium",
+      "Agitation / restlessness",
+      "Drowsiness / reduced GCS",
+      "Fall from bed / chair",
+      "Reduced mobility",
+      "Incontinence (new)",
+      "Pressure injury concern",
+      "Failure to eat / drink",
+      "Medication adverse effect",
+      "Alcohol withdrawal signs",
+    ],
+  },
+  {
+    title: "GI / Abdominal",
+    items: [
+      "Abdominal pain",
+      "Abdominal distension",
+      "Nausea / vomiting",
+      "Constipation",
+      "Diarrhoea",
+      "NG tube output (high)",
+      "Vomiting (bilious)",
+    ],
+  },
+  {
+    title: "Preop / Geriatric Pathology",
+    items: [
+      "Hip / NOF pain (post-fall)",
+      "Limb deformity / shortening",
+      "Pathological fracture concern",
+      "Sepsis / source unknown",
+      "Urinary tract infection",
+      "Pneumonia / chest infection",
+      "Electrolyte imbalance",
+      "Acute kidney injury",
+      "Delirium with infection",
+      "Falls (mechanical vs medical)",
+    ],
+  },
 ];
 
 export default function INEWSConsult() {
@@ -205,20 +270,27 @@ export default function INEWSConsult() {
 
           {/* Nurse Referral Narrative */}
           <Section title="Nurse Referral — What's the concern?" icon={Phone} open={sections.narrative} onToggle={() => toggleSection("narrative")}>
-            <p className="text-xs text-muted-foreground mb-3">Document what the nurse is reporting — common post-op complication symptoms and signs. Tap relevant symptoms or type the narrative.</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {POST_OP_SYMPTOMS.map(s => (
-                <button
-                  key={s}
-                  onClick={() => toggleSymptom(s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    selectedSymptoms.includes(s)
-                      ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
-                      : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
-                  }`}
-                >
-                  {s}
-                </button>
+            <p className="text-xs text-muted-foreground mb-3">Document what the nurse is reporting — symptoms grouped by system. Tap relevant symptoms or type the narrative.</p>
+            <div className="space-y-3 mb-3">
+              {SYMPTOM_GROUPS.map(group => (
+                <div key={group.title}>
+                  <p className="text-[11px] font-bold text-accent uppercase tracking-wider mb-1.5">{group.title}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map(s => (
+                      <button
+                        key={s}
+                        onClick={() => toggleSymptom(s)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          selectedSymptoms.includes(s)
+                            ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
+                            : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             <textarea
