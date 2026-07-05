@@ -107,7 +107,7 @@ export default function CaseDetail() {
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 transition-colors"
               >
                 <ScrollText className="w-3.5 h-3.5" />
-                Print Plan & Note
+                Print Call Note & Plan
               </button>
             </div>
           )}

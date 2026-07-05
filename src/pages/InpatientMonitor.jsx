@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import InpatientCard from "@/components/InpatientCard";
+import PrintPlanNote from "@/components/PrintPlanNote";
 import BloodTrendChart, { LAB_RANGES, getAbnormalStatus } from "@/components/BloodTrendChart";
 import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default function InpatientMonitor() {
   const [filter, setFilter] = useState("all");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [selectedCaseId, setSelectedCaseId] = useState(null);
+  const [printCase, setPrintCase] = useState(null);
 
   useEffect(() => {
     loadInpatients();
@@ -180,7 +182,7 @@ export default function InpatientMonitor() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filteredCases.map(c => <InpatientCard key={c.id} caseFile={c} />)}
+              {filteredCases.map(c => <InpatientCard key={c.id} caseFile={c} onPrint={setPrintCase} />)}
             </div>
           )}
         </>
@@ -253,6 +255,10 @@ export default function InpatientMonitor() {
             </div>
           )}
         </div>
+      )}
+
+      {printCase && (
+        <PrintPlanNote caseData={printCase} onClose={() => setPrintCase(null)} />
       )}
     </div>
   );

@@ -1,13 +1,15 @@
 import React from "react";
-import { Printer, FileText, X } from "lucide-react";
+import { Printer, FileText, X, Phone } from "lucide-react";
 
 export default function PrintPlanNote({ caseData, onClose }) {
   const handlePrint = () => window.print();
 
   const printDate = new Date().toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" });
+  const printTime = new Date().toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
   const inews = caseData.inews_data || {};
 
-  const hasAny = caseData.admission_note || caseData.treatment_plan || caseData.investigation_recommendations || caseData.iv_fluid_plan;
+  const mainConcern = caseData.presenting_complaint || caseData.referral_summary || "—";
+  const hasPlan = caseData.treatment_plan || caseData.investigation_recommendations || caseData.iv_fluid_plan || caseData.admission_note;
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 overflow-y-auto print:static print:bg-white print:overflow-visible">
@@ -15,7 +17,7 @@ export default function PrintPlanNote({ caseData, onClose }) {
       <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-hive-gold" />
-          <h2 className="text-sm font-semibold text-foreground">Printable Plan & Note</h2>
+          <h2 className="text-sm font-semibold text-foreground">After Hours Call Note — Printout</h2>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handlePrint} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90">
@@ -30,34 +32,48 @@ export default function PrintPlanNote({ caseData, onClose }) {
       {/* Printable content */}
       <div className="max-w-2xl mx-auto p-6 print:p-0 print:max-w-none text-black bg-white">
         {/* Header */}
-        <div className="border-b-2 border-black pb-3 mb-4">
+        <div className="border-b-2 border-black pb-2 mb-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-600">HIVE Surgical Assistant</p>
-              <h1 className="text-lg font-bold">Inpatient Plan & Note</h1>
+              <h1 className="text-lg font-bold">Inpatient After Hours Call Note</h1>
             </div>
-            <p className="text-xs text-gray-500">Printed: {printDate}</p>
+            <p className="text-xs text-gray-500">{printDate} · {printTime}</p>
           </div>
         </div>
 
         {/* Patient strip */}
-        <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm mb-4 pb-3 border-b border-gray-300">
+        <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm mb-3 pb-2 border-b border-gray-300">
           <p><span className="font-semibold">Patient:</span> {caseData.patient_name || "—"}</p>
           <p><span className="font-semibold">MRN:</span> {caseData.patient_mrn || "—"}</p>
           <p><span className="font-semibold">DOB:</span> {caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"}</p>
           <p><span className="font-semibold">Ward/Bed:</span> {caseData.ward || "—"}{caseData.bed_number ? ` / ${caseData.bed_number}` : ""}</p>
-          {caseData.inews_score != null && (
-            <p><span className="font-semibold">INEWS:</span> {caseData.inews_score}</p>
-          )}
-          {caseData.procedure_name && (
-            <p><span className="font-semibold">Procedure:</span> {caseData.procedure_name}</p>
-          )}
         </div>
 
-        {/* Vitals (if present) */}
+        {/* MAIN CONCERN — top priority, boxed */}
+        <div className="border-2 border-black rounded p-3 mb-3">
+          <p className="text-xs font-bold uppercase text-gray-700 mb-1">Main Concern (Referrer)</p>
+          <p className="text-sm font-medium">{mainConcern}</p>
+        </div>
+
+        {/* Referrer details */}
+        {(caseData.referrer_name || caseData.referrer_grade || caseData.referrer_department || caseData.referrer_contact) && (
+          <div className="flex items-start gap-2 mb-3 text-xs text-gray-700">
+            <Phone className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <div>
+              <span className="font-semibold">Called by:</span>{" "}
+              {caseData.referrer_name || "—"}
+              {caseData.referrer_grade && ` (${caseData.referrer_grade})`}
+              {caseData.referrer_department && `, ${caseData.referrer_department}`}
+              {caseData.referrer_contact && ` · ${caseData.referrer_contact}`}
+            </div>
+          </div>
+        )}
+
+        {/* Vitals */}
         {(inews.hr || inews.bp_sys || inews.rr || inews.spO2 || inews.temp) && (
           <div className="mb-3">
-            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Vitals</p>
+            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Vitals {caseData.inews_score != null && `(INEWS ${caseData.inews_score})`}</p>
             <p className="text-sm">
               {[
                 inews.hr && `HR ${inews.hr}`,
@@ -71,11 +87,11 @@ export default function PrintPlanNote({ caseData, onClose }) {
           </div>
         )}
 
-        {/* Admission Note */}
-        {caseData.admission_note && (
+        {/* Assessment / Impression */}
+        {caseData.triage_reasoning && (
           <div className="mb-3">
-            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Admission Note</p>
-            <p className="text-sm whitespace-pre-wrap">{caseData.admission_note}</p>
+            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Clinical Impression</p>
+            <p className="text-sm whitespace-pre-wrap">{caseData.triage_reasoning}</p>
           </div>
         )}
 
@@ -87,10 +103,10 @@ export default function PrintPlanNote({ caseData, onClose }) {
           </div>
         )}
 
-        {/* Treatment Plan */}
+        {/* Management Plan */}
         {caseData.treatment_plan && (
           <div className="mb-3">
-            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Management Plan</p>
+            <p className="text-xs font-bold uppercase text-gray-600 mb-1">Plan</p>
             <p className="text-sm whitespace-pre-wrap">{caseData.treatment_plan}</p>
           </div>
         )}
@@ -103,12 +119,12 @@ export default function PrintPlanNote({ caseData, onClose }) {
           </div>
         )}
 
-        {!hasAny && (
-          <p className="text-sm text-gray-500 italic">No plan or note has been generated for this case yet.</p>
+        {!hasPlan && !caseData.triage_reasoning && (
+          <p className="text-sm text-gray-500 italic">No plan or assessment has been generated for this case yet.</p>
         )}
 
-        {/* Signature line */}
-        <div className="mt-8 pt-4 border-t border-gray-300 grid grid-cols-2 gap-8">
+        {/* Signature lines */}
+        <div className="mt-8 pt-3 border-t border-gray-300 grid grid-cols-2 gap-8">
           <div>
             <div className="border-b border-black h-6 mb-1" />
             <p className="text-xs text-gray-600">Doctor Signature / IMC</p>

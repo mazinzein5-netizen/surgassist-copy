@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight, Calendar, Stethoscope, BedDouble, ClipboardCheck } from "lucide-react";
+import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight, Calendar, Stethoscope, BedDouble, ClipboardCheck, ScrollText } from "lucide-react";
 
 function getAbnormalFindings(inewsData, inewsScore) {
   const flags = [];
@@ -61,7 +61,7 @@ function vitalColor(value, type) {
   return "text-foreground";
 }
 
-export default function InpatientCard({ caseFile }) {
+export default function InpatientCard({ caseFile, onPrint }) {
   const flags = getAbnormalFindings(caseFile.inews_data, caseFile.inews_score);
   const hasCritical = flags.some(f => f.severity === "critical");
   const inewsData = caseFile.inews_data || {};
@@ -109,6 +109,15 @@ export default function InpatientCard({ caseFile }) {
           </span>
         )}
         {hasCritical && <AlertTriangle className="w-4 h-4 text-destructive animate-pulse-gold flex-shrink-0" />}
+        {onPrint && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPrint(caseFile); }}
+            className="p-1.5 rounded-lg bg-hive-gold/10 border border-hive-gold/20 text-hive-gold hover:bg-hive-gold/20 transition-colors flex-shrink-0"
+            title="Print Call Note & Plan"
+          >
+            <ScrollText className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Section 1: Admission Details */}
