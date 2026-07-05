@@ -5,7 +5,8 @@ import { base44 } from "@/api/base44Client";
 import { processReferralChat, uploadFile, transcribeAudio } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
-import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
+import OnCallTeamBar from "@/components/OnCallTeamBar";
+import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users } from "lucide-react";
 
 const INPUT_MODES = [
   { id: "text", label: "Text", icon: FileText },
@@ -29,6 +30,7 @@ export default function NewReferral() {
   const [recording, setRecording] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [triageResult, setTriageResult] = useState(null);
+  const [onCallTeam, setOnCallTeam] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
@@ -120,12 +122,47 @@ export default function NewReferral() {
     if (!triageResult) return;
     setLoading(true);
     try {
+      const mrn = triageResult.patient_mrn || "";
+      let patientId = null;
+
+      // Cloud memory: find or create Patient record by MRN
+      if (mrn) {
+        try {
+          const existingPatients = await base44.entities.Patient.filter({ mrn }, "-created_date", 1);
+          if (existingPatients.length > 0) {
+            patientId = existingPatients[0].id;
+            // Update patient with any new info
+            await base44.entities.Patient.update(patientId, {
+              name: triageResult.patient_name || existingPatients[0].name,
+              dob: triageResult.patient_dob || existingPatients[0].dob,
+              hospital: user?.hospital || existingPatients[0].hospital,
+              department: triageResult.department || existingPatients[0].department,
+              specialty: triageResult.accepting_specialty || existingPatients[0].specialty,
+            });
+          } else {
+            const newPatient = await base44.entities.Patient.create({
+              name: triageResult.patient_name || "Unknown Patient",
+              dob: triageResult.patient_dob || null,
+              mrn: mrn,
+              hospital: user?.hospital || "",
+              department: triageResult.department || user?.department || "orthopaedics",
+              specialty: triageResult.accepting_specialty || "",
+            });
+            patientId = newPatient.id;
+          }
+        } catch (err) {
+          console.error("Patient link error:", err);
+        }
+      }
+
       const caseData = {
         patient_name: triageResult.patient_name || "Unknown Patient",
         patient_dob: triageResult.patient_dob || null,
-        patient_mrn: triageResult.patient_mrn || "",
+        patient_mrn: mrn,
+        patient_id: patientId,
         hospital: user?.hospital || "",
         department: triageResult.department || user?.department || "orthopaedics",
+        specialty: triageResult.accepting_specialty || "",
         status: triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
         referral_mode: mode,
         referral_summary: triageResult.referral_summary || messages.map(m => m.content).join("\n"),
@@ -136,6 +173,9 @@ export default function NewReferral() {
         triage_reasoning: triageResult.reasoning || "",
         triage_guideline: triageResult.guideline_used || "",
         pre_clerking_guidance: triageResult.pre_clerking_guidance || "",
+        on_call_consultant: onCallTeam?.consultant_name || "",
+        on_call_registrar: onCallTeam?.registrar_name || "",
+        on_call_sho: onCallTeam?.sho_name || "",
       };
       const created = await base44.entities.CaseFile.create(caseData);
       for (const msg of messages) {
@@ -161,10 +201,15 @@ export default function NewReferral() {
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div>
             <h1 className="text-lg font-bold text-foreground">New Referral</h1>
-            <p className="text-xs text-muted-foreground">AI-powered triage & decision support</p>
+            <p className="text-xs text-muted-foreground">AI-powered triage & decision support — on-call team auto-tagged</p>
           </div>
           <AIBadge />
         </div>
+      </div>
+
+      {/* On-Call Team Bar */}
+      <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
+        <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
       </div>
 
       {/* Chat */}

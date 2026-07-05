@@ -5,6 +5,7 @@ import { processINEWSConsult, uploadFile } from "@/lib/hiveApi";
 import HandwritingOCR from "@/components/HandwritingOCR";
 import LabResultsCapture from "@/components/LabResultsCapture";
 import KardexCapture from "@/components/KardexCapture";
+import OnCallTeamBar from "@/components/OnCallTeamBar";
 import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
@@ -40,6 +41,7 @@ export default function INEWSConsult() {
   const [labResults, setLabResults] = useState([]);
   const [kardexData, setKardexData] = useState(null);
   const [result, setResult] = useState(null);
+  const [onCallTeam, setOnCallTeam] = useState(null);
   const [sections, setSections] = useState({ narrative: true, vitals: true, labs: false, kardex: false });
   const fileRef = useRef(null);
 
@@ -86,21 +88,58 @@ export default function INEWSConsult() {
       const result = await processINEWSConsult(inewsData, info, patientPhoto ? [patientPhoto] : [], labResults, kardexData, fullNarrative);
       setResult(result);
 
+      const mrn = patientInfo.mrn || "";
+      let patientId = null;
+
+      // Cloud memory: find or create Patient record by MRN
+      if (mrn) {
+        try {
+          const existingPatients = await base44.entities.Patient.filter({ mrn }, "-created_date", 1);
+          if (existingPatients.length > 0) {
+            patientId = existingPatients[0].id;
+            await base44.entities.Patient.update(patientId, {
+              name: patientInfo.name || existingPatients[0].name,
+              dob: patientInfo.dob || existingPatients[0].dob,
+              hospital: user?.hospital || existingPatients[0].hospital,
+              ward: patientInfo.ward || existingPatients[0].ward,
+            });
+          } else {
+            const newPatient = await base44.entities.Patient.create({
+              name: patientInfo.name || "Unknown",
+              dob: patientInfo.dob || null,
+              mrn: mrn,
+              hospital: user?.hospital || "",
+              department: user?.department || "general_surgery",
+              ward: patientInfo.ward || "",
+            });
+            patientId = newPatient.id;
+          }
+        } catch (err) {
+          console.error("Patient link error:", err);
+        }
+      }
+
       const caseData = {
         patient_name: patientInfo.name || "Unknown",
-        patient_mrn: patientInfo.mrn,
+        patient_mrn: mrn,
         patient_dob: patientInfo.dob,
+        patient_id: patientId,
         hospital: user?.hospital || "",
         department: user?.department || "general_surgery",
+        specialty: result.escalate_to && result.escalate_to !== "No escalation — routine ward review" ? result.escalate_to : "",
         status: "inews_consult",
         inews_score: inewsData.calculated_score,
         inews_data: inewsData,
         referral_summary: result.referral_summary || `Inpatient Consult — INEWS ${inewsData.calculated_score}. Nurse concern: ${fullNarrative || "See vitals"}`,
         presenting_complaint: `INEWS ${inewsData.calculated_score} — ${selectedSymptoms.join(", ") || "Inpatient consult"}`,
         kardex_data: kardexData,
+        ward: patientInfo.ward,
         triage_decision: result.escalate_to && result.escalate_to !== "No escalation — routine ward review" ? "accept" : "pending",
         triage_reasoning: result.clinical_impression || "",
         accepting_specialty: result.escalate_to || "",
+        on_call_consultant: onCallTeam?.consultant_name || "",
+        on_call_registrar: onCallTeam?.registrar_name || "",
+        on_call_sho: onCallTeam?.sho_name || "",
       };
       const createdCase = await base44.entities.CaseFile.create(caseData);
 
@@ -128,12 +167,16 @@ export default function INEWSConsult() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <Phone className="w-5 h-5 text-hive-gold" />
           <h1 className="text-xl md:text-2xl font-bold text-foreground">Inpatient Consult</h1>
         </div>
         <p className="text-sm text-muted-foreground">Ward nurse referral for post-operative inpatient concerns — structured intake with vitals, labs & kardex</p>
+      </div>
+
+      <div className="mb-4">
+        <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
       </div>
 
       {step === "input" && (

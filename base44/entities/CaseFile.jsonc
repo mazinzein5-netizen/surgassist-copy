@@ -20,6 +20,10 @@
         "other"
       ]
     },
+    "patient_id": {
+      "type": "string",
+      "description": "Links to Patient entity for cross-visit cloud memory"
+    },
     "hospital": {
       "type": "string"
     },
@@ -30,9 +34,35 @@
         "general_surgery"
       ]
     },
+    "specialty": {
+      "type": "string",
+      "description": "Admitting specialty (e.g. Orthopaedics, General Surgery, ENT)"
+    },
+    "consultant_name": {
+      "type": "string",
+      "description": "Name of the admitting consultant"
+    },
+    "bed_number": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
     "accepting_specialty": {
       "type": "string",
       "description": "The specific specialty that accepted the referral (e.g., Orthopaedics, General Surgery)"
+    },
+    "on_call_consultant": {
+      "type": "string",
+      "description": "Name of the consultant on-call at time of referral"
+    },
+    "on_call_registrar": {
+      "type": "string",
+      "description": "Name of the registrar on-call at time of referral"
+    },
+    "on_call_sho": {
+      "type": "string",
+      "description": "Name of the senior house officer on-call at time of referral"
     },
     "status": {
       "type": "string",

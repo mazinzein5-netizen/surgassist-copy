@@ -17,6 +17,7 @@ import INEWSConsult from '@/pages/INEWSConsult';
 import InpatientMonitor from '@/pages/InpatientMonitor';
 import TheatreLogPage from '@/pages/TheatreLogPage';
 import Handover from '@/pages/Handover';
+import PatientHistory from '@/pages/PatientHistory';
 import DrugCalculator from '@/pages/DrugCalculator';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
           <Route path="/inpatient-monitor" element={<InpatientMonitor />} />
           <Route path="/theatre-log" element={<TheatreLogPage />} />
           <Route path="/handover" element={<Handover />} />
+          <Route path="/patient-history" element={<PatientHistory />} />
           <Route path="/drug-calculator" element={<DrugCalculator />} />
           <Route path="/profile" element={<Profile />} />
         </Route>

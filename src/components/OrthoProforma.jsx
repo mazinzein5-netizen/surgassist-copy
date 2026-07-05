@@ -4,6 +4,7 @@ import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles, CheckCheck } fro
 import { detectBodyRegion, getGenericStatement } from "@/lib/genericStatements";
 import AnticoagulantSelector, { formatAnticoagulants } from "@/components/AnticoagulantSelector";
 import DiabeticMedSelector, { formatDiabeticMeds } from "@/components/DiabeticMedSelector";
+import InpatientProformaHeader from "@/components/InpatientProformaHeader";
 
 const ORTHO_SECTIONS = [
   {
@@ -291,13 +292,18 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
   const answeredCount = Object.values(answers).filter(a => a.answer !== null).length;
   const totalCount = Object.keys(answers).length;
 
+  const isInpatient = caseData.status === "inews_consult" || caseData.status === "admitted" || caseData.bed_number || caseData.admission_date;
+
   return (
     <div className="space-y-4">
+      {/* Inpatient Patient ID Header */}
+      {isInpatient && <InpatientProformaHeader caseData={caseData} />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">
-            {department === "general_surgery" ? "General Surgery" : "Orthopaedic"} Proforma
+            {isInpatient ? "Inpatient Proforma" : department === "general_surgery" ? "General Surgery Proforma" : "Orthopaedic Proforma"}
           </h3>
           <span className="text-xs text-muted-foreground">{answeredCount}/{totalCount} answered</span>
         </div>

@@ -29,6 +29,35 @@
         "orthopaedics",
         "general_surgery"
       ]
+    },
+    "specialty": {
+      "type": "string",
+      "description": "Current admitting specialty (e.g. Orthopaedics, General Surgery, ENT)"
+    },
+    "consultant_name": {
+      "type": "string",
+      "description": "Name of the admitting consultant"
+    },
+    "bed_number": {
+      "type": "string"
+    },
+    "ward": {
+      "type": "string"
+    },
+    "known_allergies": {
+      "type": "string"
+    },
+    "pmh_summary": {
+      "type": "string",
+      "description": "Persistent summary of past medical history compiled across visits"
+    },
+    "medication_history": {
+      "type": "string",
+      "description": "Persistent summary of medications compiled across visits"
+    },
+    "social_history": {
+      "type": "string",
+      "description": "Persistent social history (smoking, alcohol, occupation, living situation)"
     }
   },
   "required": [

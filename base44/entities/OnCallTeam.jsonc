@@ -1,0 +1,37 @@
+{
+  "name": "OnCallTeam",
+  "type": "object",
+  "properties": {
+    "hospital": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "orthopaedics",
+        "general_surgery"
+      ]
+    },
+    "consultant_name": {
+      "type": "string"
+    },
+    "registrar_name": {
+      "type": "string"
+    },
+    "sho_name": {
+      "type": "string"
+    },
+    "shift_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "department",
+    "shift_date"
+  ]
+}
