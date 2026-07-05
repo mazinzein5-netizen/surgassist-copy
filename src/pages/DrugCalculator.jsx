@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { calculateDrugDose } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
-import { Calculator, Loader2, AlertTriangle, Pill } from "lucide-react";
+import { Calculator, Loader2, AlertTriangle, Pill, Info, Ban, Activity, Stethoscope, HeartPulse, ClipboardList, Eye, BookOpen } from "lucide-react";
 
 const DRUG_CATEGORIES = {
   antibiotics: ["Co-amoxiclav", "Ceftriaxone", "Metronidazole", "Gentamicin", "Vancomycin", "Piperacillin-tazobactam", "Cefuroxime", "Clarithromycin"],
@@ -16,6 +16,7 @@ export default function DrugCalculator() {
   const [age, setAge] = useState("");
   const [eGFR, setEGFR] = useState("");
   const [allergies, setAllergies] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
   const [category, setCategory] = useState("antibiotics");
   const [drug, setDrug] = useState("");
   const [result, setResult] = useState(null);
@@ -25,7 +26,7 @@ export default function DrugCalculator() {
     if (!drug) return;
     setLoading(true);
     try {
-      const res = await calculateDrugDose(drug, weight, age, eGFR, allergies);
+      const res = await calculateDrugDose(drug, weight, age, eGFR, allergies, diagnosis);
       setResult(res);
     } catch {
       alert("Failed to calculate dose.");
@@ -41,7 +42,7 @@ export default function DrugCalculator() {
           <Calculator className="w-5 h-5 text-hive-gold" />
           <h1 className="text-xl md:text-2xl font-bold text-foreground">Drug Dose Calculator</h1>
         </div>
-        <p className="text-sm text-muted-foreground">Weight & renal-adjusted dosing with allergy cross-check</p>
+        <p className="text-sm text-muted-foreground">Weight & renal-adjusted dosing with drug info, warnings, and guideline protocols</p>
       </div>
 
       {/* Patient Parameters */}
@@ -52,6 +53,9 @@ export default function DrugCalculator() {
           <Field label="Age" value={age} onChange={setAge} />
           <Field label="eGFR (mL/min)" value={eGFR} onChange={setEGFR} />
           <Field label="Allergies" value={allergies} onChange={setAllergies} placeholder="e.g. Penicillin" />
+        </div>
+        <div className="mt-3">
+          <Field label="Diagnosis / Indication (for guideline protocol & supportive care)" value={diagnosis} onChange={setDiagnosis} placeholder="e.g. Cellulitis, NOF fracture, Acute cholecystitis" />
         </div>
       </div>
 
@@ -79,7 +83,7 @@ export default function DrugCalculator() {
 
       <button onClick={handleCalculate} disabled={loading || !drug} className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2 mb-4">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
-        Calculate Dose
+        Calculate Dose & Protocol
       </button>
 
       {/* Result */}
@@ -90,6 +94,7 @@ export default function DrugCalculator() {
             <AIBadge />
           </div>
           <div className="space-y-3">
+            {/* Dose card */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-hive-gold/10 border border-hive-gold/20">
               <Pill className="w-5 h-5 text-hive-gold" />
               <div>
@@ -107,19 +112,83 @@ export default function DrugCalculator() {
                 <p className="text-sm font-medium text-foreground">{result.frequency}</p>
               </div>
             </div>
+
+            {/* Drug Info */}
+            {result.drug_info && <ResultCard title="Drug Information" icon={Info} content={result.drug_info} />}
+
+            {/* Indications */}
+            {result.indications && <ResultCard title="Indications" icon={Stethoscope} content={result.indications} />}
+
+            {/* Contraindications */}
+            {result.contraindications && (
+              <ResultCard title="Contraindications" icon={Ban} content={result.contraindications} tone="warning" />
+            )}
+
+            {/* Warnings */}
             {result.warnings && (
               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-semibold text-destructive uppercase">Warnings</p>
-                  <p className="text-sm text-foreground">{result.warnings}</p>
+                  <p className="text-xs font-semibold text-destructive uppercase">Warnings & Interactions</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{result.warnings}</p>
                 </div>
               </div>
             )}
-            {result.reference && <p className="text-[10px] text-muted-foreground italic">Reference: {result.reference}</p>}
+
+            {/* Monitoring */}
+            {result.monitoring && <ResultCard title="Monitoring" icon={Activity} content={result.monitoring} />}
+
+            {/* Guideline Protocol */}
+            {result.guideline_protocol && (
+              <div className="p-3 rounded-lg bg-accent/10 border border-accent/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <ClipboardList className="w-4 h-4 text-accent" />
+                  <p className="text-xs font-semibold text-accent uppercase">Guideline Prescription Protocol</p>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{result.guideline_protocol}</p>
+              </div>
+            )}
+
+            {/* Supportive Care */}
+            {result.supportive_care && (
+              <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <HeartPulse className="w-4 h-4 text-success" />
+                  <p className="text-xs font-semibold text-success uppercase">Supportive Care</p>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{result.supportive_care}</p>
+              </div>
+            )}
+
+            {result.reference && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <BookOpen className="w-3 h-3 text-muted-foreground" />
+                <p className="text-[10px] text-muted-foreground italic">Reference: {result.reference}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ResultCard({ title, icon: Icon, content, tone = "default" }) {
+  const tones = {
+    default: "bg-secondary/30 border-border",
+    warning: "bg-warning/10 border-warning/30",
+  };
+  const iconColors = {
+    default: "text-hive-gold",
+    warning: "text-warning",
+  };
+  return (
+    <div className={`p-3 rounded-lg border ${tones[tone]}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className={`w-4 h-4 ${iconColors[tone]}`} />
+        <p className={`text-xs font-semibold uppercase ${tone === "warning" ? "text-warning" : "text-muted-foreground"}`}>{title}</p>
+      </div>
+      <p className="text-sm text-foreground whitespace-pre-wrap">{content}</p>
     </div>
   );
 }

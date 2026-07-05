@@ -152,16 +152,22 @@ export async function processINEWSConsult(inewsData, patientInfo, attachmentUrls
   return result;
 }
 
-export async function calculateDrugDose(drugName, weight, age, eGFR, allergies) {
+export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, diagnosis = "") {
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${DRUG_DOSE_SYSTEM_PROMPT}\n\nDRUG: ${drugName}\nWEIGHT: ${weight}kg\nAGE: ${age}\neGFR: ${eGFR}\nALLERGIES: ${allergies}\n\nCalculate the recommended dose.`,
+    prompt: `${DRUG_DOSE_SYSTEM_PROMPT}\n\nDRUG: ${drugName}\nWEIGHT: ${weight}kg\nAGE: ${age}\neGFR: ${eGFR}\nALLERGIES: ${allergies}\nDIAGNOSIS/INDICATION: ${diagnosis || "Not provided"}\n\nCalculate the recommended dose and provide full drug info, warnings, guideline protocol, and supportive care.`,
     response_json_schema: {
       type: "object",
       properties: {
         dose: { type: "string" },
         frequency: { type: "string" },
         route: { type: "string" },
+        drug_info: { type: "string" },
+        indications: { type: "string" },
+        contraindications: { type: "string" },
         warnings: { type: "string" },
+        monitoring: { type: "string" },
+        guideline_protocol: { type: "string" },
+        supportive_care: { type: "string" },
         reference: { type: "string" }
       }
     }
