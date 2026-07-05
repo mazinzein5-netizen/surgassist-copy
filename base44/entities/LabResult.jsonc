@@ -1,0 +1,57 @@
+{
+  "name": "LabResult",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "patient_name": {
+      "type": "string"
+    },
+    "patient_mrn": {
+      "type": "string"
+    },
+    "test_type": {
+      "type": "string",
+      "enum": [
+        "haemoglobin",
+        "wcc",
+        "platelets",
+        "sodium",
+        "potassium",
+        "urea",
+        "creatinine",
+        "crp",
+        "egfr",
+        "bilirubin",
+        "alt",
+        "albumin",
+        "inr"
+      ]
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "collected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ocr_ingestion"
+      ],
+      "default": "manual"
+    }
+  },
+  "required": [
+    "case_id",
+    "test_type",
+    "value",
+    "collected_at"
+  ]
+}
