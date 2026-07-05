@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { generateAdmissionNote } from "@/lib/hiveApi";
-import { exportTextToPDF } from "@/lib/pdfExport";
 import AIBadge from "@/components/AIBadge";
-import { Loader2, ClipboardList, FileText, Printer, FlaskConical, Scan, Download, Send, RefreshCw } from "lucide-react";
+import { Loader2, ClipboardList, FileText, FlaskConical, Scan } from "lucide-react";
+import ShareNoteButtons from "@/components/ShareNoteButtons";
 
 const BLOOD_INVESTIGATIONS = [
   "FBC", "UEC", "LFTs", "CRP", "Coagulation / INR", "Group & Save",
@@ -24,7 +24,6 @@ export default function InvestigationPrompts({ caseData, caseId, onUpdate }) {
   const [comorbidities, setComorbidities] = useState("");
   const [admissionNote, setAdmissionNote] = useState(caseData.admission_note || "");
   const [generating, setGenerating] = useState(false);
-  const [sending, setSending] = useState(false);
 
   const toggleBlood = (item) => {
     setSelectedBloods(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
@@ -128,27 +127,12 @@ export default function InvestigationPrompts({ caseData, caseId, onUpdate }) {
             </div>
             <div className="flex items-center gap-2">
               <AIBadge />
-              <button onClick={handleGenerate} disabled={generating} title="Re-generate" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </button>
-              <button onClick={() => window.print()} title="Print" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                <Printer className="w-4 h-4" />
-              </button>
-              <button onClick={() => exportTextToPDF("Admission Note", admissionNote, caseData.patient_name)} title="Download PDF" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                <Download className="w-4 h-4" />
-              </button>
-              <button onClick={async () => {
-                const email = prompt("Enter email address:");
-                if (!email) return;
-                setSending(true);
-                try {
-                  await base44.integrations.Core.SendEmail({ to: email, subject: `HIVE — Admission Note — ${caseData.patient_name}`, body: admissionNote });
-                  alert("Email sent.");
-                } catch { alert("Failed to send email."); }
-                finally { setSending(false); }
-              }} disabled={sending} title="Email" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
+              <ShareNoteButtons
+                note={admissionNote}
+                patientName={caseData.patient_name}
+                onRegenerate={handleGenerate}
+                generating={generating}
+              />
             </div>
           </div>
           <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{admissionNote}</pre>

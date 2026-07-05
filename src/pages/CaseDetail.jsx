@@ -3,13 +3,14 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { generateClerkingProforma, generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, checkClerkingCompleteness, uploadFile } from "@/lib/hiveApi";
-import { exportTextToPDF } from "@/lib/pdfExport";
+
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, Download, RefreshCw, ListChecks } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
+import ShareNoteButtons from "@/components/ShareNoteButtons";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -192,7 +193,6 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
   const [checking, setChecking] = useState(false);
   const [admissionNote, setAdmissionNote] = useState(caseData.admission_note || "");
   const [generatingNote, setGeneratingNote] = useState(false);
-  const [sending, setSending] = useState(false);
 
   // Initialize field values from existing proforma
   const initFieldValues = (pf) => {
@@ -297,28 +297,6 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
       alert("Failed to generate admission note.");
     } finally {
       setGeneratingNote(false);
-    }
-  };
-
-  const handleDownloadPDF = () => {
-    exportTextToPDF("Admission Note", admissionNote, caseData.patient_name);
-  };
-
-  const handleEmailNote = async () => {
-    const email = prompt("Enter email address to send the admission note:");
-    if (!email) return;
-    setSending(true);
-    try {
-      await base44.integrations.Core.SendEmail({
-        to: email,
-        subject: `HIVE — Admission Note — ${caseData.patient_name}`,
-        body: admissionNote,
-      });
-      alert("Email sent successfully.");
-    } catch {
-      alert("Failed to send email.");
-    } finally {
-      setSending(false);
     }
   };
 
@@ -449,23 +427,12 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
             </div>
             <div className="flex items-center gap-2">
               <AIBadge />
-              <button
-                onClick={handleRegenerateNote}
-                disabled={generatingNote}
-                title="Re-generate with latest info"
-                className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"
-              >
-                {generatingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </button>
-              <button onClick={() => window.print()} title="Print" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                <Printer className="w-4 h-4" />
-              </button>
-              <button onClick={handleDownloadPDF} title="Download PDF" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                <Download className="w-4 h-4" />
-              </button>
-              <button onClick={handleEmailNote} disabled={sending} title="Email" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
+              <ShareNoteButtons
+                note={admissionNote}
+                patientName={caseData.patient_name}
+                onRegenerate={handleRegenerateNote}
+                generating={generatingNote}
+              />
             </div>
           </div>
           <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{admissionNote}</pre>
