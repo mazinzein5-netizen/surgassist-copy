@@ -154,10 +154,23 @@ Generate the assessment. CRITICAL: If the INEWS calculated_score is 0, generate 
       type: "object",
       properties: {
         sbar_summary: { type: "string" },
+        clinical_impression: { type: "string", description: "Working diagnosis or impression synthesising all inputs" },
         differentials: { type: "string" },
         immediate_management: { type: "string" },
         investigation_recommendations: { type: "string" },
-        escalation_recommendation: { type: "string" }
+        plan: { type: "string", description: "Comprehensive management plan with timeline" },
+        recommendations: { type: "string", description: "Actionable recommendations for the ward team" },
+        escalation_recommendation: { type: "string" },
+        referral_summary: { type: "string", description: "Concise compiled referral summary for handover/escalation" },
+        escalate_to: { type: "string", description: "Which department/team to escalate to" },
+        required_info: {
+          type: "object",
+          properties: {
+            history: { type: "array", items: { type: "string" } },
+            exam_findings: { type: "array", items: { type: "string" } },
+            investigations_imaging: { type: "array", items: { type: "string" } }
+          }
+        }
       }
     }
   });

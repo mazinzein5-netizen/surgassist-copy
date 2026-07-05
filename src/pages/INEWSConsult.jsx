@@ -7,6 +7,7 @@ import LabResultsCapture from "@/components/LabResultsCapture";
 import KardexCapture from "@/components/KardexCapture";
 import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
+import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
 const POST_OP_SYMPTOMS = [
@@ -94,9 +95,12 @@ export default function INEWSConsult() {
         status: "inews_consult",
         inews_score: inewsData.calculated_score,
         inews_data: inewsData,
-        referral_summary: `Inpatient Consult — INEWS ${inewsData.calculated_score}. Nurse concern: ${fullNarrative || "See vitals"}`,
+        referral_summary: result.referral_summary || `Inpatient Consult — INEWS ${inewsData.calculated_score}. Nurse concern: ${fullNarrative || "See vitals"}`,
         presenting_complaint: `INEWS ${inewsData.calculated_score} — ${selectedSymptoms.join(", ") || "Inpatient consult"}`,
         kardex_data: kardexData,
+        triage_decision: result.escalate_to && result.escalate_to !== "No escalation — routine ward review" ? "accept" : "pending",
+        triage_reasoning: result.clinical_impression || "",
+        accepting_specialty: result.escalate_to || "",
       };
       const createdCase = await base44.entities.CaseFile.create(caseData);
 
@@ -261,17 +265,69 @@ export default function INEWSConsult() {
             </div>
           </div>
 
+          {result.clinical_impression && (
+            <div className="bg-card border-2 border-hive-gold/30 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Stethoscope className="w-4 h-4 text-hive-gold" />
+                <h4 className="font-bold text-foreground text-sm">Clinical Impression</h4>
+              </div>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{result.clinical_impression}</p>
+            </div>
+          )}
+
+          {result.escalate_to && (
+            <div className={`rounded-xl p-4 border flex items-center gap-3 ${
+              result.escalate_to === "No escalation — routine ward review"
+                ? "bg-success/10 border-success/30"
+                : "bg-destructive/10 border-destructive/30"
+            }`}>
+              <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${result.escalate_to === "No escalation — routine ward review" ? "text-success" : "text-destructive"}`} />
+              <div>
+                <p className={`text-sm font-bold ${result.escalate_to === "No escalation — routine ward review" ? "text-success" : "text-destructive"}`}>
+                  {result.escalate_to === "No escalation — routine ward review" ? "No Escalation Required" : `Escalate to: ${result.escalate_to}`}
+                </p>
+                {result.escalation_recommendation && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{result.escalation_recommendation}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {result.referral_summary && (
+            <div className="bg-card border-2 border-accent/30 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Send className="w-4 h-4 text-accent" />
+                  <h4 className="font-bold text-foreground text-sm">Referral Summary</h4>
+                </div>
+                <button
+                  onClick={() => {
+                    const el = document.createElement("textarea");
+                    el.value = result.referral_summary;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(el);
+                  }}
+                  className="text-xs text-hive-gold hover:underline"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{result.referral_summary}</p>
+            </div>
+          )}
+
           {result.sbar_summary && <ResultSection title={inewsScore === 0 ? "Summary" : "SBAR Summary"} icon={Send} content={result.sbar_summary} />}
           {result.differentials && <ResultSection title="Differential Diagnoses" icon={Stethoscope} content={result.differentials} />}
           {result.immediate_management && <ResultSection title="Immediate Management" icon={Activity} content={result.immediate_management} />}
           {result.investigation_recommendations && <ResultSection title="Investigations" icon={Activity} content={result.investigation_recommendations} />}
-          {result.escalation_recommendation && (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-                <h4 className="font-semibold text-destructive text-sm">Recommendation</h4>
-              </div>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{result.escalation_recommendation}</p>
+          {result.plan && <ResultSection title="Management Plan" icon={ClipboardList} content={result.plan} />}
+          {result.recommendations && <ResultSection title="Recommendations for Ward Team" icon={Activity} content={result.recommendations} />}
+
+          {result.required_info && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <RequiredInfoChecklist requiredInfo={result.required_info} />
             </div>
           )}
 

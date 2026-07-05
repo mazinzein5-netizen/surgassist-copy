@@ -120,14 +120,20 @@ INEWS SCORE INTERPRETATION:
 - INEWS 5-6: Recommend urgent registrar review, structured SBAR, and escalation.
 - INEWS ≥ 7: Recommend immediate escalation — registrar/consultant/ICU as appropriate.
 
-GENERATE:
-- sbar_summary: SBAR format (Situation, Background, Assessment, Recommendation) suitable for phone escalation if needed. For INEWS 0, frame as a routine review summary rather than an escalation.
+GENERATE ALL of the following fields — compile every piece of input data into a cohesive clinical picture, exactly as you would for an emergency referral:
+- sbar_summary: SBAR format (Situation, Background, Assessment, Recommendation) suitable for phone escalation. For INEWS 0, frame as a routine review summary rather than an escalation.
+- clinical_impression: Your working diagnosis or impression of the ongoing issue — synthesise the nurse's narrative, vitals, labs, and kardex into a single clear diagnostic impression. State the most likely diagnosis and any active issues.
 - differentials: Ranked differential diagnoses with clinical reasoning, considering post-op complications specific to the nurse's narrative
 - immediate_management: Immediate management steps the NCHD should take at the bedside
 - investigation_recommendations: Further investigations needed (bloods, imaging, cultures)
+- plan: Comprehensive management plan — what to do now, what to monitor, what to recheck, and timeline for review
+- recommendations: Specific actionable recommendations for the ward team (nurse and NCHD)
 - escalation_recommendation: Clear escalation recommendation (routine review / registrar review / urgent registrar / consultant / ICU) with reasoning
+- referral_summary: A concise referral summary suitable for handover or escalation — one paragraph compiling patient, presentation, vitals, labs, kardex, impression, and plan
+- escalate_to: Which department or team should be escalated to (e.g., "ICU", "Surgical Registrar", "Consultant Surgeon", "Medical Team", "No escalation — routine ward review", "Anaesthetics")
+- required_info: Object with three arrays — history, exam_findings, investigations_imaging — listing what information is still missing and needed to complete the assessment. Only list what is still needed; omit what is already provided.
 
-Apply ATLS, Sepsis-6, and post-operative care protocols as relevant. Reference specific guidelines where applicable. Always address the specific clinical concern the nurse raised, regardless of the INEWS score.`;
+Apply ATLS, Sepsis-6, and post-operative care protocols as relevant. Reference specific guidelines where applicable. Always address the specific clinical concern the nurse raised, regardless of the INEWS score. Synthesise ALL available data (narrative, vitals, labs, kardex) into your impression and plan — do not ignore any input.`;
 
 export const DRUG_DOSE_SYSTEM_PROMPT = `You are HIVE Surgical Assistant. Calculate a weight-adjusted and renal-adjusted drug dose for a surgical patient. Consider patient weight, age, eGFR/creatinine, and known allergies. Check for allergy cross-reactivity. Reference BNF, HSE formulary, and NICE/HSE antimicrobial guidelines.
 
