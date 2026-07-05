@@ -7,10 +7,11 @@ import { generateKardex, generateDischargeDocuments, generateConsentChecklist, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
+import PrintPlanNote from "@/components/PrintPlanNote";
 import ClerkingTab from "@/components/ClerkingTab";
 import ImagingReports from "@/components/ImagingReports";
 import { compileProformaLines } from "@/components/OrthoProforma";
@@ -33,6 +34,7 @@ export default function CaseDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("summary");
   const [photos, setPhotos] = useState([]);
+  const [showPrintNote, setShowPrintNote] = useState(false);
 
   useEffect(() => {
     loadCase();
@@ -96,6 +98,19 @@ export default function CaseDetail() {
 
           {/* Admission Info Bar */}
           <AdmissionInfoBar caseData={caseData} />
+
+          {/* Print Plan & Note button — inpatient consult cases */}
+          {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
+            <div className="mt-3">
+              <button
+                onClick={() => setShowPrintNote(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 transition-colors"
+              >
+                <ScrollText className="w-3.5 h-3.5" />
+                Print Plan & Note
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -136,6 +151,10 @@ export default function CaseDetail() {
           {activeTab === "review" && <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />}
         </div>
       </div>
+
+      {showPrintNote && (
+        <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} />
+      )}
     </div>
   );
 }
