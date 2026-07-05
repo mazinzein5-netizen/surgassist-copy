@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { generateClerkingProforma, generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, uploadFile } from "@/lib/hiveApi";
+import { generateClerkingProforma, generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, checkClerkingCompleteness, uploadFile } from "@/lib/hiveApi";
+import { exportTextToPDF } from "@/lib/pdfExport";
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, Download, RefreshCw, ListChecks } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 
@@ -186,18 +187,138 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
   const [photoType, setPhotoType] = useState("wound");
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [completeness, setCompleteness] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [admissionNote, setAdmissionNote] = useState(caseData.admission_note || "");
+  const [generatingNote, setGeneratingNote] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  // Initialize field values from existing proforma
+  const initFieldValues = (pf) => {
+    const vals = {};
+    pf?.sections?.forEach((s, si) => {
+      s.fields?.forEach((f, fi) => {
+        vals[`${si}-${fi}`] = f.value ?? f.pre_filled ?? "";
+      });
+    });
+    return vals;
+  };
+  const [fieldValues, setFieldValues] = useState(() => initFieldValues(caseData.clerking_data));
+
+  const handleFieldChange = (key, value) => {
+    setFieldValues(prev => ({ ...prev, [key]: value }));
+  };
 
   const handleGenerateProforma = async () => {
     setGenerating(true);
     try {
       const result = await generateClerkingProforma(caseData.presenting_complaint || caseData.referral_summary, caseData.referral_summary);
       setProforma(result);
+      setFieldValues(initFieldValues(result));
       await base44.entities.CaseFile.update(caseId, { clerking_data: result, status: "clerking" });
       onPhotoAdded();
     } catch (err) {
       alert("Failed to generate proforma. Please try again.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Save field values into proforma structure + persist to entity
+  const saveClerking = async () => {
+    setSaving(true);
+    try {
+      const updated = { ...proforma };
+      updated.sections = updated.sections.map((section, si) => ({
+        ...section,
+        fields: section.fields?.map((field, fi) => ({
+          ...field,
+          value: fieldValues[`${si}-${fi}`] ?? field.pre_filled ?? "",
+        })),
+      }));
+      setProforma(updated);
+      await base44.entities.CaseFile.update(caseId, { clerking_data: updated });
+      onPhotoAdded();
+      return updated;
+    } catch (err) {
+      alert("Failed to save clerking data.");
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Save + check completeness + auto-generate admission note
+  const handleSaveAndCheck = async () => {
+    const savedProforma = await saveClerking();
+    if (!savedProforma) return;
+
+    // Run completeness check
+    setChecking(true);
+    try {
+      const result = await checkClerkingCompleteness(savedProforma, caseData.presenting_complaint || caseData.referral_summary, caseData.referral_summary);
+      setCompleteness(result);
+    } catch {
+      alert("Failed to check completeness.");
+    } finally {
+      setChecking(false);
+    }
+
+    // Auto-generate admission note from current clerking data
+    setGeneratingNote(true);
+    try {
+      const updatedCase = { ...caseData, clerking_data: savedProforma };
+      const result = await generateAdmissionNote(updatedCase, [], [], "");
+      const note = typeof result === "string" ? result : (result.admission_note || "");
+      setAdmissionNote(note);
+      await base44.entities.CaseFile.update(caseId, { admission_note: note });
+      onPhotoAdded();
+    } catch {
+      // Silently fail — note generation is secondary to the save
+    } finally {
+      setGeneratingNote(false);
+    }
+  };
+
+  // Re-generate admission note with latest info (keeps input open for updates)
+  const handleRegenerateNote = async () => {
+    const savedProforma = await saveClerking();
+    if (!savedProforma) return;
+    setGeneratingNote(true);
+    try {
+      const updatedCase = { ...caseData, clerking_data: savedProforma };
+      const result = await generateAdmissionNote(updatedCase, [], [], "");
+      const note = typeof result === "string" ? result : (result.admission_note || "");
+      setAdmissionNote(note);
+      await base44.entities.CaseFile.update(caseId, { admission_note: note });
+      onPhotoAdded();
+    } catch {
+      alert("Failed to generate admission note.");
+    } finally {
+      setGeneratingNote(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    exportTextToPDF("Admission Note", admissionNote, caseData.patient_name);
+  };
+
+  const handleEmailNote = async () => {
+    const email = prompt("Enter email address to send the admission note:");
+    if (!email) return;
+    setSending(true);
+    try {
+      await base44.integrations.Core.SendEmail({
+        to: email,
+        subject: `HIVE — Admission Note — ${caseData.patient_name}`,
+        body: admissionNote,
+      });
+      alert("Email sent successfully.");
+    } catch {
+      alert("Failed to send email.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -251,19 +372,25 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
           {proforma.sections.map((section, si) => (
             <Section key={si} title={section.title} icon={FileText}>
               <div className="space-y-3">
-                {section.fields?.map((field, fi) => (
-                  <div key={fi}>
-                    <label className="text-xs font-medium text-muted-foreground block mb-1">
-                      {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
-                    </label>
-                    <textarea
-                      rows={2}
-                      defaultValue={field.pre_filled || ""}
-                      placeholder={`Enter ${field.label.toLowerCase()}...`}
-                      className={`w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-hive-gold/50 resize-none ${field.pre_filled ? "italic text-muted-foreground" : "text-foreground placeholder:text-muted-foreground"}`}
-                    />
-                  </div>
-                ))}
+                {section.fields?.map((field, fi) => {
+                  const key = `${si}-${fi}`;
+                  const val = fieldValues[key] ?? "";
+                  const isPrefilled = !val && field.pre_filled;
+                  return (
+                    <div key={fi}>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1">
+                        {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={val}
+                        onChange={(e) => handleFieldChange(key, e.target.value)}
+                        placeholder={field.pre_filled ? field.pre_filled : `Enter ${field.label.toLowerCase()}...`}
+                        className={`w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-hive-gold/50 resize-none ${isPrefilled ? "italic text-muted-foreground" : "text-foreground placeholder:text-muted-foreground"}`}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </Section>
           ))}
@@ -273,6 +400,75 @@ function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
               <p className="text-sm text-foreground italic whitespace-pre-wrap">{proforma.auto_summary}</p>
             </div>
           )}
+
+          {/* Save & Check button */}
+          <button
+            onClick={handleSaveAndCheck}
+            disabled={saving || checking || generatingNote}
+            className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
+          >
+            {saving || checking || generatingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />}
+            Save, Check Completeness & Generate Admission Note
+          </button>
+        </div>
+      )}
+
+      {/* Completeness Check Results */}
+      {completeness && (
+        <div className={`bg-card border-2 rounded-xl p-4 ${completeness.is_complete ? "border-success/30" : "border-warning/30"}`}>
+          <div className="flex items-center gap-2 mb-3">
+            {completeness.is_complete ? <CheckCircle2 className="w-4 h-4 text-success" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
+            <h4 className="font-bold text-foreground text-sm">
+              {completeness.is_complete ? "Clerking Complete" : "Missing Information"}
+            </h4>
+            <AIBadge />
+          </div>
+          {completeness.missing_items?.length > 0 && (
+            <ul className="space-y-1 mb-3">
+              {completeness.missing_items.map((item, i) => (
+                <li key={i} className="text-sm text-warning flex items-start gap-2">
+                  <span className="text-warning mt-0.5">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+          {completeness.standards_note && (
+            <p className="text-xs text-muted-foreground whitespace-pre-wrap">{completeness.standards_note}</p>
+          )}
+        </div>
+      )}
+
+      {/* Admission Note */}
+      {admissionNote && (
+        <div className="bg-card border-2 border-hive-gold/30 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-hive-gold" />
+              <h4 className="font-bold text-foreground text-sm">Admission Note with Plan</h4>
+            </div>
+            <div className="flex items-center gap-2">
+              <AIBadge />
+              <button
+                onClick={handleRegenerateNote}
+                disabled={generatingNote}
+                title="Re-generate with latest info"
+                className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"
+              >
+                {generatingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </button>
+              <button onClick={() => window.print()} title="Print" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
+                <Printer className="w-4 h-4" />
+              </button>
+              <button onClick={handleDownloadPDF} title="Download PDF" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
+                <Download className="w-4 h-4" />
+              </button>
+              <button onClick={handleEmailNote} disabled={sending} title="Email" className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{admissionNote}</pre>
         </div>
       )}
 

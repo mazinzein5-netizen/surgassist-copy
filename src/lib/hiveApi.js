@@ -2,7 +2,7 @@ import { base44 } from "@/api/base44Client";
 import {
   TRIAGE_SYSTEM_PROMPT, CLERKING_SYSTEM_PROMPT, KARDEX_SYSTEM_PROMPT,
   DISCHARGE_SYSTEM_PROMPT, CONSENT_SYSTEM_PROMPT, INEWS_SYSTEM_PROMPT,
-  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT
+  DRUG_DOSE_SYSTEM_PROMPT, PRE_CLERKING_SYSTEM_PROMPT, INVESTIGATION_SYSTEM_PROMPT, ADMISSION_NOTE_SYSTEM_PROMPT, COMPLETENESS_CHECK_SYSTEM_PROMPT
 } from "./hivePrompts";
 
 export async function processReferralChat(messages, newInput, attachments = []) {
@@ -247,6 +247,21 @@ export async function generateAdmissionNote(caseData, selectedBloods, selectedIm
       type: "object",
       properties: {
         admission_note: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function checkClerkingCompleteness(proformaData, diagnosis, caseSummary) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `${COMPLETENESS_CHECK_SYSTEM_PROMPT}\n\nDIAGNOSIS/CONDITION: ${diagnosis}\nCASE SUMMARY: ${caseSummary}\n\nCLERKING DATA (with field values):\n${JSON.stringify(proformaData, null, 2)}\n\nCheck this clerking against expected standards for the diagnosis. List all missing or incomplete items.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        missing_items: { type: "array", items: { type: "string" } },
+        standards_note: { type: "string" },
+        is_complete: { type: "boolean" }
       }
     }
   });
