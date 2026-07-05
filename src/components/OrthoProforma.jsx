@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles } from "lucide-react";
+import { Loader2, Save, Check, X, AlertTriangle, Zap, Sparkles, CheckCheck } from "lucide-react";
 import { detectBodyRegion, getGenericStatement } from "@/lib/genericStatements";
 import AnticoagulantSelector, { formatAnticoagulants } from "@/components/AnticoagulantSelector";
 
@@ -227,6 +227,39 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
     }));
   };
 
+  const handleTickAllNo = (section) => {
+    setAnswers(prev => {
+      const next = { ...prev };
+      for (const item of section.items) {
+        const key = `${section.title}::${item}`;
+        if (next[key]) {
+          next[key] = { ...next[key], answer: "no", detail: "" };
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleTickAllYes = (section) => {
+    setAnswers(prev => {
+      const next = { ...prev };
+      for (const item of section.items) {
+        const key = `${section.title}::${item}`;
+        if (next[key]) {
+          next[key] = { ...next[key], answer: "yes" };
+        }
+      }
+      return next;
+    });
+  };
+
+  const isSectionAllNo = (section) => {
+    return section.items.every(item => {
+      const key = `${section.title}::${item}`;
+      return answers[key]?.answer === "no";
+    });
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -278,9 +311,22 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
         const SectionIcon = section.icon;
         return (
           <div key={section.title} className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              {SectionIcon ? <SectionIcon className="w-4 h-4 text-hive-gold" /> : null}
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{section.title}</h4>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                {SectionIcon ? <SectionIcon className="w-4 h-4 text-hive-gold" /> : null}
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{section.title}</h4>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {isSectionAllNo(section) && (
+                  <span className="text-[10px] text-success font-medium">✓ All clear</span>
+                )}
+                <button
+                  onClick={() => handleTickAllNo(section)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors"
+                >
+                  <CheckCheck className="w-3 h-3" /> All No
+                </button>
+              </div>
             </div>
             <div className="space-y-2.5">
               {section.items.map((item) => {

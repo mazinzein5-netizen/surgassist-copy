@@ -20,9 +20,9 @@ const TABS = [
   { id: "clerking", label: "Clerking", icon: Stethoscope },
   { id: "imaging", label: "Imaging", icon: Scan },
   { id: "kardex", label: "Kardex", icon: Pill },
-  { id: "discharge", label: "Discharge", icon: FileCheck },
   { id: "consent", label: "Consent", icon: ShieldCheck },
   { id: "review", label: "Review", icon: ClipboardCheck },
+  { id: "discharge", label: "Discharge", icon: FileCheck },
 ];
 
 export default function CaseDetail() {
