@@ -1,5 +1,5 @@
-import React from "react";
-import { UserRound, Phone } from "lucide-react";
+import React, { useState } from "react";
+import { UserRound, Phone, ChevronDown, ChevronUp } from "lucide-react";
 
 const GRADES = [
   { value: "intern", label: "Intern" },
@@ -12,14 +12,21 @@ const GRADES = [
 
 export default function ReferrerDetails({ value, onChange }) {
   const update = (field, val) => onChange({ ...value, [field]: val });
+  const [open, setOpen] = useState(true);
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <UserRound className="w-4 h-4 text-hive-gold" />
-        <h3 className="font-semibold text-foreground text-sm">Referrer Details</h3>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 w-full mb-0 text-left"
+      >
+        <UserRound className="w-4 h-4 text-hive-gold flex-shrink-0" />
+        <h3 className="font-semibold text-foreground text-sm flex-1">Referrer Details</h3>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Referrer Name</label>
           <input
@@ -66,6 +73,7 @@ export default function ReferrerDetails({ value, onChange }) {
           />
         </div>
       </div>
+      )}
     </div>
   );
 }
