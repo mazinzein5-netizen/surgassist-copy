@@ -55,21 +55,21 @@ export default function ComorbiditySelector({ selected, onToggle, onClearAll, on
           <Zap className="w-3 h-3 text-hive-gold" />
           <span className="text-[10px] font-bold text-hive-gold uppercase tracking-wider">Top 10 — Rapid Entry</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {TOP_10.map(c => {
             const active = selected.includes(c);
             return (
               <button
                 key={c}
                 onClick={() => onToggle(c)}
-                className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                   active
-                    ? "bg-hive-gold/20 text-hive-gold border border-hive-gold/40"
+                    ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
                     : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
                 }`}
               >
                 {active ? <Check className="w-3 h-3 flex-shrink-0" /> : <X className="w-3 h-3 flex-shrink-0 opacity-30" />}
-                <span className="truncate">{c}</span>
+                <span>{c}</span>
               </button>
             );
           })}
