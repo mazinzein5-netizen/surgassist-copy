@@ -467,6 +467,44 @@ export async function uploadFile(file) {
   return result;
 }
 
+export async function recognizePatientDemographics(imageUrl) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical document recognition AI. Examine this image carefully — it may be a patient wristband, hospital chart, referral letter, ED triage note, or identification sticker.
+
+Extract the following patient demographics if visible:
+- patient_name: Full patient name (Surname First or First Surname — preserve as written)
+- patient_dob: Date of birth in ISO format YYYY-MM-DD (convert from DD/MM/YYYY or DD-MM-YYYY if needed)
+- patient_mrn: Medical Record Number / hospital number / MRN
+- patient_gender: male, female, or other (infer from name/Title like Mr/Mrs/Ms/Master only if clearly indicated; leave empty if ambiguous)
+
+Also look for and extract any other patient-related info visible:
+- hospital: Hospital name if present
+- ward: Ward/department if present
+- bed_number: Bed number if present
+- known_allergies: Any allergy information if present
+- presenting_complaint: Any complaint/reason for visit if present
+
+Only populate fields where the information is clearly legible. Leave fields empty if not found. Provide raw_text with the full transcription of all text visible in the image.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        patient_name: { type: "string" },
+        patient_dob: { type: "string", description: "ISO date YYYY-MM-DD" },
+        patient_mrn: { type: "string" },
+        patient_gender: { type: "string", enum: ["male", "female", "other"] },
+        hospital: { type: "string" },
+        ward: { type: "string" },
+        bed_number: { type: "string" },
+        known_allergies: { type: "string" },
+        presenting_complaint: { type: "string" },
+        raw_text: { type: "string", description: "Full raw transcription of all text visible in the image" }
+      }
+    }
+  });
+  return result;
+}
+
 export async function suggestManagementPlan(caseData) {
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `You are a senior surgical registrar. Generate a concise, bulleted management plan for this inpatient.
