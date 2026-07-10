@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Printer, Users, FileText } from "lucide-react";
+import { Loader2, Users, FileText } from "lucide-react";
+import HandoverExportMenu from "@/components/HandoverExportMenu";
 
 export default function Handover() {
   const { user } = useAuth();
@@ -26,8 +27,6 @@ export default function Handover() {
     return acc;
   }, {});
 
-  const handlePrint = () => window.print();
-
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -35,9 +34,7 @@ export default function Handover() {
           <h1 className="text-xl md:text-2xl font-bold text-foreground">End-of-Shift Handover</h1>
           <p className="text-sm text-muted-foreground mt-0.5">ISBAR summary · {cases.length} active cases</p>
         </div>
-        <button onClick={handlePrint} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-foreground font-medium text-sm hover:bg-secondary/80">
-          <Printer className="w-4 h-4" /> <span className="hidden sm:inline">Print</span>
-        </button>
+        <HandoverExportMenu grouped={grouped} caseCount={cases.length} />
       </div>
 
       {loading ? (
