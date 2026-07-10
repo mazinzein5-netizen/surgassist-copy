@@ -20,6 +20,8 @@ import { downloadCallNotePDF } from "@/lib/pdfExport";
 import ReviewInvestigations from "@/components/ReviewInvestigations";
 import BeeMonitor from "@/components/BeeMonitor";
 import ExportShareDialog from "@/components/ExportShareDialog";
+import JackSafetyPanel from "@/components/JackSafetyPanel";
+import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -546,7 +548,11 @@ function ReviewTab({ caseData, onUpdate, user }) {
   const [signing, setSigning] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
   const [suggestingPlan, setSuggestingPlan] = useState(false);
-  const canReview = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
+  const [showMeds, setShowMeds] = useState(false);
+  // All team members can edit review notes and management plan
+  const canEdit = true;
+  // Only senior grades can countersign
+  const canCountersign = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
 
   const handleSavePlan = async () => {
     setSavingPlan(true);
@@ -620,12 +626,22 @@ function ReviewTab({ caseData, onUpdate, user }) {
     }
   };
 
+  const kardex = caseData.kardex_data;
+  const hasMeds = kardex?.medications && kardex.medications.length > 0;
+
   return (
     <div className="space-y-4">
-      {!canReview && (
+      {/* Jack — Safety & Guidelines Guardian (background) */}
+      <JackSafetyPanel caseData={caseData} />
+
+      {/* Labs & Imaging Discovery (background) */}
+      <LabsImagingDiscovery caseData={caseData} />
+
+      {/* Info banner for non-senior users */}
+      {!canCountersign && (
         <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
-          <p className="text-sm text-warning">Only SHOs, Registrars, and Consultants can countersign. You can view the case but cannot approve.</p>
+          <p className="text-sm text-warning">You can edit notes and the management plan. Countersigning requires SHO grade or above.</p>
         </div>
       )}
 
@@ -655,40 +671,89 @@ function ReviewTab({ caseData, onUpdate, user }) {
       </Section>
 
       <Section title="Investigations" icon={FlaskConical}>
-        <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canReview} />
+        <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canEdit} />
       </Section>
+
+      {/* Medications quick-view button */}
+      {hasMeds && (
+        <Section title="Medications" icon={Pill}>
+          <button
+            onClick={() => setShowMeds(v => !v)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+          >
+            <span className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Pill className="w-4 h-4 text-hive-gold" />
+              View Inpatient Medications ({kardex.medications.length})
+            </span>
+            {showMeds ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          {showMeds && (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs text-muted-foreground">
+                    <th className="text-left px-3 py-2 font-medium">Drug</th>
+                    <th className="text-left px-3 py-2 font-medium">Dose</th>
+                    <th className="text-left px-3 py-2 font-medium">Route</th>
+                    <th className="text-left px-3 py-2 font-medium">Frequency</th>
+                    <th className="text-left px-3 py-2 font-medium">Indication</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kardex.medications.map((med, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="px-3 py-2 font-medium text-foreground">{med.drug}</td>
+                      <td className="px-3 py-2 text-foreground">{med.dose}</td>
+                      <td className="px-3 py-2 text-foreground">{med.route}</td>
+                      <td className="px-3 py-2 text-foreground">{med.frequency}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{med.indication}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {kardex.iv_fluids && (
+                <div className="mt-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">IV Fluids</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{kardex.iv_fluids}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title="Management Plan" icon={ClipboardCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <AIBadge />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSuggestPlan}
-                disabled={suggestingPlan || !canReview}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 disabled:opacity-40"
-              >
-                {suggestingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                AI Suggest Plan
-              </button>
-              <button
-                onClick={handleSavePlan}
-                disabled={savingPlan || !canReview}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 disabled:opacity-40"
-              >
-                {savingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
-                Save Plan
-              </button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <AIBadge />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSuggestPlan}
+                  disabled={suggestingPlan}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 disabled:opacity-40"
+                >
+                  {suggestingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI Suggest Plan
+                </button>
+                <button
+                  onClick={handleSavePlan}
+                  disabled={savingPlan}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 disabled:opacity-40"
+                >
+                  {savingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
+                  Save Plan
+                </button>
+              </div>
             </div>
+            <textarea
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              rows={6}
+              placeholder="Edit the management plan, or click AI Suggest Plan..."
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
+            />
           </div>
-          <textarea
-            value={plan}
-            onChange={(e) => setPlan(e.target.value)}
-            rows={6}
-            placeholder="Edit the management plan, or click AI Suggest Plan..."
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-            disabled={!canReview}
-          />
         </div>
       </Section>
 
@@ -699,7 +764,6 @@ function ReviewTab({ caseData, onUpdate, user }) {
           rows={5}
           placeholder="Add your review notes, annotations, or changes needed..."
           className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-          disabled={!canReview}
         />
       </Section>
 
@@ -716,7 +780,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
         </div>
       )}
 
-      {canReview && caseData.review_status !== "countersigned" && (
+      {canCountersign && caseData.review_status !== "countersigned" && (
         <div className="flex gap-2">
           <button
             onClick={handleCountersign}
