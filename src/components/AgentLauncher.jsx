@@ -5,8 +5,8 @@ import { X, Send, Loader2, Bot, ChevronDown, ChevronUp } from "lucide-react";
 
 const AGENTS = [
   {
-    name: "Jack",
-    label: "Jack",
+    name: "Clip",
+    label: "Clip",
     subtitle: "Super Agent",
     description: "Oversees all cases & workflows",
     color: "text-hive-gold",
@@ -32,7 +32,7 @@ function BeeIcon({ className = "" }) {
 
 export default function AgentLauncher() {
   const [open, setOpen] = useState(false);
-  const [activeAgent, setActiveAgent] = useState("Jack");
+  const [activeAgent, setActiveAgent] = useState("Clip");
   const [conversations, setConversations] = useState({});
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -42,6 +42,8 @@ export default function AgentLauncher() {
   const [expanded, setExpanded] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [btnPos, setBtnPos] = useState(null);
+  const dragRef = useRef(null);
 
   // Load conversations for the active agent
   const loadConversations = useCallback(async (agentName) => {
@@ -149,14 +151,55 @@ export default function AgentLauncher() {
   const activeAgentConfig = AGENTS.find((a) => a.name === activeAgent);
   const ActiveIcon = activeAgentConfig?.icon || Bot;
 
+  const handleBtnPointerDown = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      btnLeft: rect.left,
+      btnTop: rect.top,
+      moved: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleBtnPointerMove = (e) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      d.moved = true;
+    }
+    if (d.moved) {
+      const btn = e.currentTarget;
+      const w = btn.offsetWidth;
+      const h = btn.offsetHeight;
+      let newLeft = Math.max(8, Math.min(window.innerWidth - w - 8, d.btnLeft + dx));
+      let newTop = Math.max(8, Math.min(window.innerHeight - h - 8, d.btnTop + dy));
+      setBtnPos({ left: newLeft, top: newTop });
+    }
+  };
+
+  const handleBtnPointerUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (d && !d.moved) {
+      setOpen(true);
+    }
+  };
+
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-hive-gold text-hive-gold-foreground font-semibold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+        onPointerDown={handleBtnPointerDown}
+        onPointerMove={handleBtnPointerMove}
+        onPointerUp={handleBtnPointerUp}
+        style={btnPos ? { left: btnPos.left, top: btnPos.top } : { right: "1.5rem", bottom: "1.5rem" }}
+        className="fixed z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-hive-gold text-hive-gold-foreground font-semibold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-transform cursor-grab active:cursor-grabbing touch-none select-none"
       >
         <ActiveIcon className="w-5 h-5" />
-        <span className="hidden sm:inline">Ask Jack</span>
+        <span className="hidden sm:inline">Ask Clip</span>
       </button>
     );
   }

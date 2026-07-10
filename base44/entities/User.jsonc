@@ -32,5 +32,10 @@
         "general_surgery"
       ]
     }
-  }
+  },
+  "required": [
+    "imc_number",
+    "hospital",
+    "department"
+  ]
 }
