@@ -7,13 +7,17 @@ import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
 import ReferrerDetails from "@/components/ReferrerDetails";
-import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users, Type, ScanLine, Monitor, Upload, Bluetooth } from "lucide-react";
 
 const INPUT_MODES = [
-  { id: "text", label: "Text", icon: FileText },
+  { id: "text", label: "Text", icon: Type },
   { id: "audio", label: "Audio", icon: Mic },
-  { id: "screenshot", label: "Screenshot", icon: Camera },
-  { id: "camera", label: "Camera", icon: Camera },
+  { id: "photo", label: "Clinical Photo", icon: Camera },
+  { id: "camera_scan", label: "Camera Scan", icon: ScanLine },
+  { id: "document_scan", label: "Document Scan", icon: FileText },
+  { id: "screen_scan", label: "Screen Scan", icon: Monitor },
+  { id: "upload", label: "Upload Device", icon: Upload },
+  { id: "bluetooth", label: "Bluetooth", icon: Bluetooth },
 ];
 
 export default function NewReferral() {
@@ -339,14 +343,14 @@ export default function NewReferral() {
           )}
 
           {/* Mode selector */}
-          <div className="flex gap-1 mb-2">
+          <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-thin pb-1">
             {INPUT_MODES.map((m) => {
               const Icon = m.icon;
               return (
                 <button
                   key={m.id}
                   onClick={() => setMode(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                     mode === m.id ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -359,18 +363,40 @@ export default function NewReferral() {
 
           {/* Input area */}
           <div className="flex items-end gap-2">
-            {(mode === "screenshot" || mode === "camera") && (
+            {(mode === "photo" || mode === "camera_scan") && (
               <>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
                 <button
-                  onClick={() => mode === "camera" ? cameraInputRef.current?.click() : fileInputRef.current?.click()}
+                  onClick={() => cameraInputRef.current?.click()}
                   className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
-                  title={mode === "camera" ? "Take photo" : "Upload screenshot"}
+                  title={mode === "photo" ? "Take clinical photo" : "Scan with camera"}
                 >
-                  <Camera className="w-5 h-5" />
+                  {mode === "photo" ? <Camera className="w-5 h-5" /> : <ScanLine className="w-5 h-5" />}
                 </button>
               </>
+            )}
+
+            {(mode === "document_scan" || mode === "screen_scan" || mode === "upload") && (
+              <>
+                <input ref={fileInputRef} type="file" accept={mode === "upload" ? "image/*,.pdf" : "image/*"} className="hidden" onChange={handleFileUpload} />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
+                  title={mode === "document_scan" ? "Scan document" : mode === "screen_scan" ? "Upload screenshot" : "Upload from device"}
+                >
+                  {mode === "document_scan" ? <FileText className="w-5 h-5" /> : mode === "screen_scan" ? <Monitor className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                </button>
+              </>
+            )}
+
+            {mode === "bluetooth" && (
+              <button
+                onClick={() => alert("Bluetooth file transfer is not yet available on this device.")}
+                className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
+                title="Bluetooth transfer"
+              >
+                <Bluetooth className="w-5 h-5" />
+              </button>
             )}
 
             {mode === "audio" && (
