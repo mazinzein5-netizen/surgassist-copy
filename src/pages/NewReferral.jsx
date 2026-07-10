@@ -33,6 +33,8 @@ export default function NewReferral() {
   const [triageResult, setTriageResult] = useState(null);
   const [onCallTeam, setOnCallTeam] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState({});
+  const [expanded, setExpanded] = useState(false);
+  const expandedRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
@@ -42,6 +44,16 @@ export default function NewReferral() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (expanded) {
+      setTimeout(() => {
+        expandedRef.current?.focus();
+        const len = expandedRef.current?.value?.length || 0;
+        expandedRef.current?.setSelectionRange(len, len);
+      }, 50);
+    }
+  }, [expanded]);
 
   const handleSend = async () => {
     if ((!input.trim() && attachments.length === 0) || loading) return;
@@ -374,16 +386,47 @@ export default function NewReferral() {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
+              onFocus={() => setExpanded(true)}
               placeholder="Type referral details or AI responses..."
               rows={1}
               className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none max-h-32"
             />
+
+            {expanded && (
+              <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <span className="text-sm font-semibold text-foreground">Referral Details</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setExpanded(false)}
+                      className="px-4 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90 transition-colors"
+                    >
+                      Done
+                    </button>
+                    <button
+                      onClick={() => setExpanded(false)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  ref={expandedRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                      setExpanded(false);
+                    }
+                  }}
+                  placeholder="Type referral details or AI responses..."
+                  className="flex-1 w-full bg-transparent border-0 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+                />
+              </div>
+            )}
 
             <button
               onClick={handleSend}
