@@ -40,6 +40,7 @@ export default function NewReferral() {
   const [referrerInfo, setReferrerInfo] = useState({});
   const [patientInfo, setPatientInfo] = useState({});
   const [patientAutoFilled, setPatientAutoFilled] = useState(false);
+  const [referringHospital, setReferringHospital] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const expandedRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -224,6 +225,7 @@ export default function NewReferral() {
         referrer_grade: referrerInfo.referrer_grade || "",
         referrer_department: referrerInfo.referrer_department || "",
         referrer_contact: referrerInfo.referrer_contact || "",
+        referring_team: referringHospital || "",
       };
       const created = await base44.entities.CaseFile.create(caseData);
       for (const msg of messages) {
@@ -257,7 +259,7 @@ export default function NewReferral() {
 
       {/* On-Call Team Bar */}
       <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
-        <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
+        <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} onReferringHospitalChange={setReferringHospital} />
       </div>
 
       {/* Patient Details */}

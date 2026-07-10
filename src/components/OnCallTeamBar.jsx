@@ -15,10 +15,17 @@ const DEPT_LABELS = {
   ent: "ENT",
 };
 
-export default function OnCallTeamBar({ department, onTeamChange }) {
+const CATCHMENT_HOSPITALS = [
+  { value: "portlaoise_ed", label: "Portlaoise ED" },
+  { value: "mullingar_ed", label: "Mullingar ED" },
+  { value: "ballina_ed", label: "Ballina ED" },
+];
+
+export default function OnCallTeamBar({ department, onTeamChange, onReferringHospitalChange }) {
   const { user } = useAuth();
   const [teams, setTeams] = useState([]);
   const [selectedDepts, setSelectedDepts] = useState([department || user?.department || "general_surgery"]);
+  const [referringHospital, setReferringHospital] = useState(null);
   const [editingDept, setEditingDept] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +60,14 @@ export default function OnCallTeamBar({ department, onTeamChange }) {
         return prev.length > 1 ? prev.filter(d => d !== deptValue) : prev;
       }
       return [...prev, deptValue];
+    });
+  };
+
+  const toggleHospital = (hospValue) => {
+    setReferringHospital(prev => {
+      const next = prev === hospValue ? null : hospValue;
+      if (onReferringHospitalChange) onReferringHospitalChange(next);
+      return next;
     });
   };
 
@@ -138,6 +153,28 @@ export default function OnCallTeamBar({ department, onTeamChange }) {
                 {d.label}
               </button>
             ))}
+          </div>
+
+          {/* External catchment hospital selector (referring EDs) */}
+          <div className="mb-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Referring Catchment Hospital
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {CATCHMENT_HOSPITALS.map(h => (
+                <button
+                  key={h.value}
+                  onClick={() => toggleHospital(h.value)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    referringHospital === h.value
+                      ? "bg-accent/15 text-accent border border-accent/30"
+                      : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
+                  }`}
+                >
+                  {h.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Teams for all selected departments */}
