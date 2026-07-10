@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "./HiveLogo";
 import HexBadge from "./HexBadge";
+import AgentLauncher from "./AgentLauncher";
 import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch, MessageSquare } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -114,6 +115,8 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      <AgentLauncher />
     </div>
   );
 }
