@@ -281,24 +281,24 @@ export default function NewReferral() {
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.map((msg, i) =>
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[85%] rounded-2xl px-4 py-3 hidden ${
-            msg.role === "user" ?
-            "bg-accent/15 border border-accent/30 text-foreground" :
-            "bg-card border border-border text-foreground"}`
-            }>
-                {msg.role === "assistant" &&
-              <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-5 h-5 hex-clip bg-hive-gold flex items-center justify-center">
-                      <span className="text-[8px] font-bold text-hive-gold-foreground">H</span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-hive-gold">HIVE Assistant</span>
-                  </div>
-              }
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                {msg.role === "assistant" && msg.requiredInfo &&
-              <RequiredInfoChecklist requiredInfo={msg.requiredInfo} />
-              }
-              </div>
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
             </div>
           )}
           {loading &&
