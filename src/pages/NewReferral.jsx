@@ -393,38 +393,47 @@ export default function NewReferral() {
             />
 
             {expanded && (
-              <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <span className="text-sm font-semibold text-foreground">Referral Details</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setExpanded(false)}
-                      className="px-4 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90 transition-colors"
-                    >
-                      Done
-                    </button>
-                    <button
-                      onClick={() => setExpanded(false)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                onClick={() => setExpanded(false)}
+              >
+                <div
+                  className="flex flex-col w-full max-w-lg bg-card/90 border border-border rounded-xl shadow-2xl overflow-hidden"
+                  style={{ height: "min(60vh, 400px)" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <span className="text-sm font-semibold text-foreground">Referral Details</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setExpanded(false)}
+                        className="px-4 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90 transition-colors"
+                      >
+                        Done
+                      </button>
+                      <button
+                        onClick={() => setExpanded(false)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
+                  <textarea
+                    ref={expandedRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                        setExpanded(false);
+                      }
+                    }}
+                    placeholder="Type referral details or AI responses..."
+                    className="flex-1 w-full bg-transparent border-0 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+                  />
                 </div>
-                <textarea
-                  ref={expandedRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                      setExpanded(false);
-                    }
-                  }}
-                  placeholder="Type referral details or AI responses..."
-                  className="flex-1 w-full bg-transparent border-0 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
-                />
               </div>
             )}
 
