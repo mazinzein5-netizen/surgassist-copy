@@ -226,6 +226,10 @@ export default function NewReferral() {
         referrer_department: referrerInfo.referrer_department || "",
         referrer_contact: referrerInfo.referrer_contact || "",
         referring_team: referringHospital || "",
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
       };
       const created = await base44.entities.CaseFile.create(caseData);
       for (const msg of messages) {

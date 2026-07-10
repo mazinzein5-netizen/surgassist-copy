@@ -231,6 +231,23 @@
     "inews_data": {
       "type": "object"
     },
+    "note_author_name": {
+      "type": "string",
+      "description": "Name of the clinician who authored/locked the most recent note"
+    },
+    "note_author_grade": {
+      "type": "string",
+      "description": "Grade of the note author (sho, registrar, consultant)"
+    },
+    "note_author_imc": {
+      "type": "string",
+      "description": "IMC number of the note author"
+    },
+    "note_locked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the note was locked to the patient file"
+    },
     "review_status": {
       "type": "string",
       "enum": [

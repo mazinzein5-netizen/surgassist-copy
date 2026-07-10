@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { compileProformaLines } from "@/components/OrthoProforma";
 
 export function exportTextToPDF(title, text, patientName = "") {
   // Strip markdown symbols for clean presentation
@@ -283,5 +284,268 @@ export function exportCallNoteToPDF(caseData) {
 export function downloadCallNotePDF(caseData) {
   const doc = exportCallNoteToPDF(caseData);
   const fileName = `CallNote_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
+  doc.save(fileName);
+}
+
+/**
+ * Exports the FULL patient case file as a well-organized PDF with all sections,
+ * locked timestamps, author attribution, and team labels.
+ * Returns the jsPDF doc instance.
+ */
+export function exportFullCasePDF(caseData) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed = 8) => {
+    if (y + needed > pageHeight - margin - 8) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const writeTitle = (text, size = 10) => {
+    ensureSpace(10);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(size);
+    doc.setTextColor(40);
+    doc.text(text, margin, y);
+    y += size * 0.5 + 2;
+  };
+
+  const writeBody = (text) => {
+    if (!text) return;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    const clean = String(text).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
+    const lines = doc.splitTextToSize(clean, maxWidth);
+    for (const line of lines) {
+      ensureSpace(5);
+      doc.text(line, margin, y);
+      y += 5;
+    }
+    y += 3;
+  };
+
+  const writeNoteMeta = (author, lockedAt) => {
+    if (!author && !lockedAt) return;
+    ensureSpace(5);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    const parts = [];
+    if (author) parts.push(`Author: ${author}`);
+    if (lockedAt) parts.push(`Locked: ${new Date(lockedAt).toLocaleString("en-IE")}`);
+    doc.text(parts.join("  |  "), margin, y);
+    y += 5;
+  };
+
+  const writeSection = (title, text, meta) => {
+    if (!text) return;
+    ensureSpace(12);
+    writeTitle(title);
+    writeNoteMeta(meta?.author, meta?.lockedAt);
+    writeBody(text);
+    ensureSpace(3);
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
+  };
+
+  // === HEADER ===
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("HIVE SURGICAL ASSISTANT", margin, y);
+  y += 6;
+  doc.setFontSize(16);
+  doc.setTextColor(0);
+  doc.text("Patient Case File", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(`Exported: ${new Date().toLocaleString("en-IE")}`, margin, y);
+  y += 3;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+
+  // === PATIENT DEMOGRAPHICS ===
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  const demoLines = [
+    `Patient: ${caseData.patient_name || "—"}`,
+    `DOB: ${caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"}`,
+    `MRN: ${caseData.patient_mrn || "—"}`,
+    `Gender: ${caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"}`,
+  ];
+  demoLines.forEach(line => {
+    ensureSpace(5);
+    doc.text(line, margin, y);
+    y += 5;
+  });
+
+  // === TEAM LABELS ===
+  y += 2;
+  ensureSpace(8);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(80);
+  doc.text("TEAM", margin, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  const teamParts = [];
+  if (caseData.specialty) teamParts.push(`Specialty: ${caseData.specialty}`);
+  if (caseData.accepting_specialty) teamParts.push(`Accepting: ${caseData.accepting_specialty}`);
+  if (caseData.on_call_consultant) teamParts.push(`Consultant: ${caseData.on_call_consultant}`);
+  if (caseData.on_call_registrar) teamParts.push(`Registrar: ${caseData.on_call_registrar}`);
+  if (caseData.on_call_sho) teamParts.push(`SHO: ${caseData.on_call_sho}`);
+  if (caseData.referring_team) teamParts.push(`Referring: ${caseData.referring_team}`);
+  teamParts.forEach(part => {
+    ensureSpace(5);
+    doc.text(`  • ${part}`, margin, y);
+    y += 5;
+  });
+  y += 2;
+
+  // === REFERRER ===
+  if (caseData.referrer_name || caseData.referrer_department) {
+    ensureSpace(5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(80);
+    doc.text("REFERRER", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(0);
+    const ref = `  ${caseData.referrer_name || "—"}${caseData.referrer_grade ? ` (${caseData.referrer_grade})` : ""}${caseData.referrer_department ? `, ${caseData.referrer_department}` : ""}${caseData.referrer_contact ? ` · ${caseData.referrer_contact}` : ""}`;
+    const refLines = doc.splitTextToSize(ref, maxWidth);
+    refLines.forEach(line => { ensureSpace(5); doc.text(line, margin, y); y += 5; });
+    y += 2;
+  }
+
+  doc.setDrawColor(200);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+
+  // === CLINICAL SECTIONS ===
+  const meta = {
+    author: caseData.note_author_name,
+    grade: caseData.note_author_grade,
+    imc: caseData.note_author_imc,
+    lockedAt: caseData.note_locked_at,
+  };
+  const metaLabel = meta.author
+    ? `${meta.author}${meta.grade ? ` (${meta.grade})` : ""}${meta.imc ? `, IMC: ${meta.imc}` : ""}`
+    : null;
+
+  writeSection("Presenting Complaint", caseData.presenting_complaint);
+  writeSection("Referral Summary", caseData.referral_summary);
+  writeSection("Mechanism of Injury", caseData.mechanism_of_injury);
+
+  if (caseData.triage_decision && caseData.triage_decision !== "pending") {
+    const triageText = `Decision: ${caseData.triage_decision === "accept" && caseData.accepting_specialty ? `Accepted — ${caseData.accepting_specialty}` : caseData.triage_decision.replace(/_/g, " ")}\n${caseData.triage_reasoning || ""}${caseData.triage_guideline ? `\nGuideline: ${caseData.triage_guideline}` : ""}`;
+    writeSection("Triage Decision", triageText);
+  }
+
+  writeSection("Pre-Clerking Guidance", caseData.pre_clerking_guidance, { author: "AI Assistant", lockedAt: caseData.created_date });
+  writeSection("Admission Note", caseData.admission_note, { author: metaLabel, lockedAt: meta.lockedAt });
+
+  // Kardex / Medications
+  if (caseData.kardex_data) {
+    const k = caseData.kardex_data;
+    let kardexText = "";
+    if (k.medications?.length) {
+      kardexText = k.medications.map(m => `${m.drug} ${m.dose} ${m.route} ${m.frequency} — ${m.indication || ""}${m.notes ? ` (${m.notes})` : ""}`).join("\n");
+    }
+    if (k.iv_fluids) kardexText += `\n\nIV Fluids: ${k.iv_fluids}`;
+    if (k.treatment_plan) kardexText += `\n\nTreatment Plan: ${k.treatment_plan}`;
+    writeSection("Inpatient Kardex", kardexText, { author: metaLabel, lockedAt: meta.lockedAt });
+  }
+
+  writeSection("IV Fluid Plan", caseData.iv_fluid_plan, { author: metaLabel, lockedAt: meta.lockedAt });
+  writeSection("Treatment / Management Plan", caseData.treatment_plan, { author: metaLabel, lockedAt: meta.lockedAt });
+
+  // Investigations
+  const invData = caseData.investigation_data || {};
+  if (invData.bloods?.length || invData.imaging?.length) {
+    let invText = "";
+    if (invData.bloods?.length) invText += `Bloods:\n${invData.bloods.map(b => `  - ${b}`).join("\n")}`;
+    if (invData.imaging?.length) invText += `\n\nImaging:\n${invData.imaging.map(im => `  - ${im}`).join("\n")}`;
+    writeSection("Investigations", invText);
+  }
+  writeSection("Investigation Recommendations", caseData.investigation_recommendations);
+
+  // Proforma / Clerking
+  if (caseData.proforma_data) {
+    try {
+      const compiled = compileProformaLines(caseData.proforma_data, caseData);
+      if (compiled.length > 0) {
+        const proformaText = compiled.map(g => `${g.section}:\n${g.lines.map(l => `  - ${l}`).join("\n")}`).join("\n\n");
+        writeSection("Clerking Proforma", proformaText);
+      }
+    } catch {}
+  }
+
+  // Discharge
+  writeSection("GP Discharge Letter", caseData.gp_letter, { author: metaLabel, lockedAt: meta.lockedAt });
+  writeSection("Patient Education Sheet", caseData.patient_education_sheet, { author: metaLabel, lockedAt: meta.lockedAt });
+
+  // Review
+  if (caseData.review_notes) {
+    const reviewMeta = caseData.countersigned_at
+      ? { author: `Dr. ${caseData.note_author_name || ""} (IMC: ${caseData.reviewer_imc || "N/A"})`, lockedAt: caseData.countersigned_at }
+      : null;
+    writeSection("Review Notes", caseData.review_notes, reviewMeta);
+  }
+
+  // === SIGNATURE BLOCK ===
+  ensureSpace(20);
+  y += 6;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + 70, y);
+  doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Doctor Signature / IMC", margin, y);
+  doc.text("Date / Time", pageWidth - margin - 70, y);
+  if (caseData.note_locked_at) {
+    y += 5;
+    doc.setTextColor(120);
+    doc.text(`Note locked: ${new Date(caseData.note_locked_at).toLocaleString("en-IE")}${caseData.note_author_name ? ` by ${caseData.note_author_name}` : ""}`, margin, y);
+  }
+
+  // === FOOTER ===
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(
+      `HIVE Surgical Assistant — Page ${i} of ${pageCount} — AI-assisted, verify clinically`,
+      margin,
+      pageHeight - 8
+    );
+  }
+
+  return doc;
+}
+
+export function downloadFullCasePDF(caseData) {
+  const doc = exportFullCasePDF(caseData);
+  const fileName = `CaseFile_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
   doc.save(fileName);
 }

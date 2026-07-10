@@ -7,7 +7,7 @@ import { generateKardex, generateDischargeDocuments, generateConsentChecklist, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
@@ -19,6 +19,7 @@ import { compileProformaLines } from "@/components/OrthoProforma";
 import { downloadCallNotePDF } from "@/lib/pdfExport";
 import ReviewInvestigations from "@/components/ReviewInvestigations";
 import BeeMonitor from "@/components/BeeMonitor";
+import ExportShareDialog from "@/components/ExportShareDialog";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -39,6 +40,7 @@ export default function CaseDetail() {
   const [activeTab, setActiveTab] = useState("summary");
   const [photos, setPhotos] = useState([]);
   const [showPrintNote, setShowPrintNote] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     loadCase();
@@ -100,12 +102,22 @@ export default function CaseDetail() {
             </div>
           </div>
 
+          {/* Team Labels */}
+          <TeamLabels caseData={caseData} />
+
           {/* Admission Info Bar */}
           <AdmissionInfoBar caseData={caseData} />
 
-          {/* Print Plan & Note button — inpatient consult cases */}
-          {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
-            <div className="mt-3">
+          {/* Export & Share + Print Plan buttons */}
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowExport(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-semibold hover:bg-hive-gold/90 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export & Share
+            </button>
+            {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
               <button
                 onClick={() => setShowPrintNote(true)}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 transition-colors"
@@ -113,8 +125,8 @@ export default function CaseDetail() {
                 <ScrollText className="w-3.5 h-3.5" />
                 Print Call Note & Plan
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -149,8 +161,8 @@ export default function CaseDetail() {
           {activeTab === "summary" && <SummaryTab caseData={caseData} />}
           {activeTab === "clerking" && <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
           {activeTab === "imaging" && <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
-          {activeTab === "kardex" && <KardexTab caseData={caseData} onUpdate={loadCase} />}
-          {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} />}
+          {activeTab === "kardex" && <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />}
+          {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />}
           {activeTab === "consent" && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
           {activeTab === "review" && <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />}
         </div>
@@ -158,6 +170,10 @@ export default function CaseDetail() {
 
       {showPrintNote && (
         <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />
+      )}
+
+      {showExport && (
+        <ExportShareDialog caseData={caseData} onClose={() => setShowExport(false)} />
       )}
     </div>
   );
@@ -191,7 +207,7 @@ function SummaryTab({ caseData }) {
       </Section>
 
       {caseData.admission_note && (
-        <Section title="Admission Note" icon={FileText}>
+        <Section title="Admission Note" icon={FileText} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
           <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{caseData.admission_note}</pre>
           <button
             onClick={() => {
@@ -253,7 +269,7 @@ function SummaryTab({ caseData }) {
   );
 }
 
-function KardexTab({ caseData, onUpdate }) {
+function KardexTab({ caseData, onUpdate, user }) {
   const [kardex, setKardex] = useState(caseData.kardex_data || null);
   const [generating, setGenerating] = useState(false);
   const [medUrl, setMedUrl] = useState(null);
@@ -282,6 +298,10 @@ function KardexTab({ caseData, onUpdate }) {
         treatment_plan: result.treatment_plan,
         status: "admitted",
         admission_date: caseData.admission_date || new Date().toISOString(),
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
       });
       onUpdate();
     } catch {
@@ -404,7 +424,7 @@ function KardexTab({ caseData, onUpdate }) {
   );
 }
 
-function DischargeTab({ caseData, onUpdate }) {
+function DischargeTab({ caseData, onUpdate, user }) {
   const [pathway, setPathway] = useState(caseData.discharge_pathway || "not_discharged");
   const [docs, setDocs] = useState({
     gp_letter: caseData.gp_letter || "",
@@ -423,6 +443,10 @@ function DischargeTab({ caseData, onUpdate }) {
         gp_letter: result.gp_letter,
         patient_education_sheet: result.patient_education_sheet,
         status: "discharged",
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
       });
       onUpdate();
     } catch {
@@ -485,12 +509,12 @@ function DischargeTab({ caseData, onUpdate }) {
 
       {docs.gp_letter && (
         <>
-          <Section title="GP Discharge Letter" icon={FileText}>
+          <Section title="GP Discharge Letter" icon={FileText} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
             <AIBadge />
             <pre className="text-sm text-foreground whitespace-pre-wrap mt-2 font-body">{docs.gp_letter}</pre>
           </Section>
 
-          <Section title="Patient Education Sheet" icon={FileCheck}>
+          <Section title="Patient Education Sheet" icon={FileCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
             <AIBadge />
             <pre className="text-sm text-foreground whitespace-pre-wrap mt-2 font-body">{docs.patient_education_sheet}</pre>
           </Section>
@@ -527,7 +551,13 @@ function ReviewTab({ caseData, onUpdate, user }) {
   const handleSavePlan = async () => {
     setSavingPlan(true);
     try {
-      await base44.entities.CaseFile.update(caseData.id, { treatment_plan: plan });
+      await base44.entities.CaseFile.update(caseData.id, {
+        treatment_plan: plan,
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
+      });
       onUpdate();
     } catch {
       alert("Failed to save plan.");
@@ -541,7 +571,13 @@ function ReviewTab({ caseData, onUpdate, user }) {
     try {
       const suggested = await suggestManagementPlan(caseData);
       setPlan(suggested);
-      await base44.entities.CaseFile.update(caseData.id, { treatment_plan: suggested });
+      await base44.entities.CaseFile.update(caseData.id, {
+        treatment_plan: suggested,
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
+      });
       onUpdate();
     } catch {
       alert("Failed to generate plan.");
@@ -563,6 +599,10 @@ function ReviewTab({ caseData, onUpdate, user }) {
         reviewer_imc: user?.imc_number || "",
         review_notes: notes,
         countersigned_at: new Date().toISOString(),
+        note_author_name: user?.full_name || "Unknown",
+        note_author_grade: user?.clinical_grade || "nchd",
+        note_author_imc: user?.imc_number || "",
+        note_locked_at: new Date().toISOString(),
       });
       await base44.entities.ReviewLog.create({
         case_id: caseData.id,
@@ -618,7 +658,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
         <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canReview} />
       </Section>
 
-      <Section title="Management Plan" icon={ClipboardCheck}>
+      <Section title="Management Plan" icon={ClipboardCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <AIBadge />
@@ -652,7 +692,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
         </div>
       </Section>
 
-      <Section title="Review Notes" icon={Edit3}>
+      <Section title="Review Notes" icon={Edit3} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -771,14 +811,68 @@ function AdmissionInfoBar({ caseData }) {
   );
 }
 
-function Section({ title, icon: Icon, children }) {
+function TeamLabels({ caseData }) {
+  const labels = [];
+  if (caseData.specialty || caseData.accepting_specialty) {
+    labels.push({ icon: Stethoscope, text: caseData.accepting_specialty || caseData.specialty, color: "accent" });
+  }
+  if (caseData.on_call_consultant) {
+    labels.push({ icon: Users, text: `Consultant: ${caseData.on_call_consultant}`, color: "gold" });
+  }
+  if (caseData.on_call_registrar) {
+    labels.push({ icon: Users, text: `Registrar: ${caseData.on_call_registrar}`, color: "gold" });
+  }
+  if (caseData.on_call_sho) {
+    labels.push({ icon: Users, text: `SHO: ${caseData.on_call_sho}`, color: "gold" });
+  }
+  if (caseData.referring_team) {
+    labels.push({ icon: Send, text: `Ref: ${caseData.referring_team}`, color: "accent" });
+  }
+  if (caseData.note_locked_at) {
+    labels.push({ icon: Lock, text: `Locked: ${new Date(caseData.note_locked_at).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`, color: "muted" });
+  }
+
+  if (labels.length === 0) return null;
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-3">
-        {Icon && <Icon className="w-4 h-4 text-hive-gold" />}
-        <h3 className="font-semibold text-foreground text-sm">{title}</h3>
-      </div>
-      {children}
+    <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+      {labels.map((label, i) => {
+        const Icon = label.icon;
+        const colorClass = label.color === "gold"
+          ? "bg-hive-gold/10 text-hive-gold border-hive-gold/20"
+          : label.color === "accent"
+          ? "bg-accent/10 text-accent border-accent/20"
+          : "bg-secondary text-muted-foreground border-border";
+        return (
+          <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${colorClass}`}>
+            <Icon className="w-2.5 h-2.5" />
+            {label.text}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, children, noteAuthor, noteLockedAt, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="bg-card border border-border rounded-xl">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 w-full px-4 py-3 text-left hover:bg-secondary/30 transition-colors rounded-t-xl"
+      >
+        {Icon && <Icon className="w-4 h-4 text-hive-gold flex-shrink-0" />}
+        <h3 className="font-semibold text-foreground text-sm flex-1">{title}</h3>
+        {(noteAuthor || noteLockedAt) && (
+          <span className="text-[10px] text-muted-foreground hidden sm:inline-flex items-center gap-1">
+            {noteAuthor && <><Lock className="w-2.5 h-2.5" />{noteAuthor}</>}
+            {noteLockedAt && <span className="ml-1">· {new Date(noteLockedAt).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
+          </span>
+        )}
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
