@@ -9,7 +9,8 @@
       "type": "string",
       "enum": [
         "orthopaedics",
-        "general_surgery"
+        "general_surgery",
+        "ent"
       ]
     },
     "consultant_name": {

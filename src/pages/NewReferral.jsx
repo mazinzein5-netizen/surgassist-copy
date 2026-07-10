@@ -7,6 +7,7 @@ import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
 import ReferrerDetails from "@/components/ReferrerDetails";
+import PatientDetailsBox from "@/components/PatientDetailsBox";
 import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users, Type, ScanLine, Monitor, Upload, Bluetooth } from "lucide-react";
 
 const INPUT_MODES = [
@@ -37,6 +38,8 @@ export default function NewReferral() {
   const [triageResult, setTriageResult] = useState(null);
   const [onCallTeam, setOnCallTeam] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState({});
+  const [patientInfo, setPatientInfo] = useState({});
+  const [patientAutoFilled, setPatientAutoFilled] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const expandedRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -71,6 +74,26 @@ export default function NewReferral() {
       const result = await processReferralChat(newMessages, userMessage.content, attachments, referrerInfo);
       const assistantMessage = { role: "assistant", content: result.response, requiredInfo: result.required_info };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Auto-fill patient details from AI extraction (only fill empty fields — don't overwrite manual edits)
+      setPatientInfo(prev => {
+        const merged = { ...prev };
+        let changed = false;
+        const fields = [
+          ["patient_name", result.patient_name],
+          ["patient_dob", result.patient_dob],
+          ["patient_mrn", result.patient_mrn],
+          ["patient_gender", result.patient_gender],
+        ];
+        for (const [key, val] of fields) {
+          if (val && !prev[key]) {
+            merged[key] = val;
+            changed = true;
+          }
+        }
+        if (changed) setPatientAutoFilled(true);
+        return merged;
+      });
 
       if (result.triage_decision && result.triage_decision !== "pending") {
         setTriageResult(result);
@@ -140,7 +163,7 @@ export default function NewReferral() {
     if (!triageResult) return;
     setLoading(true);
     try {
-      const mrn = triageResult.patient_mrn || "";
+      const mrn = patientInfo.patient_mrn || triageResult.patient_mrn || "";
       let patientId = null;
 
       // Cloud memory: find or create Patient record by MRN
@@ -149,19 +172,21 @@ export default function NewReferral() {
           const existingPatients = await base44.entities.Patient.filter({ mrn }, "-created_date", 1);
           if (existingPatients.length > 0) {
             patientId = existingPatients[0].id;
-            // Update patient with any new info
+            // Update patient with any new info (patientInfo box takes priority)
             await base44.entities.Patient.update(patientId, {
-              name: triageResult.patient_name || existingPatients[0].name,
-              dob: triageResult.patient_dob || existingPatients[0].dob,
+              name: patientInfo.patient_name || triageResult.patient_name || existingPatients[0].name,
+              dob: patientInfo.patient_dob || triageResult.patient_dob || existingPatients[0].dob,
+              gender: patientInfo.patient_gender || existingPatients[0].gender,
               hospital: user?.hospital || existingPatients[0].hospital,
               department: triageResult.department || existingPatients[0].department,
               specialty: triageResult.accepting_specialty || existingPatients[0].specialty,
             });
           } else {
             const newPatient = await base44.entities.Patient.create({
-              name: triageResult.patient_name || "Unknown Patient",
-              dob: triageResult.patient_dob || null,
+              name: patientInfo.patient_name || triageResult.patient_name || "Unknown Patient",
+              dob: patientInfo.patient_dob || triageResult.patient_dob || null,
               mrn: mrn,
+              gender: patientInfo.patient_gender || null,
               hospital: user?.hospital || "",
               department: triageResult.department || user?.department || "orthopaedics",
               specialty: triageResult.accepting_specialty || "",
@@ -174,9 +199,10 @@ export default function NewReferral() {
       }
 
       const caseData = {
-        patient_name: triageResult.patient_name || "Unknown Patient",
-        patient_dob: triageResult.patient_dob || null,
+        patient_name: patientInfo.patient_name || triageResult.patient_name || "Unknown Patient",
+        patient_dob: patientInfo.patient_dob || triageResult.patient_dob || null,
         patient_mrn: mrn,
+        patient_gender: patientInfo.patient_gender || null,
         patient_id: patientId,
         hospital: user?.hospital || "",
         department: triageResult.department || user?.department || "orthopaedics",
@@ -232,6 +258,11 @@ export default function NewReferral() {
       {/* On-Call Team Bar */}
       <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
         <OnCallTeamBar department={user?.department} onTeamChange={setOnCallTeam} />
+      </div>
+
+      {/* Patient Details */}
+      <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
+        <PatientDetailsBox value={patientInfo} onChange={setPatientInfo} autoFilled={patientAutoFilled} />
       </div>
 
       {/* Referrer Details */}

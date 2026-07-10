@@ -1,64 +1,85 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Users, Loader2, Edit3, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Loader2, Edit3, Check, ChevronDown, ChevronUp } from "lucide-react";
+
+const ALL_DEPTS = [
+  { value: "general_surgery", label: "General Surgery" },
+  { value: "orthopaedics", label: "Orthopaedics" },
+  { value: "ent", label: "ENT" },
+];
+
+const DEPT_LABELS = {
+  general_surgery: "General Surgery",
+  orthopaedics: "Orthopaedics",
+  ent: "ENT",
+};
 
 export default function OnCallTeamBar({ department, onTeamChange }) {
   const { user } = useAuth();
-  const [team, setTeam] = useState(null);
-  const [editing, setEditing] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [selectedDepts, setSelectedDepts] = useState([department || user?.department || "general_surgery"]);
+  const [editingDept, setEditingDept] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [draft, setDraft] = useState({ consultant_name: "", registrar_name: "", sho_name: "" });
 
-  const dept = department || user?.department || "general_surgery";
-
   useEffect(() => {
-    loadTeam();
-  }, [dept]);
+    loadTeams();
+  }, [selectedDepts]);
 
-  const loadTeam = async () => {
+  const loadTeams = async () => {
     setLoading(true);
     try {
-      const teams = await base44.entities.OnCallTeam.filter(
-        { department: dept, is_active: true },
+      const allTeams = await base44.entities.OnCallTeam.filter(
+        { is_active: true },
         "-shift_date",
-        1
+        50
       );
-      if (teams.length > 0) {
-        setTeam(teams[0]);
-        setDraft({
-          consultant_name: teams[0].consultant_name || "",
-          registrar_name: teams[0].registrar_name || "",
-          sho_name: teams[0].sho_name || "",
-        });
-        if (onTeamChange) onTeamChange(teams[0]);
-      } else {
-        setTeam(null);
-        setDraft({ consultant_name: "", registrar_name: "", sho_name: "" });
-      }
+      const filtered = allTeams.filter(t => selectedDepts.includes(t.department));
+      setTeams(filtered);
+      if (onTeamChange && filtered.length > 0) onTeamChange(filtered);
     } catch {
-      setTeam(null);
+      setTeams([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleDept = (deptValue) => {
+    setSelectedDepts(prev => {
+      if (prev.includes(deptValue)) {
+        return prev.length > 1 ? prev.filter(d => d !== deptValue) : prev;
+      }
+      return [...prev, deptValue];
+    });
+  };
+
+  const startEdit = (dept) => {
+    const existing = teams.find(t => t.department === dept);
+    setDraft({
+      consultant_name: existing?.consultant_name || "",
+      registrar_name: existing?.registrar_name || "",
+      sho_name: existing?.sho_name || "",
+    });
+    setEditingDept(dept);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      if (team) {
-        const updated = await base44.entities.OnCallTeam.update(team.id, {
+      const existing = teams.find(t => t.department === editingDept);
+      if (existing) {
+        const updated = await base44.entities.OnCallTeam.update(existing.id, {
           consultant_name: draft.consultant_name,
           registrar_name: draft.registrar_name,
           sho_name: draft.sho_name,
         });
-        setTeam(updated);
-        if (onTeamChange) onTeamChange(updated);
+        setTeams(prev => prev.map(t => t.id === updated.id ? updated : t));
       } else {
         const created = await base44.entities.OnCallTeam.create({
-          department: dept,
+          department: editingDept,
           hospital: user?.hospital || "",
           consultant_name: draft.consultant_name,
           registrar_name: draft.registrar_name,
@@ -66,10 +87,10 @@ export default function OnCallTeamBar({ department, onTeamChange }) {
           shift_date: new Date().toISOString().split("T")[0],
           is_active: true,
         });
-        setTeam(created);
-        if (onTeamChange) onTeamChange(created);
+        setTeams(prev => [...prev, created]);
       }
-      setEditing(false);
+      if (onTeamChange) onTeamChange(teams);
+      setEditingDept(null);
     } catch {
       alert("Failed to save on-call team.");
     } finally {
@@ -85,7 +106,7 @@ export default function OnCallTeamBar({ department, onTeamChange }) {
     );
   }
 
-  const hasTeam = team && (team.consultant_name || team.registrar_name || team.sho_name);
+  const selectedLabels = selectedDepts.map(d => DEPT_LABELS[d] || d).join(" + ");
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -95,44 +116,73 @@ export default function OnCallTeamBar({ department, onTeamChange }) {
       >
         <Users className="w-4 h-4 text-hive-gold" />
         <span className="text-xs font-semibold text-foreground uppercase tracking-wide flex-1 text-left">
-          On-Call Team — {dept === "general_surgery" ? "General Surgery" : "Orthopaedics"}
+          On-Call — {selectedLabels}
         </span>
         {collapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
       </button>
 
       {!collapsed && (
         <div className="px-4 pb-3">
-          {editing ? (
-            <div className="space-y-2">
-              <TeamInput label="Consultant" value={draft.consultant_name} onChange={v => setDraft(p => ({ ...p, consultant_name: v }))} />
-              <TeamInput label="Registrar" value={draft.registrar_name} onChange={v => setDraft(p => ({ ...p, registrar_name: v }))} />
-              <TeamInput label="SHO" value={draft.sho_name} onChange={v => setDraft(p => ({ ...p, sho_name: v }))} />
-              <div className="flex gap-2 pt-1">
-                <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90 disabled:opacity-50">
-                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Save Team
-                </button>
-                <button onClick={() => { setEditing(false); loadTeam(); }} className="px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs hover:bg-secondary/80">
-                  Cancel
-                </button>
+          {/* Department cross-cover selector */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {ALL_DEPTS.map(d => (
+              <button
+                key={d.value}
+                onClick={() => toggleDept(d.value)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  selectedDepts.includes(d.value)
+                    ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30"
+                    : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Teams for all selected departments */}
+          {selectedDepts.map(dept => {
+            const team = teams.find(t => t.department === dept);
+            const hasTeam = team && (team.consultant_name || team.registrar_name || team.sho_name);
+            return (
+              <div key={dept} className="border-t border-border first:border-t-0 pt-2 first:pt-0">
+                <p className="text-[10px] font-bold text-hive-gold uppercase tracking-wider mb-1.5">
+                  {DEPT_LABELS[dept] || dept}
+                </p>
+                {editingDept === dept ? (
+                  <div className="space-y-2">
+                    <TeamInput label="Consultant" value={draft.consultant_name} onChange={v => setDraft(p => ({ ...p, consultant_name: v }))} />
+                    <TeamInput label="Registrar" value={draft.registrar_name} onChange={v => setDraft(p => ({ ...p, registrar_name: v }))} />
+                    <TeamInput label="SHO" value={draft.sho_name} onChange={v => setDraft(p => ({ ...p, sho_name: v }))} />
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90 disabled:opacity-50">
+                        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Save
+                      </button>
+                      <button onClick={() => setEditingDept(null)} className="px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs hover:bg-secondary/80">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : hasTeam ? (
+                  <div className="space-y-1.5">
+                    <TeamRow label="Consultant" name={team.consultant_name} />
+                    <TeamRow label="Registrar" name={team.registrar_name} />
+                    <TeamRow label="SHO" name={team.sho_name} />
+                    <button onClick={() => startEdit(dept)} className="inline-flex items-center gap-1 text-xs text-hive-gold hover:underline mt-1">
+                      <Edit3 className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-1.5">
+                    <p className="text-xs text-muted-foreground mb-1.5">No team set</p>
+                    <button onClick={() => startEdit(dept)} className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-hive-gold/80 text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90">
+                      <Users className="w-3 h-3" /> Set Team
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ) : hasTeam ? (
-            <div className="space-y-1.5">
-              <TeamRow label="Consultant" name={team.consultant_name} />
-              <TeamRow label="Registrar" name={team.registrar_name} />
-              <TeamRow label="SHO" name={team.sho_name} />
-              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-xs text-hive-gold hover:underline mt-1">
-                <Edit3 className="w-3 h-3" /> Edit team
-              </button>
-            </div>
-          ) : (
-            <div className="text-center py-2">
-              <p className="text-xs text-muted-foreground mb-2">No on-call team set for today</p>
-              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90">
-                <Users className="w-3 h-3" /> Set On-Call Team
-              </button>
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
     </div>
