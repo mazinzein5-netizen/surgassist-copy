@@ -88,3 +88,24 @@
     border-radius: 3px;
   }
 }
+
+@keyframes bee-buzz {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-3px) rotate(-8deg); }
+  40% { transform: translateX(3px) rotate(8deg); }
+  60% { transform: translateX(-2px) rotate(-5deg); }
+  80% { transform: translateX(2px) rotate(5deg); }
+}
+
+@keyframes bee-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-bee-buzz {
+  animation: bee-buzz 0.4s ease-in-out infinite;
+}
+
+.animate-bee-hover {
+  animation: bee-hover 2s ease-in-out infinite;
+}

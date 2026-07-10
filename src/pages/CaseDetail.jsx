@@ -18,6 +18,7 @@ import ImagingReports from "@/components/ImagingReports";
 import { compileProformaLines } from "@/components/OrthoProforma";
 import { downloadCallNotePDF } from "@/lib/pdfExport";
 import ReviewInvestigations from "@/components/ReviewInvestigations";
+import BeeMonitor from "@/components/BeeMonitor";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -335,6 +336,8 @@ function KardexTab({ caseData, onUpdate }) {
 
       {kardex && (
         <>
+          <BeeMonitor caseData={caseData} kardex={kardex} />
+
           {kardex.alerts?.length > 0 && (
             <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
