@@ -26,6 +26,7 @@ import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
 import CaseTimeline from "@/components/CaseTimeline";
 import ChronologicalNotes from "@/components/ChronologicalNotes";
+import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 
 const TABS = [
@@ -231,7 +232,7 @@ function SummaryTab({ caseData }) {
 
       {caseData.admission_note && (
         <Section title="Admission Note" icon={FileText} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-          <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{caseData.admission_note}</pre>
+          <FormattedAdmissionNote note={caseData.admission_note} />
           <button
             onClick={() => {
               const el = document.createElement("textarea");
