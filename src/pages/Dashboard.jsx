@@ -6,7 +6,7 @@ import HexBadge from "@/components/HexBadge";
 import { INEWSAlertCard, PendingReferralCard } from "@/components/DashboardAlertCard";
 import HoneycombTitle from "@/components/HoneycombTitle";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
-import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren } from "lucide-react";
+import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren, ChevronDown } from "lucide-react";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
   useEffect(() => {
     loadCases();
@@ -67,15 +68,23 @@ export default function Dashboard() {
         <div className="absolute inset-0 hex-pattern-dense opacity-70 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/60 to-transparent pointer-events-none" />
         <div className="relative p-5 md:p-6">
-          <div className="flex items-center gap-2 mb-2">
+          <button
+            onClick={() => setHeaderCollapsed(v => !v)}
+            className="flex items-center gap-2 mb-2 w-full text-left"
+          >
             <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl text-foreground font-medium [font-family:'Titan_One',_system-ui]">
-            Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {GRADE_LABELS[user?.clinical_grade] || "NCHD"} · {DEPT_LABELS[user?.department] || "Surgery"} · {user?.hospital || "HSE Hospital"}
-          </p>
+            <ChevronDown className={`w-4 h-4 text-hive-gold ml-auto transition-transform duration-200 ${headerCollapsed ? "" : "rotate-180"}`} />
+          </button>
+          {!headerCollapsed && (
+            <>
+              <h1 className="text-2xl md:text-3xl text-foreground font-medium [font-family:'Titan_One',_system-ui]">
+                Welcome, Dr. {user?.full_name?.split(" ").pop() || "User"}
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {GRADE_LABELS[user?.clinical_grade] || "NCHD"} · {DEPT_LABELS[user?.department] || "Surgery"} · {user?.hospital || "HSE Hospital"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
