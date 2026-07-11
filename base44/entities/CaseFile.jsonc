@@ -50,7 +50,7 @@
     },
     "accepting_specialty": {
       "type": "string",
-      "description": "The specific specialty that accepted the referral (e.g., Orthopaedics, General Surgery)"
+      "description": "The specific specialty that accepted the referral"
     },
     "on_call_consultant": {
       "type": "string",
@@ -82,7 +82,7 @@
     },
     "referrer_department": {
       "type": "string",
-      "description": "Department/team of the referrer (e.g. ED, Ward 3B, Orthopaedics)"
+      "description": "Department/team of the referrer"
     },
     "referrer_contact": {
       "type": "string",
@@ -98,6 +98,7 @@
         "clerking",
         "investigations",
         "admitted",
+        "discharge_ready",
         "discharged",
         "inews_consult"
       ],

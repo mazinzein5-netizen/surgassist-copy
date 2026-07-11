@@ -32,7 +32,7 @@
     },
     "specialty": {
       "type": "string",
-      "description": "Current admitting specialty (e.g. Orthopaedics, General Surgery, ENT)"
+      "description": "Current admitting specialty"
     },
     "consultant_name": {
       "type": "string",
@@ -57,7 +57,11 @@
     },
     "social_history": {
       "type": "string",
-      "description": "Persistent social history (smoking, alcohol, occupation, living situation)"
+      "description": "Persistent social history"
+    },
+    "patient_email": {
+      "type": "string",
+      "description": "Patient's email address for discharge reports and communication"
     }
   },
   "required": [

@@ -46,6 +46,11 @@
     },
     "learning_points": {
       "type": "string"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set to true when case is discharged to archive the record"
     }
   },
   "required": [

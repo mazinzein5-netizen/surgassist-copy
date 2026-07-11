@@ -1,0 +1,40 @@
+{
+  "name": "Discharge Ready Automation",
+  "description": "When a CaseFile status changes to 'discharge_ready', triggers Clip to compile a discharge summary from recent ChatMessages and LabResults, emails the final report to the patient, and archives the TheatreLog record.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "CaseFile",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"discharge_ready\" and .trigger.old_data.status != \"discharge_ready\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "discharge_ready_automation",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "compile_summary": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "compileDischargeSummary",
+            "args": {
+              "case_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Compile Discharge Summary",
+            "description": "Clip compiles summary, emails patient, archives TheatreLog"
+          }
+        }
+      }
+    ]
+  }
+}
