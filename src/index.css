@@ -30,9 +30,9 @@
     --input: 220 13% 91%;
     --ring: 220 15% 15%;
     --radius: 0.5rem;
-    --hive-navy: 220 15% 15%;
-    --hive-gold: 220 15% 15%;
-    --hive-gold-dark: 220 15% 25%;
+    --hive-navy: 229 80% 26%;
+    --hive-gold: 45 96% 58%;
+    --hive-gold-dark: 45 90% 45%;
     --font-heading: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-display: 'Inter', sans-serif;
@@ -59,19 +59,19 @@
 
 @layer utilities {
   .hex-pattern {
-    background-image: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='56' height='100' viewBox='0 0 56 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='28,0 56,16 56,48 28,64 0,48 0,16' fill='none' stroke='%23FBC02D' stroke-opacity='0.06' stroke-width='1'/%3E%3Cpolygon points='28,50 56,66 56,98 28,114 0,98 0,66' fill='none' stroke='%23FBC02D' stroke-opacity='0.04' stroke-width='1'/%3E%3C/svg%3E");
   }
   .hex-pattern-dense {
-    background-image: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='28' height='50' viewBox='0 0 28 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='14,0 28,8 28,24 14,32 0,24 0,8' fill='none' stroke='%23FBC02D' stroke-opacity='0.08' stroke-width='1'/%3E%3Cpolygon points='14,25 28,33 28,49 14,57 0,49 0,33' fill='none' stroke='%23FBC02D' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
   }
   .hex-clip {
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   }
   .gold-gradient {
-    background: transparent;
+    background: linear-gradient(135deg, hsl(45 96% 58%) 0%, hsl(45 90% 45%) 100%);
   }
   .navy-gradient {
-    background: transparent;
+    background: linear-gradient(135deg, hsl(229 80% 26%) 0%, hsl(229 80% 18%) 100%);
   }
   .scrollbar-thin {
     scrollbar-width: thin;
