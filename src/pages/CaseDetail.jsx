@@ -23,6 +23,7 @@ import ExportShareDialog from "@/components/ExportShareDialog";
 import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
+import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -198,6 +199,7 @@ function SummaryTab({ caseData }) {
   const proformaLines = compileProformaLines(caseData.proforma_data, caseData);
 
   return (
+    <CollapsibleSections>
     <div className="space-y-4">
       {proformaLines.length > 0 && (
         <Section title="Key Clinical Highlights" icon={Activity}>
@@ -281,6 +283,7 @@ function SummaryTab({ caseData }) {
         </Section>
       )}
     </div>
+    </CollapsibleSections>
   );
 }
 
@@ -331,6 +334,7 @@ function KardexTab({ caseData, onUpdate, user }) {
   };
 
   return (
+    <CollapsibleSections>
     <div className="space-y-4">
       {!kardex && (
         <div className="bg-card border border-border rounded-xl p-6">
@@ -436,6 +440,7 @@ function KardexTab({ caseData, onUpdate, user }) {
         </>
       )}
     </div>
+    </CollapsibleSections>
   );
 }
 
@@ -493,6 +498,7 @@ function DischargeTab({ caseData, onUpdate, user }) {
   const handlePrint = () => window.print();
 
   return (
+    <CollapsibleSections>
     <div className="space-y-4">
       {pathway === "not_discharged" && (
         <div className="bg-card border border-border rounded-xl p-6">
@@ -552,6 +558,7 @@ function DischargeTab({ caseData, onUpdate, user }) {
         </>
       )}
     </div>
+    </CollapsibleSections>
   );
 }
 
@@ -643,6 +650,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
   const hasMeds = kardex?.medications && kardex.medications.length > 0;
 
   return (
+    <CollapsibleSections>
     <div className="space-y-4">
       {/* Jack — Safety & Guidelines Guardian (background) */}
       <JackSafetyPanel caseData={caseData} />
@@ -823,6 +831,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
         </button>
       )}
     </div>
+    </CollapsibleSections>
   );
 }
 
@@ -927,29 +936,6 @@ function TeamLabels({ caseData }) {
           </span>
         );
       })}
-    </div>
-  );
-}
-
-function Section({ title, icon: Icon, children, noteAuthor, noteLockedAt, defaultOpen = true }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="bg-card border border-border rounded-xl">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 w-full px-4 py-3 text-left hover:bg-secondary/30 transition-colors rounded-t-xl"
-      >
-        {Icon && <Icon className="w-4 h-4 text-hive-gold flex-shrink-0" />}
-        <h3 className="font-semibold text-foreground text-sm flex-1">{title}</h3>
-        {(noteAuthor || noteLockedAt) && (
-          <span className="text-[10px] text-muted-foreground hidden sm:inline-flex items-center gap-1">
-            {noteAuthor && <><Lock className="w-2.5 h-2.5" />{noteAuthor}</>}
-            {noteLockedAt && <span className="ml-1">· {new Date(noteLockedAt).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
-          </span>
-        )}
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-      </button>
-      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
