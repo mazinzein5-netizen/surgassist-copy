@@ -61,6 +61,7 @@ const AuthenticatedApp = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new-referral" element={<NewReferral />} />
           <Route path="/cases" element={<CaseList />} />
+          <Route path="/patients" element={<PatientHistory />} />
           <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/inews-consult" element={<INEWSConsult />} />
           <Route path="/inpatient-monitor" element={<InpatientMonitor />} />

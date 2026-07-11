@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import HiveLogo from "./HiveLogo";
 import AgentLauncher from "./AgentLauncher";
-import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, LayoutDashboard, AlertTriangle, Activity, MessageSquare, User, ChevronDown } from "lucide-react";
+import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard } from "lucide-react";
 
 const MAIN_NAV = [
   { to: "/", label: "Referrals", icon: FolderOpen },
-  { to: "/patient-history", label: "Patients", icon: Users },
+  { to: "/patients", label: "Patients", icon: Users },
   { to: "/theatre-log", label: "Theatre", icon: ClipboardList },
 ];
 
@@ -16,39 +15,40 @@ const MORE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/inews-consult", label: "INEWS Consult", icon: AlertTriangle },
   { to: "/inpatient-monitor", label: "Inpatient Monitor", icon: Activity },
-  { to: "/handover", label: "Handover", icon: Users },
+  { to: "/handover", label: "Handover", icon: BedDouble },
+  { to: "/patient-history", label: "Patient Memory", icon: FolderOpen },
   { to: "/contacts", label: "Contacts", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
 export default function AppLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
 
+  const isActive = (to) => {
+    if (to === "/") return location.pathname === "/";
+    return location.pathname.startsWith(to);
+  };
+
   const handleLogout = async () => { await logout(); };
-  const isActive = (to) => location.pathname === to;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 flex-col bg-card border-r border-border">
-        <div className="px-5 py-5 border-b border-border">
-          <Link to="/"><HiveLogo size={28} showText /></Link>
+      <aside className="hidden md:flex w-56 flex-col bg-white border-r border-gray-200">
+        <div className="px-5 py-6 border-b border-gray-100">
+          <h1 className="text-lg font-bold text-gray-900">HIVE</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Surgical Assistant</p>
         </div>
-
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {MAIN_NAV.map((item) => {
+          {MAIN_NAV.map(item => {
             const Icon = item.icon;
             return (
-              <Link
-                key={item.to}
-                to={item.to}
+              <Link key={item.to} to={item.to}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
+                  isActive(item.to) ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"
+                }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {item.label}
               </Link>
@@ -57,58 +57,100 @@ export default function AppLayout() {
         </nav>
 
         {/* More dropdown */}
-        <div className="px-3 relative">
-          <button
-            onClick={() => setMoreOpen(v => !v)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors ${
-              moreOpen ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
+        <div className="relative px-3 pb-2">
+          {moreOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMoreOpen(false)} />
+              <div className="absolute bottom-full left-3 right-3 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-20">
+                {MORE_NAV.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <Link key={item.to} to={item.to} onClick={() => setMoreOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          <button onClick={() => setMoreOpen(!moreOpen)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 w-full">
             <MoreHorizontal className="w-4 h-4 flex-shrink-0" />
             More
-            <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${moreOpen ? "rotate-180" : ""}`} />
           </button>
-          {moreOpen && (
-            <div className="absolute bottom-full left-3 right-3 mb-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-10">
-              {MORE_NAV.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-                      isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </div>
 
-        {/* User + logout */}
-        <div className="px-3 py-3 border-t border-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground font-medium text-sm">
+        <div className="px-4 py-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-sm">
               {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground truncate">{user?.full_name || "User"}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name || "User"}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-muted transition-colors w-full"
-          >
+          <button onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors w-full">
             <LogOut className="w-4 h-4" />
             Sign out
           </button>
         </div>
       </aside>
+
+      {/* Mobile bottom tab bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex">
+        {MAIN_NAV.map(item => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.to} to={item.to}
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 ${
+                isActive(item.to) ? "text-gray-900" : "text-gray-400"
+              }`}>
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+        <button onClick={() => setMoreOpen(true)}
+          className="flex-1 flex flex-col items-center gap-1 py-2.5 text-gray-400">
+          <MoreHorizontal className="w-5 h-5" />
+          <span className="text-[10px] font-medium">More</span>
+        </button>
+      </div>
+
+      {/* Mobile More sheet */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMoreOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 pb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-900">More</h2>
+              <button onClick={() => setMoreOpen(false)} className="text-gray-400">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {MORE_NAV.map(item => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.to} to={item.to} onClick={() => setMoreOpen(false)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50">
+                    <Icon className="w-5 h-5 text-gray-600" />
+                    <span className="text-xs text-gray-600 text-center">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+            <button onClick={handleLogout}
+              className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm text-red-600 bg-red-50">
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -116,60 +158,6 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around z-40">
-        {MAIN_NAV.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 py-2 px-4 ${isActive(item.to) ? "text-foreground" : "text-muted-foreground"}`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
-        <button
-          onClick={() => setMoreOpen(v => !v)}
-          className={`flex flex-col items-center gap-0.5 py-2 px-4 ${moreOpen ? "text-foreground" : "text-muted-foreground"}`}
-        >
-          <MoreHorizontal className="w-5 h-5" />
-          <span className="text-[10px] font-medium">More</span>
-        </button>
-      </nav>
-
-      {/* Mobile More sheet */}
-      {moreOpen && (
-        <div className="md:hidden fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute bottom-16 left-0 right-0 bg-card border-t border-border rounded-t-xl p-3 space-y-1">
-            {MORE_NAV.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMoreOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive w-full"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
-          </div>
-        </div>
-      )}
 
       <AgentLauncher />
     </div>

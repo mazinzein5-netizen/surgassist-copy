@@ -2,20 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { generateKardex, generateDischargeDocuments, generateConsentChecklist, generateInvestigationPlan, generatePreClerkingGuidance, generateAdmissionNote, uploadFile, suggestManagementPlan } from "@/lib/hiveApi";
+import { generateKardex, generateDischargeDocuments, suggestManagementPlan, uploadFile } from "@/lib/hiveApi";
 
-import AIBadge from "@/components/AIBadge";
-import HexBadge from "@/components/HexBadge";
-
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator, Clock, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
-import InvestigationPrompts from "@/components/InvestigationPrompts";
-import ShareNoteButtons from "@/components/ShareNoteButtons";
-import PrintPlanNote from "@/components/PrintPlanNote";
 import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
 import ImagingReports from "@/components/ImagingReports";
-import { compileProformaLines } from "@/components/OrthoProforma";
 import { downloadCallNotePDF } from "@/lib/pdfExport";
 import ReviewInvestigations from "@/components/ReviewInvestigations";
 import BeeMonitor from "@/components/BeeMonitor";
@@ -24,12 +17,24 @@ import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
-import CaseTimeline from "@/components/CaseTimeline";
 import ChronologicalNotes from "@/components/ChronologicalNotes";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
-import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
-import CaseChat from "@/components/CaseChat";
-import { formatTimestamp } from "@/lib/formatDate";
+import PrintPlanNote from "@/components/PrintPlanNote";
+import CollapsibleCard from "@/components/CollapsibleCard";
+import WorkflowStepper from "@/components/WorkflowStepper";
+import TriageChat from "@/components/TriageChat";
+import PathwayActions from "@/components/PathwayActions";
+import StatusPill from "@/components/StatusPill";
+import { formatTimestamp } from "@/lib/workflow";
+import AIBadge from "@/components/AIBadge";
+
+const PREOP_LABELS = {
+  not_listed: "Not Listed",
+  listed: "Listed",
+  in_theatre: "In Theatre",
+  post_op: "Post-Op",
+  not_applicable: "N/A",
+};
 
 export default function CaseDetail() {
   const { id } = useParams();
@@ -42,9 +47,7 @@ export default function CaseDetail() {
   const [showExport, setShowExport] = useState(false);
   const [showDrugCalc, setShowDrugCalc] = useState(false);
 
-  useEffect(() => {
-    loadCase();
-  }, [id]);
+  useEffect(() => { loadCase(); }, [id]);
 
   const loadCase = async () => {
     try {
@@ -54,17 +57,14 @@ export default function CaseDetail() {
         const photoData = await base44.entities.ClinicalPhoto.filter({ case_id: id });
         setPhotos(photoData);
       } catch {}
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <div className="w-8 h-8 border-4 border-border border-t-hive-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
       </div>
     );
   }
@@ -72,137 +72,194 @@ export default function CaseDetail() {
   if (!caseData) {
     return (
       <div className="p-8 text-center">
-        <p className="text-muted-foreground">Case not found.</p>
-        <Link to="/cases" className="text-hive-gold hover:underline mt-2 inline-block">← Back to cases</Link>
+        <p className="text-gray-500">Case not found.</p>
+        <Link to="/" className="text-gray-700 hover:underline mt-2 inline-block">← Back to referrals</Link>
       </div>
     );
   }
 
+  const clinicalHistory = extractClinicalHistory(caseData);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="border-b border-border px-4 md:px-8 py-4">
-        <div className="max-w-3xl mx-auto">
-          <button onClick={() => navigate("/cases")} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
+      <div className="border-b border-gray-200 px-4 md:px-8 py-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <button onClick={() => navigate("/")} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 mb-2">
             <ArrowLeft className="w-3 h-3" /> Back to Referrals
           </button>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-lg md:text-xl font-semibold text-foreground">{caseData.patient_name}</h1>
-                <HexBadge status={caseData.status} />
-                {caseData.review_status === "countersigned" && <HexBadge status="countersigned" />}
-              </div>
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+              <h1 className="text-lg md:text-xl font-bold text-gray-900">{caseData.patient_name}</h1>
+              <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
                 {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
-                <span>{formatTimestamp(caseData.created_date)}</span>
+                {caseData.patient_dob && <span>DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
+                <span className="capitalize">{caseData.department?.replace("_", " ")}</span>
+              </div>
+              <div className="flex items-center gap-3 mt-1.5">
+                <StatusPill caseData={caseData} />
+                <span className="text-xs text-gray-400">{formatTimestamp(caseData.created_date)}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button onClick={() => setShowExport(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-80">
-                <Download className="w-3.5 h-3.5" /> Export
+          </div>
+
+          {/* Workflow Stepper */}
+          <div className="mt-4">
+            <WorkflowStepper caseData={caseData} />
+          </div>
+
+          {/* Action buttons */}
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <button onClick={() => setShowExport(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export & Share
+            </button>
+            {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
+              <button onClick={() => setShowPrintNote(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+                <Printer className="w-3.5 h-3.5" /> Print Plan
               </button>
-              {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
-                <button onClick={() => setShowPrintNote(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-muted">
-                  <ScrollText className="w-3.5 h-3.5" /> Print
-                </button>
-              )}
-              <button onClick={() => setShowDrugCalc(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-muted">
-                <Calculator className="w-3.5 h-3.5" /> Drugs
-              </button>
-            </div>
+            )}
+            <button onClick={() => setShowDrugCalc(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+              <Calculator className="w-3.5 h-3.5" /> Drug Calculator
+            </button>
+            <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
           </div>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content — single scroll with collapsible sections */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
-        <div className="max-w-3xl mx-auto space-y-2">
-          {/* 1. AI Triage Chat — OPEN */}
-          <Section title="AI Triage Chat" icon={MessageSquare} defaultOpen={true}>
-            <CaseChat caseId={id} caseData={caseData} />
-          </Section>
+        <div className="max-w-4xl mx-auto space-y-3">
+          {/* 1. AI Triage Chat — always open */}
+          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare} defaultOpen={true}>
+            <TriageChat caseId={id} caseData={caseData} />
+          </CollapsibleCard>
 
-          {/* 2. Patient Info — collapsed */}
-          <Section title="Patient Info" icon={User} defaultOpen={false}>
-            <div className="grid grid-cols-2 gap-3">
-              <InfoField label="Name" value={caseData.patient_name || "—"} />
-              <InfoField label="MRN" value={caseData.patient_mrn || "—"} />
-              <InfoField label="DOB" value={caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"} />
-              <InfoField label="Gender" value={caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"} />
-              <InfoField label="Hospital" value={caseData.hospital || "—"} />
-              <InfoField label="Ward" value={caseData.ward || "—"} />
-              <InfoField label="Bed" value={caseData.bed_number || "—"} />
-              <InfoField label="Department" value={caseData.department?.replace("_", " ") || "—"} />
+          {/* 2. Patient Info */}
+          <CollapsibleCard title="Patient Info" icon={User}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <InfoItem label="Name" value={caseData.patient_name} />
+              <InfoItem label="DOB" value={caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-GB") : "—"} />
+              <InfoItem label="MRN" value={caseData.patient_mrn || "—"} />
+              <InfoItem label="Gender" value={caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"} />
+              <InfoItem label="Hospital" value={caseData.hospital || "—"} />
+              <InfoItem label="Ward" value={caseData.ward || "—"} />
+              <InfoItem label="Bed" value={caseData.bed_number || "—"} />
+              <InfoItem label="Consultant" value={caseData.consultant_name || "—"} />
+              <InfoItem label="Specialty" value={caseData.specialty || caseData.accepting_specialty || "—"} />
             </div>
-          </Section>
+          </CollapsibleCard>
 
-          {/* 3. Referral Summary — collapsed */}
-          <Section title="Referral Summary" icon={FileText} defaultOpen={false}>
+          {/* 3. Referral Summary */}
+          <CollapsibleCard title="Referral Summary" icon={FileText}>
             <div className="space-y-3">
               {caseData.presenting_complaint && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Presenting Complaint</p>
-                  <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
-                </div>
+                <Field label="Presenting Complaint" value={caseData.presenting_complaint} />
+              )}
+              {caseData.mechanism_of_injury && (
+                <Field label="Mechanism of Injury" value={caseData.mechanism_of_injury} />
               )}
               {caseData.referral_summary && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Referral Summary</p>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary}</p>
+                <Field label="Referral Summary" value={caseData.referral_summary} />
+              )}
+              {caseData.referral_mode && (
+                <Field label="Referral Mode" value={caseData.referral_mode} capitalize />
+              )}
+              {caseData.referrer_name && (
+                <Field label="Referrer" value={`${caseData.referrer_name}${caseData.referrer_grade ? ` · ${caseData.referrer_grade}` : ""}${caseData.referrer_department ? ` · ${caseData.referrer_department}` : ""}`} />
+              )}
+              {caseData.referring_team && (
+                <Field label="Referring Team" value={caseData.referring_team} />
+              )}
+
+              {/* Triage decision */}
+              {caseData.triage_decision && caseData.triage_decision !== "pending" && (
+                <div className="pt-3 border-t border-gray-100">
+                  <StatusPill caseData={caseData} />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
-                <InfoField label="Referrer" value={caseData.referrer_name || "—"} />
-                <InfoField label="Grade" value={caseData.referrer_grade || "—"} />
-                <InfoField label="Mode" value={caseData.referral_mode || "—"} />
-                <InfoField label="Referring Team" value={caseData.referring_team || "—"} />
-              </div>
+              {caseData.triage_reasoning && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Reasoning</p>
+                  <ReasoningBullets text={caseData.triage_reasoning} />
+                </div>
+              )}
+              {caseData.triage_guideline && (
+                <Field label="Guideline Applied" value={caseData.triage_guideline} />
+              )}
+              {caseData.pre_clerking_guidance && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AIBadge />
+                    <p className="text-sm text-gray-500">Pre-Clerking Guidance</p>
+                  </div>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{caseData.pre_clerking_guidance}</p>
+                </div>
+              )}
+              {caseData.admission_note && (
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500 mb-1">Admission Note</p>
+                  <FormattedAdmissionNote note={caseData.admission_note} />
+                </div>
+              )}
             </div>
-          </Section>
+          </CollapsibleCard>
 
-          {/* 4. Clinical Proforma — collapsed */}
-          <Section title="Clinical Proforma" icon={Stethoscope} defaultOpen={false}>
+          {/* 4. Clinical Proforma */}
+          <CollapsibleCard title="Clinical Proforma" icon={Stethoscope}>
             <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
-          </Section>
+          </CollapsibleCard>
 
-          {/* 5. Investigations — collapsed */}
-          <Section title="Investigations" icon={FlaskConical} defaultOpen={false}>
+          {/* 5. Investigations */}
+          <CollapsibleCard title="Investigations" icon={FlaskConical}>
             <div className="space-y-4">
-              <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
-              <ReviewInvestigations caseData={caseData} onUpdate={loadCase} canEdit={true} />
+              <LabsImagingDiscovery caseData={caseData} />
               <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+              <ReviewInvestigations caseData={caseData} onUpdate={loadCase} canEdit={true} />
             </div>
-          </Section>
+          </CollapsibleCard>
 
-          {/* 6. Admission & Plan — collapsed */}
-          <Section title="Admission & Plan" icon={ClipboardCheck} defaultOpen={false}>
+          {/* 6. Admission & Plan */}
+          <CollapsibleCard title="Admission & Plan" icon={ClipboardCheck}>
             <div className="space-y-4">
-              <SummaryTab caseData={caseData} />
+              <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} />
               <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
+              <JackSafetyPanel caseData={caseData} />
               <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />
               <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
             </div>
-          </Section>
+          </CollapsibleCard>
 
-          {/* 7. Discharge — collapsed */}
-          <Section title="Discharge" icon={FileCheck} defaultOpen={false}>
+          {/* 7. Discharge */}
+          <CollapsibleCard title="Discharge" icon={FileCheck}>
             <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />
-          </Section>
+          </CollapsibleCard>
         </div>
       </div>
 
-      {showPrintNote && (
-        <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />
-      )}
+      {showPrintNote && <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />}
+      {showExport && <ExportShareDialog caseData={caseData} onClose={() => setShowExport(false)} />}
+      {showDrugCalc && <DrugCalculatorPanel caseData={caseData} onClose={() => setShowDrugCalc(false)} />}
+    </div>
+  );
+}
 
-      {showExport && (
-        <ExportShareDialog caseData={caseData} onClose={() => setShowExport(false)} />
-      )}
+function InfoItem({ label, value }) {
+  return (
+    <div>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm font-medium text-gray-900 mt-0.5">{value}</p>
+    </div>
+  );
+}
 
-      {showDrugCalc && (
-        <DrugCalculatorPanel caseData={caseData} onClose={() => setShowDrugCalc(false)} />
-      )}
+function Field({ label, value, capitalize }) {
+  return (
+    <div>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className={`text-sm text-gray-900 mt-0.5 whitespace-pre-wrap ${capitalize ? "capitalize" : ""}`}>{value}</p>
     </div>
   );
 }
@@ -236,180 +293,6 @@ function extractClinicalHistory(caseData) {
   return history;
 }
 
-function SummaryTab({ caseData }) {
-  const proformaLines = compileProformaLines(caseData.proforma_data, caseData);
-  const clinicalHistory = extractClinicalHistory(caseData);
-
-  return (
-    <CollapsibleSections>
-    <div className="space-y-4">
-      {/* === PRESENTING COMPLAINT === */}
-      <Section title="Presenting Complaint" icon={Activity}>
-        <div className="space-y-3">
-          {caseData.presenting_complaint && (
-            <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
-          )}
-          {caseData.mechanism_of_injury && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Mechanism of Injury</p>
-              <p className="text-sm text-foreground">{caseData.mechanism_of_injury}</p>
-            </div>
-          )}
-          {caseData.referral_summary && (
-            <div className="pt-2 border-t border-border/50">
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Referral Summary</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary}</p>
-              {caseData.referral_mode && (
-                <p className="text-xs text-muted-foreground mt-1">Input mode: <span className="capitalize">{caseData.referral_mode}</span></p>
-              )}
-            </div>
-          )}
-          {!caseData.presenting_complaint && !caseData.referral_summary && (
-            <p className="text-sm text-muted-foreground">No presenting complaint recorded.</p>
-          )}
-        </div>
-      </Section>
-
-      {/* === CLINICAL HISTORY === */}
-      {clinicalHistory.length > 0 || proformaLines.length > 0 ? (
-        <Section title="Clinical History" icon={Stethoscope}>
-          <div className="space-y-3">
-            {proformaLines.length > 0 && (
-              <div className="space-y-2">
-                {proformaLines.map((group, gi) => (
-                  <div key={gi}>
-                    <p className="text-xs font-semibold text-accent uppercase mb-0.5">{group.section}</p>
-                    {group.lines.map((line, li) => (
-                      <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-            {clinicalHistory.map((item, i) => (
-              <div key={i} className={proformaLines.length > 0 ? "pt-2 border-t border-border/50" : ""}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{item.label}</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      ) : null}
-
-      {/* === DIAGNOSIS & ASSESSMENT === */}
-      {(caseData.triage_decision || caseData.admission_note || caseData.pre_clerking_guidance) && (
-        <Section title="Diagnosis & Assessment" icon={ClipboardCheck}>
-          <div className="space-y-3">
-            {caseData.triage_decision && caseData.triage_decision !== "pending" && (
-              <div>
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-2 ${
-                  caseData.triage_decision === "accept" ? "bg-success/15 text-success" :
-                  caseData.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
-                  "bg-warning/15 text-warning"
-                }`}>
-                  <span className="font-bold text-sm uppercase">
-                    {caseData.triage_decision === "accept" && caseData.accepting_specialty
-                      ? `Accepted — ${caseData.accepting_specialty}`
-                      : caseData.triage_decision.replace("_", " ")}
-                  </span>
-                </div>
-                {caseData.triage_reasoning && (
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
-                    <p className="text-sm text-foreground">{caseData.triage_reasoning}</p>
-                  </div>
-                )}
-                {caseData.triage_guideline && (
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Guideline Applied</p>
-                    <p className="text-sm text-foreground">{caseData.triage_guideline}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {caseData.pre_clerking_guidance && (
-              <div className="pt-2 border-t border-border/50">
-                <div className="flex items-center gap-2 mb-1">
-                  <AIBadge />
-                  <p className="text-xs font-semibold text-muted-foreground uppercase">Pre-Clerking Guidance</p>
-                </div>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.pre_clerking_guidance}</p>
-              </div>
-            )}
-
-            {caseData.admission_note && (
-              <div className="pt-2 border-t border-border/50">
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Admission Note</p>
-                <FormattedAdmissionNote note={caseData.admission_note} />
-                <button
-                  onClick={() => {
-                    const el = document.createElement("textarea");
-                    el.value = caseData.admission_note;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(el);
-                  }}
-                  className="mt-2 text-xs text-hive-gold hover:underline"
-                >
-                  Copy to clipboard
-                </button>
-              </div>
-            )}
-          </div>
-        </Section>
-      )}
-
-      {/* === PLAN === */}
-      {(caseData.treatment_plan || caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable")) && (
-        <Section title="Plan" icon={FileCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-          <div className="space-y-3">
-            {caseData.treatment_plan && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Treatment Plan</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.treatment_plan}</p>
-              </div>
-            )}
-            {(caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable") || caseData.pod != null) && (
-              <div className={caseData.treatment_plan ? "pt-2 border-t border-border/50" : ""}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Operative Details</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {caseData.procedure_name && (
-                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Procedure</p>
-                      <p className="text-sm text-foreground">{caseData.procedure_name}</p>
-                    </div>
-                  )}
-                  {caseData.procedure_date && (
-                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Date</p>
-                      <p className="text-sm text-foreground">{new Date(caseData.procedure_date).toLocaleDateString("en-IE")}</p>
-                    </div>
-                  )}
-                  {caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable" && (
-                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pre-Op Status</p>
-                      <p className="text-sm text-foreground">{PREOP_LABELS[caseData.pre_op_status] || caseData.pre_op_status.replace("_", " ")}</p>
-                    </div>
-                  )}
-                  {caseData.pod != null && (
-                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Post-Op Day</p>
-                      <p className="text-sm text-foreground">Day {caseData.pod}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </Section>
-      )}
-    </div>
-    </CollapsibleSections>
-  );
-}
-
 function KardexTab({ caseData, onUpdate, user }) {
   const [kardex, setKardex] = useState(caseData.kardex_data || null);
   const [generating, setGenerating] = useState(false);
@@ -423,9 +306,7 @@ function KardexTab({ caseData, onUpdate, user }) {
     try {
       const result = await uploadFile(file);
       setMedUrl(result.file_url);
-    } catch {
-      alert("Failed to upload image.");
-    }
+    } catch { alert("Failed to upload image."); }
   };
 
   const handleGenerate = async () => {
@@ -444,7 +325,6 @@ function KardexTab({ caseData, onUpdate, user }) {
         note_author_imc: user?.imc_number || "",
         note_locked_at: new Date().toISOString(),
       });
-      // Create permanent admission record in the patient's CaseNote history
       await base44.entities.CaseNote.create({
         case_id: caseData.id,
         patient_id: caseData.patient_id || "",
@@ -457,53 +337,28 @@ function KardexTab({ caseData, onUpdate, user }) {
         is_locked: true,
       });
       onUpdate();
-    } catch {
-      alert("Failed to generate kardex.");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
+    } catch { alert("Failed to generate kardex."); }
+    finally { setGenerating(false); }
   };
 
   return (
-    <CollapsibleSections>
-    <div className="space-y-4">
+    <div className="space-y-3">
       {!kardex && (
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-2">Generate Inpatient Kardex</h3>
-          <p className="text-sm text-muted-foreground mb-4">Upload a photo of the patient's medications for a tailored kardex, or generate a generic baseline kardex based on demographics and comorbidities.</p>
-          <AIBadge />
-          <div className="mt-3 mb-4">
-            <label className="text-xs font-medium text-muted-foreground block mb-1">Known Comorbidities</label>
-            <textarea
-              value={comorbidities}
-              onChange={(e) => setComorbidities(e.target.value)}
-              rows={2}
-              placeholder="e.g. T2DM, HTN, AF on warfarin, CKD stage 3"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-            />
-          </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <h3 className="font-semibold text-gray-900 text-sm mb-2">Generate Inpatient Kardex</h3>
+          <p className="text-sm text-gray-500 mb-3">Upload a photo of medications or generate a baseline kardex.</p>
+          <textarea value={comorbidities} onChange={(e) => setComorbidities(e.target.value)} rows={2}
+            placeholder="e.g. T2DM, HTN, AF on warfarin, CKD stage 3"
+            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none mb-3" />
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleUpload} />
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80">
-              <Camera className="w-4 h-4" /> Upload Medication List
+            <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
+              <Camera className="w-4 h-4" /> Upload Meds
             </button>
-            {medUrl && (
-              <>
-                <img src={medUrl} alt="meds" className="w-16 h-16 rounded-lg object-cover border border-border" />
-                <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90">
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Tailored Kardex
-                </button>
-              </>
-            )}
-            {!medUrl && (
-              <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90">
-                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Generic Kardex
-              </button>
-            )}
+            {medUrl && <img src={medUrl} alt="meds" className="w-12 h-12 rounded-lg object-cover border border-gray-200" />}
+            <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pill className="w-4 h-4" />} Generate Kardex
+            </button>
           </div>
         </div>
       )}
@@ -513,48 +368,43 @@ function KardexTab({ caseData, onUpdate, user }) {
           <BeeMonitor caseData={caseData} kardex={kardex} />
 
           {kardex.alerts?.length > 0 && (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-                <span className="font-semibold text-destructive text-sm">Contraindication Alerts</span>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+                <span className="font-semibold text-red-600 text-sm">Contraindication Alerts</span>
               </div>
-              <ul className="space-y-1">
-                {kardex.alerts.map((a, i) => <li key={i} className="text-sm text-destructive">• {a}</li>)}
+              <ul className="space-y-0.5">
+                {kardex.alerts.map((a, i) => <li key={i} className="text-sm text-red-600">• {a}</li>)}
               </ul>
             </div>
           )}
 
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h3 className="font-semibold text-foreground text-sm">Inpatient Kardex — {caseData.patient_name}</h3>
-              <div className="flex items-center gap-2">
-                <AIBadge />
-                <button onClick={handlePrint} className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
-                  <Printer className="w-4 h-4" />
-                </button>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 text-sm">Inpatient Kardex — {caseData.patient_name}</h3>
+              <button onClick={() => window.print()} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+                <Printer className="w-4 h-4" />
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
-                    <th className="text-left px-4 py-2 font-medium">Drug (Generic)</th>
+                  <tr className="border-b border-gray-200 text-xs text-gray-500">
+                    <th className="text-left px-4 py-2 font-medium">Drug</th>
                     <th className="text-left px-4 py-2 font-medium">Dose</th>
                     <th className="text-left px-4 py-2 font-medium">Route</th>
                     <th className="text-left px-4 py-2 font-medium">Frequency</th>
                     <th className="text-left px-4 py-2 font-medium">Indication</th>
-                    <th className="text-left px-4 py-2 font-medium">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {kardex.medications?.map((med, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="px-4 py-3 font-medium text-foreground">{med.drug}</td>
-                      <td className="px-4 py-3 text-foreground">{med.dose}</td>
-                      <td className="px-4 py-3 text-foreground">{med.route}</td>
-                      <td className="px-4 py-3 text-foreground">{med.frequency}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{med.indication}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{med.notes}</td>
+                    <tr key={i} className="border-b border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-900">{med.drug}</td>
+                      <td className="px-4 py-3 text-gray-900">{med.dose}</td>
+                      <td className="px-4 py-3 text-gray-900">{med.route}</td>
+                      <td className="px-4 py-3 text-gray-900">{med.frequency}</td>
+                      <td className="px-4 py-3 text-gray-500">{med.indication}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -563,19 +413,20 @@ function KardexTab({ caseData, onUpdate, user }) {
           </div>
 
           {kardex.iv_fluids && (
-            <Section title="IV Fluid Plan" icon={Activity}>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{kardex.iv_fluids}</p>
-            </Section>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">IV Fluid Plan</p>
+              <p className="text-sm text-gray-900 whitespace-pre-wrap">{kardex.iv_fluids}</p>
+            </div>
           )}
           {kardex.treatment_plan && (
-            <Section title="Treatment Plan" icon={ClipboardCheck}>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{kardex.treatment_plan}</p>
-            </Section>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Treatment Plan</p>
+              <p className="text-sm text-gray-900 whitespace-pre-wrap">{kardex.treatment_plan}</p>
+            </div>
           )}
         </>
       )}
     </div>
-    </CollapsibleSections>
   );
 }
 
@@ -587,14 +438,19 @@ function DischargeTab({ caseData, onUpdate, user }) {
   });
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [transferSpecialty, setTransferSpecialty] = useState("");
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (type) => {
     setGenerating(true);
     try {
-      const result = await generateDischargeDocuments(caseData.presenting_complaint, caseData.referral_summary, pathway, caseData.patient_name);
+      let pathwayValue = "no_followup";
+      if (type === "opd") pathwayValue = "opd_followup";
+
+      const result = await generateDischargeDocuments(caseData.presenting_complaint, caseData.referral_summary, pathwayValue, caseData.patient_name);
       setDocs(result);
-      await base44.entities.CaseFile.update(caseData.id, {
-        discharge_pathway: pathway,
+
+      const updates = {
+        discharge_pathway: pathwayValue,
         gp_letter: result.gp_letter,
         patient_education_sheet: result.patient_education_sheet,
         status: "discharged",
@@ -602,13 +458,17 @@ function DischargeTab({ caseData, onUpdate, user }) {
         note_author_grade: user?.clinical_grade || "nchd",
         note_author_imc: user?.imc_number || "",
         note_locked_at: new Date().toISOString(),
-      });
+      };
+
+      if (type === "transfer") {
+        updates.accepting_specialty = transferSpecialty;
+      }
+
+      await base44.entities.CaseFile.update(caseData.id, updates);
+      setPathway(pathwayValue);
       onUpdate();
-    } catch {
-      alert("Failed to generate discharge documents.");
-    } finally {
-      setGenerating(false);
-    }
+    } catch { alert("Failed to generate discharge documents."); }
+    finally { setGenerating(false); }
   };
 
   const handleEmail = async (type) => {
@@ -617,83 +477,82 @@ function DischargeTab({ caseData, onUpdate, user }) {
     setSending(true);
     try {
       const body = type === "patient" ? docs.patient_education_sheet : docs.gp_letter;
-      await base44.integrations.Core.SendEmail({
-        to: email,
-        subject: `HIVE Surgical Assistant — ${caseData.patient_name} — Discharge Summary`,
-        body,
-      });
+      await base44.integrations.Core.SendEmail({ to: email, subject: `HIVE — ${caseData.patient_name} — Discharge Summary`, body });
       alert("Email sent successfully.");
-    } catch {
-      alert("Failed to send email.");
-    } finally {
-      setSending(false);
-    }
+    } catch { alert("Failed to send email."); }
+    finally { setSending(false); }
   };
 
-  const handlePrint = () => window.print();
-
   return (
-    <CollapsibleSections>
     <div className="space-y-4">
-      {pathway === "not_discharged" && (
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-semibold text-foreground mb-3">Discharge Pathway</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <button onClick={() => setPathway("opd_followup")} className="p-4 rounded-lg border border-border hover:border-hive-gold/30 text-left transition-colors">
-              <FileCheck className="w-5 h-5 text-hive-gold mb-2" />
-              <div className="font-medium text-sm text-foreground">OPD Follow-Up</div>
-              <div className="text-xs text-muted-foreground mt-1">Full GP letter with follow-up plan</div>
-            </button>
-            <button onClick={() => setPathway("no_followup")} className="p-4 rounded-lg border border-border hover:border-hive-gold/30 text-left transition-colors">
-              <FileCheck className="w-5 h-5 text-hive-gold mb-2" />
-              <div className="font-medium text-sm text-foreground">No Follow-Up</div>
-              <div className="text-xs text-muted-foreground mt-1">Condensed safety-net letter</div>
-            </button>
+      {pathway === "not_discharged" && !docs.gp_letter && (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">Select a discharge pathway:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <DischargeOption icon={FileCheck} title="Discharge Home" desc="GP letter, patient education, safety net"
+              onClick={() => handleGenerate("home")} disabled={generating} />
+            <DischargeOption icon={Share2} title="To Other Specialty" desc="Handover summary to another team"
+              onClick={() => {
+                const s = prompt("Enter accepting specialty/team:");
+                if (s) { setTransferSpecialty(s); handleGenerate("transfer"); }
+              }} disabled={generating} />
+            <DischargeOption icon={FileCheck} title="OPD Follow-up" desc="GP letter with follow-up plan"
+              onClick={() => handleGenerate("opd")} disabled={generating} />
           </div>
-        </div>
-      )}
-
-      {pathway !== "not_discharged" && !docs.gp_letter && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
-          <AIBadge />
-          <p className="text-sm text-muted-foreground mt-3 mb-4">Generate discharge documents for: <span className="font-medium text-foreground">{pathway === "opd_followup" ? "OPD Follow-Up" : "No Follow-Up (Safety-Net)"}</span></p>
-          <button onClick={handleGenerate} disabled={generating} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-hive-gold text-hive-gold-foreground font-medium text-sm hover:bg-hive-gold/90">
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck className="w-4 h-4" />} Generate Documents
-          </button>
+          {generating && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            </div>
+          )}
         </div>
       )}
 
       {docs.gp_letter && (
         <>
-          <Section title="GP Discharge Letter" icon={FileText} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-            <AIBadge />
-            <pre className="text-sm text-foreground whitespace-pre-wrap mt-2 font-body">{docs.gp_letter}</pre>
-          </Section>
-
-          <Section title="Patient Education Sheet" icon={FileCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-            <AIBadge />
-            <pre className="text-sm text-foreground whitespace-pre-wrap mt-2 font-body">{docs.patient_education_sheet}</pre>
-          </Section>
-
-          <div className="bg-card border border-border rounded-xl p-4">
-            <h4 className="text-sm font-semibold text-foreground mb-3">Delivery Options</h4>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => handleEmail("patient")} disabled={sending} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm hover:bg-secondary/80">
-                <Send className="w-4 h-4" /> Email Patient
-              </button>
-              <button onClick={() => handleEmail("gp")} disabled={sending} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm hover:bg-secondary/80">
-                <Send className="w-4 h-4" /> Email GP
-              </button>
-              <button onClick={handlePrint} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm hover:bg-secondary/80">
-                <Printer className="w-4 h-4" /> Print (WiFi/BT)
-              </button>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <AIBadge />
+              <p className="text-sm text-gray-500">GP Discharge Letter</p>
             </div>
-            {sending && <p className="text-xs text-muted-foreground mt-2">Sending...</p>}
+            <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans bg-gray-50 border border-gray-200 rounded-lg p-3">{docs.gp_letter}</pre>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <AIBadge />
+              <p className="text-sm text-gray-500">Patient Education Sheet</p>
+            </div>
+            <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans bg-gray-50 border border-gray-200 rounded-lg p-3">{docs.patient_education_sheet}</pre>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => handleEmail("patient")} disabled={sending}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+              <Send className="w-4 h-4" /> Email Patient
+            </button>
+            <button onClick={() => handleEmail("gp")} disabled={sending}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+              <Send className="w-4 h-4" /> Email GP
+            </button>
+            <button onClick={() => window.print()}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+              <Printer className="w-4 h-4" /> Print
+            </button>
           </div>
         </>
       )}
     </div>
-    </CollapsibleSections>
+  );
+}
+
+function DischargeOption({ icon: Icon, title, desc, onClick, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className="flex flex-col items-start p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-colors text-left disabled:opacity-50">
+      <Icon className="w-5 h-5 text-gray-600 mb-2" />
+      <span className="font-semibold text-sm text-gray-900">{title}</span>
+      <span className="text-xs text-gray-500 mt-0.5">{desc}</span>
+    </button>
   );
 }
 
@@ -703,10 +562,7 @@ function ReviewTab({ caseData, onUpdate, user }) {
   const [signing, setSigning] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
   const [suggestingPlan, setSuggestingPlan] = useState(false);
-  const [showMeds, setShowMeds] = useState(false);
-  // All team members can edit review notes and management plan
-  const canEdit = true;
-  // Only senior grades can countersign
+
   const canCountersign = user?.clinical_grade === "sho" || user?.clinical_grade === "registrar" || user?.clinical_grade === "consultant";
 
   const handleSavePlan = async () => {
@@ -720,11 +576,8 @@ function ReviewTab({ caseData, onUpdate, user }) {
         note_locked_at: new Date().toISOString(),
       });
       onUpdate();
-    } catch {
-      alert("Failed to save plan.");
-    } finally {
-      setSavingPlan(false);
-    }
+    } catch { alert("Failed to save plan."); }
+    finally { setSavingPlan(false); }
   };
 
   const handleSuggestPlan = async () => {
@@ -740,16 +593,11 @@ function ReviewTab({ caseData, onUpdate, user }) {
         note_locked_at: new Date().toISOString(),
       });
       onUpdate();
-    } catch {
-      alert("Failed to generate plan.");
-    } finally {
-      setSuggestingPlan(false);
-    }
+    } catch { alert("Failed to generate plan."); }
+    finally { setSuggestingPlan(false); }
   };
 
-  const handlePrintPDF = () => {
-    downloadCallNotePDF({ ...caseData, treatment_plan: plan });
-  };
+  const handlePrintPDF = () => { downloadCallNotePDF({ ...caseData, treatment_plan: plan }); };
 
   const handleCountersign = async () => {
     setSigning(true);
@@ -774,166 +622,53 @@ function ReviewTab({ caseData, onUpdate, user }) {
         notes,
       });
       onUpdate();
-    } catch {
-      alert("Failed to countersign.");
-    } finally {
-      setSigning(false);
-    }
+    } catch { alert("Failed to countersign."); }
+    finally { setSigning(false); }
   };
 
-  const kardex = caseData.kardex_data;
-  const hasMeds = kardex?.medications && kardex.medications.length > 0;
-
   return (
-    <CollapsibleSections>
     <div className="space-y-4">
-      {/* Jack — Safety & Guidelines Guardian (background) */}
-      <JackSafetyPanel caseData={caseData} />
-
-      {/* Labs & Imaging Discovery (background) */}
-      <LabsImagingDiscovery caseData={caseData} />
-
-      {/* Info banner for non-senior users */}
-      {!canCountersign && (
-        <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
-          <p className="text-sm text-warning">You can edit notes and the management plan. Countersigning requires SHO grade or above.</p>
-        </div>
-      )}
-
-      <Section title="Case Review" icon={ClipboardCheck}>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Referral Time</p>
-              <p className="text-sm text-foreground">{new Date(caseData.created_date).toLocaleString("en-IE")}</p>
-            </div>
-            <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Note Time</p>
-              <p className="text-sm text-foreground">{caseData.countersigned_at ? new Date(caseData.countersigned_at).toLocaleString("en-IE") : new Date().toLocaleString("en-IE")}</p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Triage Decision</p>
-            <p className="text-sm text-foreground capitalize">{caseData.triage_decision?.replace("_", " ") || "N/A"}</p>
-          </div>
-          {caseData.triage_reasoning && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
-              <ReasoningBullets text={caseData.triage_reasoning} />
-            </div>
-          )}
-        </div>
-      </Section>
-
-      <Section title="Investigations" icon={FlaskConical}>
-        <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canEdit} />
-      </Section>
-
-      {/* Permanent patient record — chronological notes */}
       <ChronologicalNotes caseData={caseData} />
 
-      {/* Medications quick-view button */}
-      {hasMeds && (
-        <Section title="Medications" icon={Pill}>
-          <button
-            onClick={() => setShowMeds(v => !v)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-          >
-            <span className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Pill className="w-4 h-4 text-hive-gold" />
-              View Inpatient Medications ({kardex.medications.length})
-            </span>
-            {showMeds ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
-          </button>
-          {showMeds && (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
-                    <th className="text-left px-3 py-2 font-medium">Drug</th>
-                    <th className="text-left px-3 py-2 font-medium">Dose</th>
-                    <th className="text-left px-3 py-2 font-medium">Route</th>
-                    <th className="text-left px-3 py-2 font-medium">Frequency</th>
-                    <th className="text-left px-3 py-2 font-medium">Indication</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {kardex.medications.map((med, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="px-3 py-2 font-medium text-foreground">{med.drug}</td>
-                      <td className="px-3 py-2 text-foreground">{med.dose}</td>
-                      <td className="px-3 py-2 text-foreground">{med.route}</td>
-                      <td className="px-3 py-2 text-foreground">{med.frequency}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{med.indication}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {kardex.iv_fluids && (
-                <div className="mt-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">IV Fluids</p>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{kardex.iv_fluids}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </Section>
-      )}
-
-      <Section title="Management Plan" icon={ClipboardCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-        <div className="space-y-2">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <AIBadge />
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSuggestPlan}
-                  disabled={suggestingPlan}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 disabled:opacity-40"
-                >
-                  {suggestingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  AI Suggest Plan
-                </button>
-                <button
-                  onClick={handleSavePlan}
-                  disabled={savingPlan}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 disabled:opacity-40"
-                >
-                  {savingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
-                  Save Plan
-                </button>
-              </div>
-            </div>
-            <textarea
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-              rows={6}
-              placeholder="Edit the management plan, or click AI Suggest Plan..."
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-            />
+      {/* Management Plan */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-gray-500">Management Plan</p>
+          <div className="flex items-center gap-2">
+            <AIBadge />
+            <button onClick={handleSuggestPlan} disabled={suggestingPlan}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 disabled:opacity-40">
+              {suggestingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              AI Suggest
+            </button>
+            <button onClick={handleSavePlan} disabled={savingPlan}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-40">
+              {savingPlan ? <Loader2 className="w-3 h-3 animate-spin" /> : <ClipboardCheck className="w-3 h-3" />}
+              Save
+            </button>
           </div>
         </div>
-      </Section>
+        <textarea value={plan} onChange={(e) => setPlan(e.target.value)} rows={6}
+          placeholder="Edit the management plan, or click AI Suggest..."
+          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none" />
+      </div>
 
-      <Section title="Review Notes" icon={Edit3} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={5}
-          placeholder="Add your review notes, annotations, or changes needed..."
-          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none"
-        />
-      </Section>
+      {/* Review Notes */}
+      <div>
+        <p className="text-sm text-gray-500 mb-1">Review Notes</p>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
+          placeholder="Add review notes, annotations, or changes needed..."
+          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none" />
+      </div>
 
       {caseData.review_status === "countersigned" && (
-        <div className="bg-success/10 border border-success/30 rounded-lg p-4 flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-success" />
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-600" />
           <div>
-            <p className="text-sm font-medium text-success">Countersigned</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm font-medium text-green-700">Countersigned</p>
+            <p className="text-xs text-gray-500">
               By Dr. {user?.full_name} · IMC: {caseData.reviewer_imc || "N/A"}
-              {caseData.countersigned_at && ` · ${new Date(caseData.countersigned_at).toLocaleString("en-IE")}`}
+              {caseData.countersigned_at && ` · ${new Date(caseData.countersigned_at).toLocaleString("en-GB")}`}
             </p>
           </div>
         </div>
@@ -941,148 +676,24 @@ function ReviewTab({ caseData, onUpdate, user }) {
 
       {canCountersign && caseData.review_status !== "countersigned" && (
         <div className="flex gap-2">
-          <button
-            onClick={handleCountersign}
-            disabled={signing}
-            className="flex-1 px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
-          >
-            {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
+          <button onClick={handleCountersign} disabled={signing}
+            className="flex-1 px-4 py-3 rounded-lg bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 flex items-center justify-center gap-2">
+            {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
             Countersign (IMC: {user?.imc_number || "N/A"})
           </button>
-          <button
-            onClick={handlePrintPDF}
-            className="px-4 py-3 rounded-lg bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80 flex items-center justify-center gap-2"
-          >
-            <Printer className="w-4 h-4" />
-            Print PDF
+          <button onClick={handlePrintPDF}
+            className="px-4 py-3 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 flex items-center justify-center gap-2">
+            <Printer className="w-4 h-4" /> Print PDF
           </button>
         </div>
       )}
 
       {caseData.review_status === "countersigned" && (
-        <button
-          onClick={handlePrintPDF}
-          className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground font-semibold text-sm hover:bg-secondary/80 flex items-center justify-center gap-2"
-        >
-          <Printer className="w-4 h-4" />
-          Print Signed Note (PDF)
+        <button onClick={handlePrintPDF}
+          className="w-full px-4 py-3 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 flex items-center justify-center gap-2">
+          <Printer className="w-4 h-4" /> Print Signed Note (PDF)
         </button>
       )}
-    </div>
-    </CollapsibleSections>
-  );
-}
-
-function isConsentIncomplete(caseData) {
-  const theatreBound = caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre" ||
-    caseData.status === "accepted" || caseData.status === "admitted" || caseData.status === "investigations";
-  if (!theatreBound) return false;
-  if (!caseData.consent_checklist) return true;
-  try {
-    const parsed = typeof caseData.consent_checklist === "string"
-      ? JSON.parse(caseData.consent_checklist)
-      : caseData.consent_checklist;
-    const checked = parsed.checked || {};
-    return !Object.values(checked).every(Boolean);
-  } catch {
-    return true;
-  }
-}
-
-function InfoField({ label, value }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm text-foreground">{value}</p>
-    </div>
-  );
-}
-
-const PREOP_LABELS = {
-  not_listed: "Not Listed",
-  listed: "Listed",
-  in_theatre: "In Theatre",
-  post_op: "Post-Op",
-  not_applicable: "N/A",
-};
-
-function AdmissionInfoBar({ caseData }) {
-  const admitted = caseData.admission_date ? new Date(caseData.admission_date) : null;
-  const procDate = caseData.procedure_date ? new Date(caseData.procedure_date) : null;
-  const pod = procDate ? Math.floor((new Date() - procDate) / (1000 * 60 * 60 * 24)) : null;
-
-  const items = [
-    {
-      label: "Admitted",
-      value: admitted ? admitted.toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" }) : "Not admitted",
-      highlight: !admitted,
-    },
-    {
-      label: "Pre-Op Status",
-      value: PREOP_LABELS[caseData.pre_op_status] || "Not Listed",
-      highlight: caseData.pre_op_status === "listed" || caseData.pre_op_status === "in_theatre",
-    },
-    {
-      label: "POD",
-      value: pod !== null ? `Day ${pod}` : "—",
-    },
-    {
-      label: "Procedure",
-      value: caseData.procedure_name || "Not listed",
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-      {items.map((item) => (
-        <div key={item.label} className={`rounded-lg px-3 py-2 border ${item.highlight ? "bg-hive-gold/10 border-hive-gold/30" : "bg-background border-border"}`}>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
-          <p className={`text-sm font-medium ${item.highlight ? "text-hive-gold" : "text-foreground"}`}>{item.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TeamLabels({ caseData }) {
-  const labels = [];
-  if (caseData.specialty || caseData.accepting_specialty) {
-    labels.push({ icon: Stethoscope, text: caseData.accepting_specialty || caseData.specialty, color: "accent" });
-  }
-  if (caseData.on_call_consultant) {
-    labels.push({ icon: Users, text: `Consultant: ${caseData.on_call_consultant}`, color: "gold" });
-  }
-  if (caseData.on_call_registrar) {
-    labels.push({ icon: Users, text: `Registrar: ${caseData.on_call_registrar}`, color: "gold" });
-  }
-  if (caseData.on_call_sho) {
-    labels.push({ icon: Users, text: `SHO: ${caseData.on_call_sho}`, color: "gold" });
-  }
-  if (caseData.referring_team) {
-    labels.push({ icon: Send, text: `Ref: ${caseData.referring_team}`, color: "accent" });
-  }
-  if (caseData.note_locked_at) {
-    labels.push({ icon: Lock, text: `Locked: ${new Date(caseData.note_locked_at).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`, color: "muted" });
-  }
-
-  if (labels.length === 0) return null;
-
-  return (
-    <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-      {labels.map((label, i) => {
-        const Icon = label.icon;
-        const colorClass = label.color === "gold"
-          ? "bg-hive-gold/10 text-hive-gold border-hive-gold/20"
-          : label.color === "accent"
-          ? "bg-accent/10 text-accent border-accent/20"
-          : "bg-secondary text-muted-foreground border-border";
-        return (
-          <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${colorClass}`}>
-            <Icon className="w-2.5 h-2.5" />
-            {label.text}
-          </span>
-        );
-      })}
     </div>
   );
 }
