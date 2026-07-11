@@ -25,6 +25,7 @@ import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
 import CaseTimeline from "@/components/CaseTimeline";
+import ChronologicalNotes from "@/components/ChronologicalNotes";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 
 const TABS = [
@@ -325,6 +326,18 @@ function KardexTab({ caseData, onUpdate, user }) {
         note_author_grade: user?.clinical_grade || "nchd",
         note_author_imc: user?.imc_number || "",
         note_locked_at: new Date().toISOString(),
+      });
+      // Create permanent admission record in the patient's CaseNote history
+      await base44.entities.CaseNote.create({
+        case_id: caseData.id,
+        patient_id: caseData.patient_id || "",
+        note_type: "admission",
+        content: `Patient admitted.\n\nTreatment Plan:\n${result.treatment_plan || "See kardex."}\n\nIV Fluids:\n${result.iv_fluids || "N/A"}`,
+        author_name: user?.full_name || "Unknown",
+        author_id: user?.id || "",
+        author_grade: user?.clinical_grade || "nchd",
+        author_imc: user?.imc_number || "",
+        is_locked: true,
       });
       onUpdate();
     } catch {
@@ -699,6 +712,9 @@ function ReviewTab({ caseData, onUpdate, user }) {
       <Section title="Investigations" icon={FlaskConical}>
         <ReviewInvestigations caseData={caseData} onUpdate={onUpdate} canEdit={canEdit} />
       </Section>
+
+      {/* Permanent patient record — chronological notes */}
+      <ChronologicalNotes caseData={caseData} />
 
       {/* Medications quick-view button */}
       {hasMeds && (

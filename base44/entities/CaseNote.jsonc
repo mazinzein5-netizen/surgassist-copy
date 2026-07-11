@@ -1,0 +1,61 @@
+{
+  "name": "CaseNote",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "Links to the CaseFile"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Links to Patient entity for cross-visit permanent record"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "admission",
+        "review",
+        "handover",
+        "general"
+      ],
+      "default": "review",
+      "description": "Category of clinical note"
+    },
+    "content": {
+      "type": "string",
+      "description": "Full note text"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the clinician who wrote the note"
+    },
+    "author_id": {
+      "type": "string",
+      "description": "User ID of the author"
+    },
+    "author_grade": {
+      "type": "string",
+      "enum": [
+        "nchd",
+        "sho",
+        "registrar",
+        "consultant"
+      ],
+      "description": "Grade of the author"
+    },
+    "author_imc": {
+      "type": "string",
+      "description": "IMC number of the author"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Locked notes are permanent patient records (e.g. admission notes)"
+    }
+  },
+  "required": [
+    "case_id",
+    "content",
+    "author_name"
+  ]
+}
