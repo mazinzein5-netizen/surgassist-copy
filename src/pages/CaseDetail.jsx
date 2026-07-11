@@ -202,8 +202,38 @@ export default function CaseDetail() {
   );
 }
 
+function extractClinicalHistory(caseData) {
+  const history = [];
+  const pmhItems = [];
+  const medItems = [];
+
+  if (caseData.proforma_data) {
+    for (const [key, entry] of Object.entries(caseData.proforma_data)) {
+      if (entry.answer === "yes") {
+        if (key.includes("Diabetic")) pmhItems.push("Diabetes Mellitus");
+        if (key.includes("Smoker")) pmhItems.push("Smoker");
+        if (key.includes("Osteoporosis")) pmhItems.push("Osteoporosis");
+        if (key.toLowerCase().includes("anticoagul")) pmhItems.push("On Anticoagulants");
+      }
+    }
+  }
+
+  if (caseData.kardex_data?.medications?.length > 0) {
+    caseData.kardex_data.medications.forEach(m => {
+      medItems.push(`${m.drug} ${m.dose} ${m.route} ${m.frequency}`);
+    });
+  }
+
+  if (pmhItems.length > 0) history.push({ label: "Past Medical History", value: pmhItems.join(", ") });
+  if (medItems.length > 0) history.push({ label: "Current Medications", value: medItems.join("\n") });
+  if (caseData.iv_fluid_plan) history.push({ label: "IV Fluid Plan", value: caseData.iv_fluid_plan });
+
+  return history;
+}
+
 function SummaryTab({ caseData }) {
   const proformaLines = compileProformaLines(caseData.proforma_data, caseData);
+  const clinicalHistory = extractClinicalHistory(caseData);
 
   return (
     <CollapsibleSections>
@@ -217,6 +247,33 @@ function SummaryTab({ caseData }) {
                 {group.lines.map((line, li) => (
                   <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
                 ))}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {(caseData.presenting_complaint || caseData.mechanism_of_injury) && (
+        <Section title="Presenting Complaint" icon={Activity}>
+          {caseData.presenting_complaint && (
+            <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
+          )}
+          {caseData.mechanism_of_injury && (
+            <div className="mt-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Mechanism of Injury</p>
+              <p className="text-sm text-foreground">{caseData.mechanism_of_injury}</p>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {clinicalHistory.length > 0 && (
+        <Section title="Clinical History" icon={Stethoscope}>
+          <div className="space-y-3">
+            {clinicalHistory.map((item, i) => (
+              <div key={i}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{item.label}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{item.value}</p>
               </div>
             ))}
           </div>
@@ -284,9 +341,42 @@ function SummaryTab({ caseData }) {
         </Section>
       )}
 
-      {caseData.presenting_complaint && (
-        <Section title="Presenting Complaint" icon={Activity}>
-          <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
+      {(caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable")) && (
+        <Section title="Operative Notes" icon={FileCheck}>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {caseData.procedure_name && (
+                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Procedure</p>
+                  <p className="text-sm text-foreground">{caseData.procedure_name}</p>
+                </div>
+              )}
+              {caseData.procedure_date && (
+                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Date</p>
+                  <p className="text-sm text-foreground">{new Date(caseData.procedure_date).toLocaleDateString("en-IE")}</p>
+                </div>
+              )}
+              {caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable" && (
+                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pre-Op Status</p>
+                  <p className="text-sm text-foreground">{PREOP_LABELS[caseData.pre_op_status] || caseData.pre_op_status.replace("_", " ")}</p>
+                </div>
+              )}
+              {caseData.pod != null && (
+                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Post-Op Day</p>
+                  <p className="text-sm text-foreground">Day {caseData.pod}</p>
+                </div>
+              )}
+            </div>
+            {caseData.treatment_plan && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Treatment Plan</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.treatment_plan}</p>
+              </div>
+            )}
+          </div>
         </Section>
       )}
     </div>
