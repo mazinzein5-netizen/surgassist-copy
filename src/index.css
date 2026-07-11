@@ -2,49 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Albert+Sans:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&family=Fascinate+Inline:wght@400&family=Lexend:wght@300;400;500;600;700&family=Titan+One:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 222 56% 26%;
-    --foreground: 210 40% 98%;
-    --card: 220 44% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 44% 12%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 48 93% 61%;
-    --primary-foreground: 222 47% 7%;
-    --secondary: 220 30% 16%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 30% 14%;
-    --muted-foreground: 215 20% 60%;
-    --accent: 213 94% 68%;
-    --accent-foreground: 210 40% 98%;
+    --background: 0 0% 100%;
+    --foreground: 220 15% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+    --primary: 220 15% 15%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 15%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 15% 15%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --success: 160 60% 50%;
-    --success-foreground: 222 47% 7%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 7%;
-    --border: 220 30% 18%;
-    --input: 220 30% 14%;
-    --ring: 48 93% 61%;
-    --radius: 0.625rem;
-    --hive-navy: 226 64% 30%;
-    --hive-gold: 48 93% 61%;
-    --hive-gold-dark: 41 69% 49%;
-    --font-heading: 'Albert Sans', sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --warning-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 15% 15%;
+    --radius: 0.5rem;
+    --hive-navy: 220 15% 15%;
+    --hive-gold: 220 15% 15%;
+    --hive-gold-dark: 220 15% 25%;
+    --font-heading: 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Inter', sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 222 50% 5%;
-    --sidebar-foreground: 210 30% 80%;
-    --sidebar-primary: 48 93% 61%;
-    --sidebar-primary-foreground: 222 47% 7%;
-    --sidebar-accent: 220 40% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 30% 14%;
-    --sidebar-ring: 48 93% 61%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 15% 15%;
+    --sidebar-primary: 220 15% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 15% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 220 15% 15%;
   }
 }
 
@@ -59,23 +59,23 @@
 
 @layer utilities {
   .hex-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 0L56 16.18V49.5L28 65.68L0 49.5V16.18Z' fill='none' stroke='%23F9D342' stroke-width='1' stroke-opacity='0.05'/%3E%3Cpath d='M0 49.5L28 65.68V99L0 82.82Z' fill='none' stroke='%23F9D342' stroke-width='1' stroke-opacity='0.05'/%3E%3Cpath d='M56 49.5L28 65.68V99L56 82.82Z' fill='none' stroke='%23F9D342' stroke-width='1' stroke-opacity='0.05'/%3E%3C/svg%3E");
+    background-image: none;
   }
   .hex-pattern-dense {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='50' viewBox='0 0 28 50'%3E%3Cpath d='M14 0L28 8.09V24.75L14 32.84L0 24.75V8.09Z' fill='none' stroke='%23F9D342' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Cpath d='M0 24.75L14 32.84V49.5L0 41.41Z' fill='none' stroke='%23F9D342' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Cpath d='M28 24.75L14 32.84V49.5L28 41.41Z' fill='none' stroke='%23F9D342' stroke-width='0.5' stroke-opacity='0.08'/%3E%3C/svg%3E");
+    background-image: none;
   }
   .hex-clip {
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   }
   .gold-gradient {
-    background: linear-gradient(135deg, #F9D342 0%, #D99C25 100%);
+    background: transparent;
   }
   .navy-gradient {
-    background: linear-gradient(180deg, #0A1428 0%, #0D1830 100%);
+    background: transparent;
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(220 30% 18%) transparent;
+    scrollbar-color: hsl(220 13% 80%) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -84,7 +84,7 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(220 30% 22%);
+    background-color: hsl(220 13% 80%);
     border-radius: 3px;
   }
 }

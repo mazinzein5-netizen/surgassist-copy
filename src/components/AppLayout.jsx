@@ -1,119 +1,175 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
 import HiveLogo from "./HiveLogo";
-import HexBadge from "./HexBadge";
 import AgentLauncher from "./AgentLauncher";
-import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch, MessageSquare } from "lucide-react";
+import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, LayoutDashboard, AlertTriangle, Activity, MessageSquare, User, ChevronDown } from "lucide-react";
 
-const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+const MAIN_NAV = [
+  { to: "/", label: "Referrals", icon: FolderOpen },
+  { to: "/patient-history", label: "Patients", icon: Users },
+  { to: "/theatre-log", label: "Theatre", icon: ClipboardList },
+];
+
+const MORE_NAV = [
   { to: "/new-referral", label: "New Referral", icon: FilePlus2 },
-  { to: "/cases", label: "My Cases", icon: FolderOpen },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/inews-consult", label: "INEWS Consult", icon: AlertTriangle },
   { to: "/inpatient-monitor", label: "Inpatient Monitor", icon: Activity },
-  { to: "/theatre-log", label: "Theatre Log", icon: ClipboardList },
   { to: "/handover", label: "Handover", icon: Users },
-  { to: "/patient-history", label: "Patient Memory", icon: FolderSearch },
   { to: "/contacts", label: "Contacts", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];
-
-const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 
 export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  const handleLogout = async () => { await logout(); };
+  const isActive = (to) => location.pathname === to;
 
-  const NavContent = () => (
-    <>
-      <div className="px-4 py-6 border-b border-sidebar-border">
-        <Link to="/" onClick={() => setMobileOpen(false)}>
-          <HiveLogo size={36} showText />
-        </Link>
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-56 flex-col bg-card border-r border-border">
+        <div className="px-5 py-5 border-b border-border">
+          <Link to="/"><HiveLogo size={28} showText /></Link>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {MAIN_NAV.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* More dropdown */}
+        <div className="px-3 relative">
+          <button
+            onClick={() => setMoreOpen(v => !v)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors ${
+              moreOpen ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <MoreHorizontal className="w-4 h-4 flex-shrink-0" />
+            More
+            <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+          </button>
+          {moreOpen && (
+            <div className="absolute bottom-full left-3 right-3 mb-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-10">
+              {MORE_NAV.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
+                      isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* User + logout */}
+        <div className="px-3 py-3 border-t border-border">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground font-medium text-sm">
+              {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">{user?.full_name || "User"}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-muted transition-colors w-full"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 md:pb-0">
+          <Outlet />
+        </main>
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.to;
+
+      {/* Mobile bottom tab bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around z-40">
+        {MAIN_NAV.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.to}
               to={item.to}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? "bg-hive-gold/10 text-hive-gold border border-hive-gold/20"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              }`}
+              className={`flex flex-col items-center gap-0.5 py-2 px-4 ${isActive(item.to) ? "text-foreground" : "text-muted-foreground"}`}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {item.label}
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );
         })}
-      </nav>
-      <div className="px-4 py-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-hive-gold/20 flex items-center justify-center text-hive-gold font-bold text-sm">
-            {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground truncate">{user?.full_name || "User"}</p>
-            <p className="text-xs text-muted-foreground">{GRADE_LABELS[user?.clinical_grade] || "NCHD"}</p>
-          </div>
-        </div>
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors w-full"
+          onClick={() => setMoreOpen(v => !v)}
+          className={`flex flex-col items-center gap-0.5 py-2 px-4 ${moreOpen ? "text-foreground" : "text-muted-foreground"}`}
         >
-          <LogOut className="w-4 h-4" />
-          Sign out
+          <MoreHorizontal className="w-5 h-5" />
+          <span className="text-[10px] font-medium">More</span>
         </button>
-      </div>
-    </>
-  );
+      </nav>
 
-  return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-sidebar border-r border-sidebar-border">
-        <NavContent />
-      </aside>
-
-      {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col bg-sidebar border-r border-sidebar-border animate-slide-up">
-            <button className="absolute top-4 right-4 text-muted-foreground" onClick={() => setMobileOpen(false)}>
-              <X className="w-5 h-5" />
+      {/* Mobile More sheet */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute bottom-16 left-0 right-0 bg-card border-t border-border rounded-t-xl p-3 space-y-1">
+            {MORE_NAV.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMoreOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${isActive(item.to) ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive w-full"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
             </button>
-            <NavContent />
-          </aside>
+          </div>
         </div>
       )}
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-          <button onClick={() => setMobileOpen(true)} className="text-foreground">
-            <Menu className="w-6 h-6" />
-          </button>
-          <HiveLogo size={28} />
-        </header>
-        <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <Outlet />
-        </main>
-      </div>
 
       <AgentLauncher />
     </div>

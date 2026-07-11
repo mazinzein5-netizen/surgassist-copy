@@ -7,7 +7,7 @@ import { generateKardex, generateDischargeDocuments, generateConsentChecklist, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator, Clock, MessageSquare, User } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
@@ -28,17 +28,8 @@ import CaseTimeline from "@/components/CaseTimeline";
 import ChronologicalNotes from "@/components/ChronologicalNotes";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
-
-const TABS = [
-  { id: "summary", label: "Summary", icon: FileText },
-  { id: "clerking", label: "Clerking", icon: Stethoscope },
-  { id: "imaging", label: "Imaging", icon: Scan },
-  { id: "kardex", label: "Kardex", icon: Pill },
-  { id: "consent", label: "Consent", icon: ShieldCheck },
-  { id: "review", label: "Review", icon: ClipboardCheck },
-  { id: "discharge", label: "Discharge", icon: FileCheck },
-  { id: "timeline", label: "Timeline", icon: Clock },
-];
+import CaseChat from "@/components/CaseChat";
+import { formatTimestamp } from "@/lib/formatDate";
 
 export default function CaseDetail() {
   const { id } = useParams();
@@ -46,7 +37,6 @@ export default function CaseDetail() {
   const { user } = useAuth();
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("summary");
   const [photos, setPhotos] = useState([]);
   const [showPrintNote, setShowPrintNote] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -91,99 +81,114 @@ export default function CaseDetail() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-border px-4 md:px-8 py-4 bg-card/50">
-        <div className="max-w-5xl mx-auto">
-          <button onClick={() => navigate("/cases")} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
-            <ArrowLeft className="w-3 h-3" /> Back to Cases
+      <div className="border-b border-border px-4 md:px-8 py-4">
+        <div className="max-w-3xl mx-auto">
+          <button onClick={() => navigate("/cases")} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
+            <ArrowLeft className="w-3 h-3" /> Back to Referrals
           </button>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-lg md:text-xl font-bold text-foreground">{caseData.patient_name}</h1>
+                <h1 className="text-lg md:text-xl font-semibold text-foreground">{caseData.patient_name}</h1>
                 <HexBadge status={caseData.status} />
                 {caseData.review_status === "countersigned" && <HexBadge status="countersigned" />}
               </div>
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
-                {caseData.patient_dob && <span>DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-IE")}</span>}
-                <span className="capitalize">{caseData.department?.replace("_", " ")}</span>
-                <span>{new Date(caseData.created_date).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</span>
+                <span>{formatTimestamp(caseData.created_date)}</span>
               </div>
             </div>
-          </div>
-
-          {/* Team Labels */}
-          <TeamLabels caseData={caseData} />
-
-          {/* Admission Info Bar */}
-          <AdmissionInfoBar caseData={caseData} />
-
-          {/* Export & Share + Print Plan buttons */}
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setShowExport(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-semibold hover:bg-hive-gold/90 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export & Share
-            </button>
-            {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
-              <button
-                onClick={() => setShowPrintNote(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-xs font-semibold hover:bg-hive-gold/20 transition-colors"
-              >
-                <ScrollText className="w-3.5 h-3.5" />
-                Print Call Note & Plan
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={() => setShowExport(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-80">
+                <Download className="w-3.5 h-3.5" /> Export
               </button>
-            )}
-            <button
-              onClick={() => setShowDrugCalc(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 transition-colors"
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              Drug Calculator
-            </button>
-            <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-border px-4 md:px-8 bg-card/30">
-        <div className="max-w-5xl mx-auto flex gap-1 overflow-x-auto scrollbar-thin">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            const showConsentWarning = tab.id === "consent" && isConsentIncomplete(caseData);
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === tab.id ? "border-hive-gold text-hive-gold" : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-                {showConsentWarning && (
-                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse-gold" />
-                )}
+              {(caseData.status === "inews_consult" || caseData.status === "admitted") && (
+                <button onClick={() => setShowPrintNote(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-muted">
+                  <ScrollText className="w-3.5 h-3.5" /> Print
+                </button>
+              )}
+              <button onClick={() => setShowDrugCalc(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-muted">
+                <Calculator className="w-3.5 h-3.5" /> Drugs
               </button>
-            );
-          })}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
-        <div className="max-w-5xl mx-auto">
-          {activeTab === "summary" && <SummaryTab caseData={caseData} />}
-          {activeTab === "clerking" && <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
-          {activeTab === "imaging" && <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />}
-          {activeTab === "kardex" && <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />}
-          {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />}
-          {activeTab === "consent" && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
-          {activeTab === "review" && <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />}
-          {activeTab === "timeline" && <CaseTimeline caseData={caseData} />}
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* 1. AI Triage Chat — OPEN */}
+          <Section title="AI Triage Chat" icon={MessageSquare} defaultOpen={true}>
+            <CaseChat caseId={id} caseData={caseData} />
+          </Section>
+
+          {/* 2. Patient Info — collapsed */}
+          <Section title="Patient Info" icon={User} defaultOpen={false}>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoField label="Name" value={caseData.patient_name || "—"} />
+              <InfoField label="MRN" value={caseData.patient_mrn || "—"} />
+              <InfoField label="DOB" value={caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"} />
+              <InfoField label="Gender" value={caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"} />
+              <InfoField label="Hospital" value={caseData.hospital || "—"} />
+              <InfoField label="Ward" value={caseData.ward || "—"} />
+              <InfoField label="Bed" value={caseData.bed_number || "—"} />
+              <InfoField label="Department" value={caseData.department?.replace("_", " ") || "—"} />
+            </div>
+          </Section>
+
+          {/* 3. Referral Summary — collapsed */}
+          <Section title="Referral Summary" icon={FileText} defaultOpen={false}>
+            <div className="space-y-3">
+              {caseData.presenting_complaint && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Presenting Complaint</p>
+                  <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
+                </div>
+              )}
+              {caseData.referral_summary && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Referral Summary</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <InfoField label="Referrer" value={caseData.referrer_name || "—"} />
+                <InfoField label="Grade" value={caseData.referrer_grade || "—"} />
+                <InfoField label="Mode" value={caseData.referral_mode || "—"} />
+                <InfoField label="Referring Team" value={caseData.referring_team || "—"} />
+              </div>
+            </div>
+          </Section>
+
+          {/* 4. Clinical Proforma — collapsed */}
+          <Section title="Clinical Proforma" icon={Stethoscope} defaultOpen={false}>
+            <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+          </Section>
+
+          {/* 5. Investigations — collapsed */}
+          <Section title="Investigations" icon={FlaskConical} defaultOpen={false}>
+            <div className="space-y-4">
+              <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
+              <ReviewInvestigations caseData={caseData} onUpdate={loadCase} canEdit={true} />
+              <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+            </div>
+          </Section>
+
+          {/* 6. Admission & Plan — collapsed */}
+          <Section title="Admission & Plan" icon={ClipboardCheck} defaultOpen={false}>
+            <div className="space-y-4">
+              <SummaryTab caseData={caseData} />
+              <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
+              <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />
+              <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
+            </div>
+          </Section>
+
+          {/* 7. Discharge — collapsed */}
+          <Section title="Discharge" icon={FileCheck} defaultOpen={false}>
+            <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />
+          </Section>
         </div>
       </div>
 
@@ -982,6 +987,15 @@ function isConsentIncomplete(caseData) {
   } catch {
     return true;
   }
+}
+
+function InfoField({ label, value }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
+    </div>
+  );
 }
 
 const PREOP_LABELS = {
