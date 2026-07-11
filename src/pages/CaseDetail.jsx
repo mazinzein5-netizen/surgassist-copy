@@ -238,142 +238,163 @@ function SummaryTab({ caseData }) {
   return (
     <CollapsibleSections>
     <div className="space-y-4">
-      {proformaLines.length > 0 && (
-        <Section title="Key Clinical Highlights" icon={Activity}>
-          <div className="space-y-2">
-            {proformaLines.map((group, gi) => (
-              <div key={gi}>
-                <p className="text-xs font-semibold text-accent uppercase mb-0.5">{group.section}</p>
-                {group.lines.map((line, li) => (
-                  <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
-                ))}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {(caseData.presenting_complaint || caseData.mechanism_of_injury) && (
-        <Section title="Presenting Complaint" icon={Activity}>
+      {/* === PRESENTING COMPLAINT === */}
+      <Section title="Presenting Complaint" icon={Activity}>
+        <div className="space-y-3">
           {caseData.presenting_complaint && (
             <p className="text-sm text-foreground">{caseData.presenting_complaint}</p>
           )}
           {caseData.mechanism_of_injury && (
-            <div className="mt-2">
+            <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Mechanism of Injury</p>
               <p className="text-sm text-foreground">{caseData.mechanism_of_injury}</p>
             </div>
           )}
-        </Section>
-      )}
+          {caseData.referral_summary && (
+            <div className="pt-2 border-t border-border/50">
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Referral Summary</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary}</p>
+              {caseData.referral_mode && (
+                <p className="text-xs text-muted-foreground mt-1">Input mode: <span className="capitalize">{caseData.referral_mode}</span></p>
+              )}
+            </div>
+          )}
+          {!caseData.presenting_complaint && !caseData.referral_summary && (
+            <p className="text-sm text-muted-foreground">No presenting complaint recorded.</p>
+          )}
+        </div>
+      </Section>
 
-      {clinicalHistory.length > 0 && (
+      {/* === CLINICAL HISTORY === */}
+      {clinicalHistory.length > 0 || proformaLines.length > 0 ? (
         <Section title="Clinical History" icon={Stethoscope}>
           <div className="space-y-3">
+            {proformaLines.length > 0 && (
+              <div className="space-y-2">
+                {proformaLines.map((group, gi) => (
+                  <div key={gi}>
+                    <p className="text-xs font-semibold text-accent uppercase mb-0.5">{group.section}</p>
+                    {group.lines.map((line, li) => (
+                      <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
             {clinicalHistory.map((item, i) => (
-              <div key={i}>
+              <div key={i} className={proformaLines.length > 0 ? "pt-2 border-t border-border/50" : ""}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{item.label}</p>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{item.value}</p>
               </div>
             ))}
           </div>
         </Section>
-      )}
+      ) : null}
 
-      <Section title="Referral Summary" icon={FileText}>
-        <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.referral_summary || "No referral summary recorded."}</p>
-        {caseData.referral_mode && (
-          <p className="text-xs text-muted-foreground mt-2">Input mode: <span className="capitalize">{caseData.referral_mode}</span></p>
-        )}
-      </Section>
-
-      {caseData.admission_note && (
-        <Section title="Admission Note" icon={FileText} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
-          <FormattedAdmissionNote note={caseData.admission_note} />
-          <button
-            onClick={() => {
-              const el = document.createElement("textarea");
-              el.value = caseData.admission_note;
-              document.body.appendChild(el);
-              el.select();
-              document.execCommand("copy");
-              document.body.removeChild(el);
-            }}
-            className="mt-2 text-xs text-hive-gold hover:underline"
-          >
-            Copy to clipboard
-          </button>
-        </Section>
-      )}
-
-      {caseData.triage_decision && caseData.triage_decision !== "pending" && (
-        <Section title="Triage Decision" icon={CheckCircle2}>
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-3 ${
-            caseData.triage_decision === "accept" ? "bg-success/15 text-success" :
-            caseData.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
-            "bg-warning/15 text-warning"
-          }`}>
-            <span className="font-bold text-sm uppercase">
-              {caseData.triage_decision === "accept" && caseData.accepting_specialty
-                ? `Accepted — ${caseData.accepting_specialty}`
-                : caseData.triage_decision.replace("_", " ")}
-            </span>
-          </div>
-          {caseData.triage_reasoning && (
-            <div className="mb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
-              <p className="text-sm text-foreground">{caseData.triage_reasoning}</p>
-            </div>
-          )}
-          {caseData.triage_guideline && (
-            <div className="mb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Guideline Applied</p>
-              <p className="text-sm text-foreground">{caseData.triage_guideline}</p>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {caseData.pre_clerking_guidance && (
-        <Section title="Pre-Clerking Guidance" icon={Stethoscope}>
-          <AIBadge />
-          <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{caseData.pre_clerking_guidance}</p>
-        </Section>
-      )}
-
-      {(caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable")) && (
-        <Section title="Operative Notes" icon={FileCheck}>
+      {/* === DIAGNOSIS & ASSESSMENT === */}
+      {(caseData.triage_decision || caseData.admission_note || caseData.pre_clerking_guidance) && (
+        <Section title="Diagnosis & Assessment" icon={ClipboardCheck}>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              {caseData.procedure_name && (
-                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Procedure</p>
-                  <p className="text-sm text-foreground">{caseData.procedure_name}</p>
+            {caseData.triage_decision && caseData.triage_decision !== "pending" && (
+              <div>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-2 ${
+                  caseData.triage_decision === "accept" ? "bg-success/15 text-success" :
+                  caseData.triage_decision === "decline" ? "bg-destructive/15 text-destructive" :
+                  "bg-warning/15 text-warning"
+                }`}>
+                  <span className="font-bold text-sm uppercase">
+                    {caseData.triage_decision === "accept" && caseData.accepting_specialty
+                      ? `Accepted — ${caseData.accepting_specialty}`
+                      : caseData.triage_decision.replace("_", " ")}
+                  </span>
                 </div>
-              )}
-              {caseData.procedure_date && (
-                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Date</p>
-                  <p className="text-sm text-foreground">{new Date(caseData.procedure_date).toLocaleDateString("en-IE")}</p>
+                {caseData.triage_reasoning && (
+                  <div className="mb-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
+                    <p className="text-sm text-foreground">{caseData.triage_reasoning}</p>
+                  </div>
+                )}
+                {caseData.triage_guideline && (
+                  <div className="mb-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Guideline Applied</p>
+                    <p className="text-sm text-foreground">{caseData.triage_guideline}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {caseData.pre_clerking_guidance && (
+              <div className="pt-2 border-t border-border/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <AIBadge />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Pre-Clerking Guidance</p>
                 </div>
-              )}
-              {caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable" && (
-                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pre-Op Status</p>
-                  <p className="text-sm text-foreground">{PREOP_LABELS[caseData.pre_op_status] || caseData.pre_op_status.replace("_", " ")}</p>
-                </div>
-              )}
-              {caseData.pod != null && (
-                <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Post-Op Day</p>
-                  <p className="text-sm text-foreground">Day {caseData.pod}</p>
-                </div>
-              )}
-            </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.pre_clerking_guidance}</p>
+              </div>
+            )}
+
+            {caseData.admission_note && (
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Admission Note</p>
+                <FormattedAdmissionNote note={caseData.admission_note} />
+                <button
+                  onClick={() => {
+                    const el = document.createElement("textarea");
+                    el.value = caseData.admission_note;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(el);
+                  }}
+                  className="mt-2 text-xs text-hive-gold hover:underline"
+                >
+                  Copy to clipboard
+                </button>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* === PLAN === */}
+      {(caseData.treatment_plan || caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable")) && (
+        <Section title="Plan" icon={FileCheck} noteAuthor={caseData.note_author_name} noteLockedAt={caseData.note_locked_at}>
+          <div className="space-y-3">
             {caseData.treatment_plan && (
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Treatment Plan</p>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{caseData.treatment_plan}</p>
+              </div>
+            )}
+            {(caseData.procedure_name || caseData.procedure_date || (caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable") || caseData.pod != null) && (
+              <div className={caseData.treatment_plan ? "pt-2 border-t border-border/50" : ""}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Operative Details</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {caseData.procedure_name && (
+                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Procedure</p>
+                      <p className="text-sm text-foreground">{caseData.procedure_name}</p>
+                    </div>
+                  )}
+                  {caseData.procedure_date && (
+                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Date</p>
+                      <p className="text-sm text-foreground">{new Date(caseData.procedure_date).toLocaleDateString("en-IE")}</p>
+                    </div>
+                  )}
+                  {caseData.pre_op_status && caseData.pre_op_status !== "not_listed" && caseData.pre_op_status !== "not_applicable" && (
+                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pre-Op Status</p>
+                      <p className="text-sm text-foreground">{PREOP_LABELS[caseData.pre_op_status] || caseData.pre_op_status.replace("_", " ")}</p>
+                    </div>
+                  )}
+                  {caseData.pod != null && (
+                    <div className="bg-background/50 rounded-lg px-3 py-2 border border-border/50">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Post-Op Day</p>
+                      <p className="text-sm text-foreground">Day {caseData.pod}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
