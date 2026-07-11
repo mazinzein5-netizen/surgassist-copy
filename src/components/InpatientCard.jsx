@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight, Calendar, Stethoscope, BedDouble, ClipboardCheck, ScrollText } from "lucide-react";
+import { AlertTriangle, Activity, Droplet, Thermometer, Heart, Wind, ChevronRight, Calendar, Stethoscope, BedDouble, ClipboardCheck, ScrollText, Clock } from "lucide-react";
 
 function getAbnormalFindings(inewsData, inewsScore) {
   const flags = [];
@@ -42,6 +42,52 @@ function scoreColor(score) {
   return "bg-success/20 text-success";
 }
 
+const TRAUMA_KEYWORDS = ["fall", "rta", "road traffic", "accident", "fracture", "injury", "trauma", "crush", "assault", "laceration", "collision", "sport"];
+
+function getPatientCategory(caseFile) {
+  const text = `${caseFile.presenting_complaint || ""} ${caseFile.mechanism_of_injury || ""} ${caseFile.referral_summary || ""}`.toLowerCase();
+  const isTrauma = TRAUMA_KEYWORDS.some(k => text.includes(k));
+  const isEmergency = caseFile.status === "inews_consult" || (caseFile.inews_score != null && caseFile.inews_score >= 7);
+
+  if (isEmergency) {
+    return { label: "Emergency", color: "bg-destructive/15 text-destructive border-destructive/30", dot: "bg-destructive", bg: "bg-destructive/10", priority: 3 };
+  }
+  if (isTrauma) {
+    return { label: "Trauma / Accident", color: "bg-orange-500/15 text-orange-400 border-orange-500/30", dot: "bg-orange-400", bg: "bg-orange-400/10", priority: 2 };
+  }
+  if (caseFile.pre_op_status === "in_theatre") {
+    return { label: "Peri-Op", color: "bg-purple-500/15 text-purple-400 border-purple-500/30", dot: "bg-purple-400", bg: "bg-purple-400/10", priority: 1 };
+  }
+  return { label: "Routine", color: "bg-accent/15 text-accent border-accent/30", dot: "bg-accent", bg: "bg-accent/10", priority: 0 };
+}
+
+function getElapsedLabel(admissionDate) {
+  if (!admissionDate) return null;
+  const now = new Date();
+  const diff = now - new Date(admissionDate);
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHrs = hours % 24;
+    return { value: `${days}d ${remainingHrs}h`, sub: `${days} day${days !== 1 ? "s" : ""} ${remainingHrs}h ago`, urgent: false };
+  }
+  return { value: `${hours}h ${mins}m`, sub: `${hours}h ${mins}m since admission`, urgent: hours >= 12 };
+}
+
+function getCategoryBorder(category) {
+  if (category.priority === 3) return "border-destructive/50";
+  if (category.priority === 2) return "border-orange-500/40";
+  if (category.priority === 1) return "border-purple-500/40";
+  return "border-border";
+}
+
+function getTimeColor(elapsed) {
+  if (!elapsed) return "text-muted-foreground";
+  if (elapsed.urgent) return "text-destructive";
+  return "text-hive-gold";
+}
+
 function vitalColor(value, type) {
   if (!value) return "text-muted-foreground";
   const num = parseFloat(value);
@@ -65,12 +111,12 @@ export default function InpatientCard({ caseFile, onPrint }) {
   const flags = getAbnormalFindings(caseFile.inews_data, caseFile.inews_score);
   const hasCritical = flags.some(f => f.severity === "critical");
   const inewsData = caseFile.inews_data || {};
+  const category = getPatientCategory(caseFile);
+  const elapsed = getElapsedLabel(caseFile.admission_date);
 
   const borderClass = hasCritical
     ? "border-destructive/40"
-    : flags.length > 0
-    ? "border-warning/30"
-    : "border-border";
+    : getCategoryBorder(category);
 
   // Post-op / pre-op day calculation
   const now = new Date();
@@ -94,14 +140,19 @@ export default function InpatientCard({ caseFile, onPrint }) {
     >
       {/* Patient header */}
       <div className="flex items-center gap-3 p-4 pb-3">
-        <div className="w-10 h-10 hex-clip bg-hive-gold/10 flex items-center justify-center flex-shrink-0">
-          <span className="text-hive-gold font-bold text-sm">
+        <div className={`w-10 h-10 hex-clip flex items-center justify-center flex-shrink-0 ${category.bg}`}>
+          <span className={`font-bold text-sm ${category.color.split(" ").find(c => c.startsWith("text-"))}`}>
             {caseFile.patient_name?.charAt(0)?.toUpperCase() || "?"}
           </span>
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-medium text-foreground text-sm truncate">{caseFile.patient_name || "Unknown"}</p>
-          <p className="text-xs text-muted-foreground truncate">MRN: {caseFile.patient_mrn || "—"}</p>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border ${category.color}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${category.dot}`} />
+              {category.label}
+            </span>
+          </div>
         </div>
         {caseFile.inews_score != null && (
           <span className={`px-2 py-0.5 rounded text-xs font-bold ${scoreColor(caseFile.inews_score)}`}>
@@ -119,6 +170,22 @@ export default function InpatientCard({ caseFile, onPrint }) {
           </button>
         )}
       </div>
+
+      {/* Time since admission — prominent timer */}
+      {elapsed && (
+        <div className="mx-4 mb-2.5 flex items-center justify-between rounded-lg px-3 py-2 border border-border/50 bg-secondary/30">
+          <div className="flex items-baseline gap-1.5">
+            <Clock className={`w-3.5 h-3.5 ${getTimeColor(elapsed)}`} />
+            <span className={`text-lg font-bold tabular-nums ${getTimeColor(elapsed)}`}>{elapsed.value}</span>
+            <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">since admit</span>
+          </div>
+          {caseFile.admission_date && (
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {new Date(caseFile.admission_date).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Section 1: Admission Details */}
       <div className="px-4 pb-2.5 border-l-2 border-l-hive-gold/20 ml-1">

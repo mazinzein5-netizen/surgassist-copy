@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import InpatientCard from "@/components/InpatientCard";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import BloodTrendChart, { LAB_RANGES, getAbnormalStatus } from "@/components/BloodTrendChart";
-import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown, Building2 } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown, Building2, Siren } from "lucide-react";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 
@@ -62,7 +62,15 @@ export default function InpatientMonitor() {
       const q = search.toLowerCase();
       result = result.filter(c => c.patient_name?.toLowerCase().includes(q) || c.patient_mrn?.toLowerCase().includes(q));
     }
-    if (filter !== "all") {
+    if (filter === "emergency") {
+      result = result.filter(c => c.status === "inews_consult" || (c.inews_score != null && c.inews_score >= 7));
+    } else if (filter === "trauma") {
+      const traumaKeywords = ["fall", "rta", "road traffic", "accident", "fracture", "injury", "trauma", "crush", "assault", "laceration", "collision", "sport"];
+      result = result.filter(c => {
+        const text = `${c.presenting_complaint || ""} ${c.mechanism_of_injury || ""} ${c.referral_summary || ""}`.toLowerCase();
+        return traumaKeywords.some(k => text.includes(k));
+      });
+    } else if (filter !== "all") {
       result = result.filter(c => {
         const score = c.inews_score;
         if (filter === "critical") return score != null && score >= 7;
@@ -71,14 +79,26 @@ export default function InpatientMonitor() {
         return true;
       });
     }
-    return [...result].sort((a, b) => (b.inews_score || 0) - (a.inews_score || 0));
+    return [...result].sort((a, b) => {
+      // Sort: emergency first, then by INEWS score descending
+      const aEmerg = a.status === "inews_consult" || (a.inews_score != null && a.inews_score >= 7) ? 1 : 0;
+      const bEmerg = b.status === "inews_consult" || (b.inews_score != null && b.inews_score >= 7) ? 1 : 0;
+      if (aEmerg !== bEmerg) return bEmerg - aEmerg;
+      return (b.inews_score || 0) - (a.inews_score || 0);
+    });
   }, [cases, search, filter]);
 
   const stats = useMemo(() => {
     const critical = cases.filter(c => c.inews_score != null && c.inews_score >= 7).length;
     const warning = cases.filter(c => c.inews_score != null && c.inews_score >= 3 && c.inews_score < 7).length;
     const stable = cases.filter(c => c.inews_score == null || c.inews_score < 3).length;
-    return { total: cases.length, critical, warning, stable };
+    const traumaKeywords = ["fall", "rta", "road traffic", "accident", "fracture", "injury", "trauma", "crush", "assault", "laceration", "collision", "sport"];
+    const trauma = cases.filter(c => {
+      const text = `${c.presenting_complaint || ""} ${c.mechanism_of_injury || ""} ${c.referral_summary || ""}`.toLowerCase();
+      return traumaKeywords.some(k => text.includes(k));
+    }).length;
+    const emergency = cases.filter(c => c.status === "inews_consult" || (c.inews_score != null && c.inews_score >= 7)).length;
+    return { total: cases.length, critical, warning, stable, trauma, emergency };
   }, [cases]);
 
   // Group lab results by test type for the selected patient
@@ -154,8 +174,10 @@ export default function InpatientMonitor() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
         <StatCard label="Total Admitted" value={stats.total} icon={BedDouble} color="text-hive-gold" />
+        <StatCard label="Emergency" value={stats.emergency} icon={Siren} color="text-destructive" />
+        <StatCard label="Trauma / Accident" value={stats.trauma} icon={AlertTriangle} color="text-orange-400" />
         <StatCard label="Critical (INEWS ≥7)" value={stats.critical} icon={AlertTriangle} color="text-destructive" />
         <StatCard label="Warning (3–6)" value={stats.warning} icon={Activity} color="text-warning" />
         <StatCard label="Stable (<3)" value={stats.stable} icon={ShieldCheck} color="text-success" />
@@ -181,9 +203,9 @@ export default function InpatientMonitor() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" placeholder="Search by name or MRN..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-card border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50" />
             </div>
-            <div className="flex gap-1.5 bg-card border border-border rounded-lg p-1">
-              {[{ key: "all", label: "All" }, { key: "critical", label: "Critical" }, { key: "warning", label: "Warning" }, { key: "stable", label: "Stable" }].map(f => (
-                <button key={f.key} onClick={() => setFilter(f.key)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === f.key ? "bg-hive-gold/15 text-hive-gold" : "text-muted-foreground hover:text-foreground"}`}>
+            <div className="flex gap-1.5 bg-card border border-border rounded-lg p-1 overflow-x-auto scrollbar-thin">
+              {[{ key: "all", label: "All" }, { key: "emergency", label: "🚨 Emergency" }, { key: "trauma", label: "🟠 Trauma" }, { key: "critical", label: "Critical" }, { key: "warning", label: "Warning" }, { key: "stable", label: "Stable" }].map(f => (
+                <button key={f.key} onClick={() => setFilter(f.key)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${filter === f.key ? "bg-hive-gold/15 text-hive-gold" : "text-muted-foreground hover:text-foreground"}`}>
                   {f.label}
                 </button>
               ))}
