@@ -28,6 +28,7 @@ import StatusPill from "@/components/StatusPill";
 import ProformaModal from "@/components/ProformaModal";
 import AdmissionNotePanel from "@/components/AdmissionNotePanel";
 import InpatientNotePanel from "@/components/InpatientNotePanel";
+import OperativeNotePanel from "@/components/OperativeNotePanel";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 
@@ -52,6 +53,7 @@ export default function CaseDetail() {
   const [showProforma, setShowProforma] = useState(false);
   const [showAdmissionNote, setShowAdmissionNote] = useState(false);
   const [showInpatientNote, setShowInpatientNote] = useState(false);
+  const [showOperativeNote, setShowOperativeNote] = useState(false);
 
   useEffect(() => { loadCase(); }, [id]);
 
@@ -141,6 +143,10 @@ export default function CaseDetail() {
             <button onClick={() => setShowInpatientNote(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Stethoscope className="w-3.5 h-3.5" /> Inpatient Note
+            </button>
+            <button onClick={() => setShowOperativeNote(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+              <FileText className="w-3.5 h-3.5" /> Operative Note
             </button>
             <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
           </div>
@@ -263,6 +269,7 @@ export default function CaseDetail() {
       {showProforma && <ProformaModal caseData={caseData} caseId={id} onClose={() => setShowProforma(false)} onUpdate={loadCase} />}
       {showAdmissionNote && <AdmissionNotePanel caseData={caseData} caseId={id} onClose={() => setShowAdmissionNote(false)} onUpdate={loadCase} />}
       {showInpatientNote && <InpatientNotePanel caseData={caseData} caseId={id} onClose={() => setShowInpatientNote(false)} onUpdate={loadCase} />}
+      {showOperativeNote && <OperativeNotePanel caseData={caseData} caseId={id} onClose={() => setShowOperativeNote(false)} onUpdate={loadCase} />}
     </div>
   );
 }

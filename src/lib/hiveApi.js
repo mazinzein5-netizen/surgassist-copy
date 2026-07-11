@@ -505,6 +505,97 @@ Only populate fields where the information is clearly legible. Leave fields empt
   return result;
 }
 
+export async function generateOperativeNote(caseData, operativeData, user) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are HIVE Surgical Assistant. Generate a PROFESSIONAL OPERATIVE NOTE for this surgical patient. This is a formal operative documentation record.
+
+PATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}
+DEPARTMENT: ${caseData.department}
+PROCEDURE: ${operativeData.procedure_name || "N/A"}
+PROCEDURE DATE: ${operativeData.procedure_date || "N/A"}
+PRE-OP DIAGNOSIS: ${operativeData.pre_op_diagnosis || "N/A"}
+POST-OP DIAGNOSIS: ${operativeData.post_op_diagnosis || "N/A"}
+SURGEON: ${operativeData.surgeon_name || "N/A"}
+ASSISTANTS: ${operativeData.assistant_names || "N/A"}
+ANAESTHETIST: ${operativeData.anaesthetist_name || "N/A"}
+ANAESTHESIA: ${operativeData.anaesthetic_type || "N/A"}
+OPERATION FINDINGS: ${operativeData.operation_findings || "N/A"}
+OPERATION TECHNIQUE: ${operativeData.operation_technique || "N/A"}
+CLOSURE METHOD: ${operativeData.closure_method || "N/A"}
+BLOOD LOSS: ${operativeData.blood_loss || "N/A"}
+DRAINS: ${operativeData.drains || "None"}
+SPECIMENS: ${operativeData.specimens || "None"}
+COMPLICATIONS: ${operativeData.complications || "None"}
+ANTIBIOTICS GIVEN: ${operativeData.antibiotics_given || "N/A"}
+DVT PROPHYLAXIS: ${operativeData.dvt_prophylaxis || "N/A"}
+POST-OP PLAN: ${operativeData.post_op_plan || "N/A"}
+
+Generate a professional operative note in plain text (no markdown) with these sections:
+
+PROCEDURE
+[procedure name and laterality]
+
+PRE-OP DIAGNOSIS
+[diagnosis]
+
+POST-OP DIAGNOSIS
+[diagnosis confirmed at operation]
+
+ANAESTHESIA
+[type]
+
+SURGEON
+[name, IMC]
+
+ASSISTANTS
+[names]
+
+INDICATION
+[brief indication for surgery]
+
+OPERATION FINDINGS
+[detailed findings at operation]
+
+OPERATION PERFORMED
+[step-by-step description of the procedure — patient positioning, incision, approach, key steps, haemostasis, closure]
+
+CLOSURE
+[closure method — layers, suture material, skin closure]
+
+BLOOD LOSS
+[estimated blood loss]
+
+DRAINS
+[drains placed or none]
+
+SPECIMENS SENT
+[specimens sent for histology or none]
+
+COMPLICATIONS
+[intraoperative complications or none]
+
+MEDICATIONS
+[antibiotics given, DVT prophylaxis]
+
+POST-OP PLAN
+[management plan — monitoring, analgesia, mobilisation, follow-up]
+
+Rules:
+- Write in professional surgical documentation style
+- Use proper medical terminology and standard abbreviations
+- Plain text only, no markdown symbols
+- Maximum 40 lines
+- Presentable as-is for direct chart entry`,
+    response_json_schema: {
+      type: "object",
+      "properties": {
+        operative_note: { type: "string" }
+      }
+    }
+  });
+  return result.operative_note;
+}
+
 export async function generateInpatientNote(caseData, labResults, photos, user) {
   // Build lab results summary
   const labSummary = labResults.length > 0

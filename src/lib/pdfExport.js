@@ -1115,3 +1115,111 @@ export function downloadAdmissionNotePDF(caseData, note) {
   const fileName = `AdmissionNote_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
   doc.save(fileName);
 }
+
+/**
+ * Generates a polished Operative Note PDF with patient demographics,
+ * operative note content, and signature block.
+ */
+export function downloadOperativeNotePDF(caseData, opNote) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed = 8) => {
+    if (y + needed > pageHeight - margin - 8) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  // === HEADER ===
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("HIVE SURGICAL ASSISTANT", margin, y);
+  y += 7;
+  doc.setFontSize(18);
+  doc.setTextColor(20);
+  doc.text("Operative Note", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(`Generated: ${new Date().toLocaleString("en-IE")}`, margin, y);
+  y += 3;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+
+  // === PATIENT STRIP ===
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  const dobStr = caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—";
+  doc.text(`Patient: ${caseData.patient_name || "—"}`, margin, y);
+  doc.text(`MRN: ${caseData.patient_mrn || "—"}`, pageWidth - margin - 60, y);
+  y += 5;
+  doc.text(`DOB: ${dobStr}`, margin, y);
+  doc.text(`Ward/Bed: ${caseData.ward || "—"}${caseData.bed_number ? ` / ${caseData.bed_number}` : ""}`, pageWidth - margin - 60, y);
+  y += 5;
+  if (caseData.consultant_name) {
+    doc.text(`Consultant: ${caseData.consultant_name}`, margin, y);
+    y += 5;
+  }
+  doc.setDrawColor(200);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+
+  // === NOTE BODY ===
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  const noteText = opNote.note_content || opNote.operation_findings || "";
+  const cleanNote = String(noteText).replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
+  const lines = doc.splitTextToSize(cleanNote, maxWidth);
+  for (const line of lines) {
+    ensureSpace(6);
+    doc.text(line, margin, y);
+    y += 5;
+  }
+
+  // === SIGNATURE BLOCK ===
+  ensureSpace(20);
+  y += 8;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + 70, y);
+  doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Surgeon Signature / IMC", margin, y);
+  doc.text("Date / Time", pageWidth - margin - 70, y);
+  if (opNote.surgeon_name || opNote.author_name) {
+    y += 5;
+    doc.setTextColor(120);
+    const authorStr = opNote.surgeon_name || opNote.author_name;
+    const imcStr = opNote.surgeon_imc || opNote.author_imc;
+    doc.text(`Surgeon: ${authorStr}${imcStr ? `, IMC: ${imcStr}` : ""}`, margin, y);
+  }
+
+  // === FOOTER ===
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(
+      `HIVE Surgical Assistant — Page ${i} of ${pageCount} — AI-assisted, verify clinically`,
+      margin,
+      pageHeight - 8
+    );
+  }
+
+  const fileName = `OperativeNote_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
+  doc.save(fileName);
+}

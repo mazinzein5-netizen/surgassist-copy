@@ -1,0 +1,139 @@
+{
+  "name": "OperativeNote",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "Links to the CaseFile"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Links to Patient entity for cross-visit record"
+    },
+    "patient_name": {
+      "type": "string"
+    },
+    "patient_mrn": {
+      "type": "string"
+    },
+    "procedure_name": {
+      "type": "string",
+      "description": "Name of the surgical procedure performed"
+    },
+    "procedure_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of operation"
+    },
+    "pre_op_diagnosis": {
+      "type": "string",
+      "description": "Diagnosis before operation"
+    },
+    "post_op_diagnosis": {
+      "type": "string",
+      "description": "Diagnosis confirmed at operation"
+    },
+    "surgeon_name": {
+      "type": "string",
+      "description": "Primary operating surgeon"
+    },
+    "surgeon_imc": {
+      "type": "string",
+      "description": "IMC number of primary surgeon"
+    },
+    "assistant_names": {
+      "type": "string",
+      "description": "Names of assistants"
+    },
+    "anaesthetist_name": {
+      "type": "string"
+    },
+    "anaesthetic_type": {
+      "type": "string",
+      "enum": [
+        "general",
+        "regional",
+        "local",
+        "sedation",
+        "spinal",
+        "epidural",
+        "combined",
+        "other"
+      ],
+      "description": "Type of anaesthesia used"
+    },
+    "operation_findings": {
+      "type": "string",
+      "description": "Findings at operation"
+    },
+    "operation_technique": {
+      "type": "string",
+      "description": "Step-by-step description of the procedure performed"
+    },
+    "closure_method": {
+      "type": "string",
+      "description": "Method of wound closure (e.g. interrupted nylon, continuous PDS, staples)"
+    },
+    "blood_loss": {
+      "type": "string",
+      "description": "Estimated blood loss"
+    },
+    "drains": {
+      "type": "string",
+      "description": "Drains placed (type, size, location) or 'None'"
+    },
+    "specimens": {
+      "type": "string",
+      "description": "Specimens sent for histology or 'None'"
+    },
+    "complications": {
+      "type": "string",
+      "description": "Intraoperative complications or 'None'"
+    },
+    "post_op_plan": {
+      "type": "string",
+      "description": "Post-operative management plan"
+    },
+    "antibiotics_given": {
+      "type": "string",
+      "description": "Antibiotics administered (prophylactic or therapeutic)"
+    },
+    "dvt_prophylaxis": {
+      "type": "string",
+      "description": "DVT prophylaxis used"
+    },
+    "note_content": {
+      "type": "string",
+      "description": "Full compiled operative note text for record"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": true,
+      "description": "Operative notes are permanent records"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the clinician who authored the note"
+    },
+    "author_id": {
+      "type": "string"
+    },
+    "author_grade": {
+      "type": "string",
+      "enum": [
+        "nchd",
+        "sho",
+        "registrar",
+        "consultant"
+      ]
+    },
+    "author_imc": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "procedure_name",
+    "procedure_date"
+  ]
+}
