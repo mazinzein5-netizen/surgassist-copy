@@ -72,20 +72,20 @@ export function Section({ title, icon: Icon, children, noteAuthor, noteLockedAt 
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl">
+    <div className="bg-card/60 backdrop-blur-md border border-hive-gold/20 rounded-xl transition-shadow hover:shadow-[0_0_12px_rgba(249,211,66,0.12)]">
       <button
         onClick={handleToggle}
-        className="flex items-center gap-2 w-full px-4 py-3 text-left hover:bg-secondary/30 transition-colors rounded-t-xl"
+        className="flex items-center gap-2 w-full px-4 py-3 text-left rounded-xl"
       >
-        {Icon && <Icon className="w-4 h-4 text-hive-gold flex-shrink-0" />}
-        <h3 className="font-semibold text-foreground text-sm flex-1">{title}</h3>
+        {Icon && <Icon className="w-4 h-4 text-accent flex-shrink-0" />}
+        <h3 className="font-medium text-foreground text-[13px] flex-1">{title}</h3>
         {(noteAuthor || noteLockedAt) && (
-          <span className="text-[10px] text-muted-foreground hidden sm:inline-flex items-center gap-1">
-            {noteAuthor && (<><Lock className="w-2.5 h-2.5" />{noteAuthor}</>)}
+          <span className="text-[10px] text-muted-foreground/80 hidden sm:inline-flex items-center gap-1">
+            {noteAuthor && (<><Lock className="w-2.5 h-2.5 text-accent" />{noteAuthor}</>)}
             {noteLockedAt && <span className="ml-1">· {new Date(noteLockedAt).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
           </span>
         )}
-        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+        <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && <div className="px-4 pb-4">{children}</div>}
     </div>
