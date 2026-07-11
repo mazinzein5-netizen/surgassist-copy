@@ -1,5 +1,5 @@
-import React from "react";
-import { FileText, FlaskConical, ClipboardCheck, Activity, User, Pill } from "lucide-react";
+import React, { useState } from "react";
+import { FileText, FlaskConical, ClipboardCheck, Activity, User, Pill, ChevronDown } from "lucide-react";
 
 /**
  * Parses a raw AI-generated admission note into structured sections
@@ -17,7 +17,7 @@ const SECTION_ICONS = {
   presenting: Activity,
   complaint: Activity,
   history: User,
-  examination: Stethoscope,
+  examination: Activity,
   investigations: FlaskConical,
   bloods: FlaskConical,
   imaging: FlaskConical,
@@ -40,11 +40,6 @@ const SECTION_LABELS = {
   medications: "Medications",
   medication: "Medications",
 };
-
-function Stethoscope(props) {
-  // Re-export to avoid extra import if not used
-  return <Activity {...props} />;
-}
 
 function detectSectionKey(header) {
   const lower = header.toLowerCase();
@@ -129,80 +124,89 @@ function parseNote(text) {
   return sections;
 }
 
+function NoteSection({ section }) {
+  const [open, setOpen] = useState(true);
+  const Icon = SECTION_ICONS[section.key] || FileText;
+  const label = SECTION_LABELS[section.key] || section.title;
+
+  const items = section.items.filter((item, idx) => {
+    if (item.type === "break") {
+      const next = section.items[idx + 1];
+      if (!next || next.type === "break") return false;
+    }
+    return true;
+  });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/30 overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-secondary/40 hover:bg-secondary/60 transition-colors"
+      >
+        <Icon className="w-3.5 h-3.5 text-hive-gold flex-shrink-0" />
+        <h5 className="text-xs font-bold text-hive-gold uppercase tracking-wider flex-1 text-left">{label}</h5>
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
+      </button>
+      {open && (
+        <div className="px-4 py-3 space-y-1.5">
+          {items.map((item, ii) => {
+            switch (item.type) {
+              case "numbered":
+                return (
+                  <div key={ii} className="flex gap-2 text-sm text-foreground">
+                    <span className="text-hive-gold font-bold flex-shrink-0 min-w-[1.2em]">{item.num}.</span>
+                    <span className="flex-1 leading-relaxed">{item.text}</span>
+                  </div>
+                );
+              case "bullet":
+                return (
+                  <div key={ii} className="flex gap-2 text-sm text-foreground">
+                    <span className="text-accent flex-shrink-0 mt-0.5">•</span>
+                    <span className="flex-1 leading-relaxed">{item.text}</span>
+                  </div>
+                );
+              case "sub":
+                return (
+                  <div key={ii} className="flex gap-2 text-sm text-muted-foreground pl-4">
+                    <span className="text-muted-foreground flex-shrink-0">›</span>
+                    <span className="flex-1">{item.text}</span>
+                  </div>
+                );
+              case "kv":
+                return (
+                  <div key={ii} className="text-sm text-foreground">
+                    <span className="font-semibold text-foreground">{item.label}:</span>{" "}
+                    <span className="text-muted-foreground">{item.value}</span>
+                  </div>
+                );
+              case "paragraph":
+                return (
+                  <p key={ii} className="text-sm text-foreground leading-relaxed">{item.text}</p>
+                );
+              case "break":
+                return <div key={ii} className="h-1" />;
+              default:
+                return null;
+            }
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FormattedAdmissionNote({ note }) {
   if (!note) return null;
 
   const sections = parseNote(note);
 
   return (
-    <div className="space-y-4">
-      {sections.map((section, si) => {
-        const Icon = SECTION_ICONS[section.key] || FileText;
-        const label = SECTION_LABELS[section.key] || section.title;
-
-        // Filter out break-only trailing items
-        const items = section.items.filter((item, idx) => {
-          if (item.type === "break") {
-            const next = section.items[idx + 1];
-            if (!next || next.type === "break") return false;
-          }
-          return true;
-        });
-
-        return (
-          <div key={si} className="border-l-2 border-hive-gold/30 pl-3">
-            {/* Section header */}
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="w-3.5 h-3.5 text-hive-gold flex-shrink-0" />
-              <h5 className="text-xs font-bold text-hive-gold uppercase tracking-wider">{label}</h5>
-            </div>
-
-            {/* Section content */}
-            <div className="space-y-1.5 pl-5">
-              {items.map((item, ii) => {
-                switch (item.type) {
-                  case "numbered":
-                    return (
-                      <div key={ii} className="flex gap-2 text-sm text-foreground">
-                        <span className="text-hive-gold font-bold flex-shrink-0 min-w-[1.2em]">{item.num}.</span>
-                        <span className="flex-1 leading-relaxed">{item.text}</span>
-                      </div>
-                    );
-                  case "bullet":
-                    return (
-                      <div key={ii} className="flex gap-2 text-sm text-foreground">
-                        <span className="text-accent flex-shrink-0 mt-0.5">•</span>
-                        <span className="flex-1 leading-relaxed">{item.text}</span>
-                      </div>
-                    );
-                  case "sub":
-                    return (
-                      <div key={ii} className="flex gap-2 text-sm text-muted-foreground pl-4">
-                        <span className="text-muted-foreground flex-shrink-0">›</span>
-                        <span className="flex-1">{item.text}</span>
-                      </div>
-                    );
-                  case "kv":
-                    return (
-                      <div key={ii} className="text-sm text-foreground">
-                        <span className="font-semibold text-foreground">{item.label}:</span>{" "}
-                        <span className="text-muted-foreground">{item.value}</span>
-                      </div>
-                    );
-                  case "paragraph":
-                    return (
-                      <p key={ii} className="text-sm text-foreground leading-relaxed">{item.text}</p>
-                    );
-                  case "break":
-                    return <div key={ii} className="h-1" />;
-                  default:
-                    return null;
-                }
-              })}
-            </div>
-          </div>
-        );
-      })}
+    <div className="space-y-2">
+      {sections.map((section, si) => (
+        <NoteSection key={si} section={section} />
+      ))}
     </div>
   );
 }
