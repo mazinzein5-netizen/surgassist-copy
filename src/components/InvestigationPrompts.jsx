@@ -4,6 +4,7 @@ import { generateAdmissionNote } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import { Loader2, ClipboardList, FileText, FlaskConical, Scan } from "lucide-react";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
+import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 
 const BLOOD_INVESTIGATIONS = [
   "FBC", "UEC", "LFTs", "CRP", "Coagulation / INR", "Group & Save",
@@ -135,7 +136,7 @@ export default function InvestigationPrompts({ caseData, caseId, onUpdate }) {
               />
             </div>
           </div>
-          <pre className="text-sm text-foreground whitespace-pre-wrap font-body">{admissionNote}</pre>
+          <FormattedAdmissionNote note={admissionNote} />
         </div>
       )}
     </div>
