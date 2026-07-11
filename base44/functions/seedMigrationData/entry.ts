@@ -67,10 +67,24 @@ Deno.serve(async (req) => {
       { case_id: "", patient_name: "Barbara Ryan", patient_mrn: "63451", test_type: "creatinine", value: 123, unit: "umol/L", collected_at: "2026-07-06T00:00:00Z", source: "ocr_ingestion" },
     ];
 
+    const caseFiles = [
+      { patient_name: "Darrol Mcalister", patient_mrn: "9762", patient_dob: "Not provided", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", specialty: "Orthopaedics", status: "discharged", referral_mode: "camera", referrer_name: "Assad", referrer_grade: "sho", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", accepting_specialty: "Orthopaedics", triage_decision: "needs_more_info", presenting_complaint: "Diabetic foot ulcer with necrosis and cellulitis", mechanism_of_injury: "N/A - chronic progression", referral_summary: "70-year-old male with Type 2 DM presenting with necrotic ulceration of the left hallux, associated with spreading cellulitis of the distal leg. Plain films negative for osteomyelitis.", discharge_pathway: "no_followup", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Jacinta McDonough", patient_mrn: "333760", patient_dob: "1995-01-20", hospital: "Midwestern University Hospital Tullamore", department: "general_surgery", specialty: "General Surgery", status: "discharged", referral_mode: "camera", referrer_name: "Niall", referrer_grade: "sho", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "needs_more_info", presenting_complaint: "Postoperative surgical drain management following cosmetic surgery abroad", mechanism_of_injury: "N/A (Surgical procedure)", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Irene Woulfe", patient_mrn: "27002834", patient_dob: "2008-03-16", hospital: "Midwestern University Hospital Tullamore", department: "general_surgery", specialty: "General Surgery", status: "admitted", referral_mode: "camera", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Acute abdominal pain", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Ann Brennan", patient_mrn: "863606", patient_dob: "Not provided", hospital: "Midwestern University Hospital Tullamore", department: "general_surgery", specialty: "General Surgery", status: "admitted", referral_mode: "camera", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Abdominal pain query appendicitis", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Moloney John Paul", patient_mrn: "124310", patient_dob: "1982-05-19", hospital: "Midwestern University Hospital Tullamore", department: "general_surgery", specialty: "General Surgery", status: "admitted", referral_mode: "camera", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Abdominal pain", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Marie Lynch", patient_mrn: "19871", patient_dob: "1950-07-22", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", ward: "Arden", status: "admitted", referral_mode: "audio", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Orthopaedic review", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Barbara Ryan", patient_mrn: "63451", patient_dob: "1973-12-13", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", ward: "Bora", status: "admitted", referral_mode: "audio", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Post-op orthopaedic review", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Graham Radford", patient_mrn: "2392325", patient_dob: "Not provided", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", specialty: "Orthopaedics", status: "admitted", referral_mode: "camera", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Orthopaedic injury", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Leo Friend", patient_mrn: "750954", patient_dob: "Not provided", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", specialty: "Orthopaedics", status: "admitted", referral_mode: "camera", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "accept", presenting_complaint: "Orthopaedic review", review_status: "pending", pre_op_status: "not_listed" },
+      { patient_name: "Joseph Fox", patient_mrn: "368665", patient_dob: "Unknown", hospital: "Midwestern University Hospital Tullamore", department: "orthopaedics", specialty: "Pending evaluation", status: "admitted", referral_mode: "camera", referrer_department: "ED", on_call_consultant: "Umair (Al Hadi)", on_call_registrar: "Adeel", on_call_sho: "Mazin", triage_decision: "needs_more_info", presenting_complaint: "Pending evaluation", review_status: "pending", pre_op_status: "not_listed" },
+    ];
+
     const patientResults = await base44.asServiceRole.entities.Patient.bulkCreate(patients);
     const onCallResults = await base44.asServiceRole.entities.OnCallTeam.create(onCallTeam);
     const staffResults = await base44.asServiceRole.entities.StaffProfile.create(staffProfile);
     const labResults_inserted = await base44.asServiceRole.entities.LabResult.bulkCreate(labResults);
+    const caseFileResults = await base44.asServiceRole.entities.CaseFile.bulkCreate(caseFiles);
 
     return Response.json({
       status: "success",
@@ -79,6 +93,7 @@ Deno.serve(async (req) => {
         onCallTeam: 1,
         staffProfile: 1,
         labResults: labResults_inserted.length || labResults.length,
+        caseFiles: caseFileResults.length || caseFiles.length,
       },
     });
   } catch (error) {
