@@ -549,3 +549,460 @@ export function downloadFullCasePDF(caseData) {
   const fileName = `CaseFile_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
   doc.save(fileName);
 }
+
+/**
+ * Generates a polished Inpatient Drug Kardex PDF with medication table,
+ * IV fluids, and treatment plan.
+ */
+export function downloadKardexPDF(caseData, kardex) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed = 8) => {
+    if (y + needed > pageHeight - margin - 8) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  // === HEADER ===
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("HIVE SURGICAL ASSISTANT", margin, y);
+  y += 7;
+  doc.setFontSize(18);
+  doc.setTextColor(20);
+  doc.text("Inpatient Drug Kardex", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(`Generated: ${new Date().toLocaleString("en-IE")}`, margin, y);
+  y += 3;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+
+  // === PATIENT STRIP ===
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  const dobStr = caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—";
+  doc.text(`Patient: ${caseData.patient_name || "—"}`, margin, y);
+  doc.text(`MRN: ${caseData.patient_mrn || "—"}`, pageWidth - margin - 60, y);
+  y += 5;
+  doc.text(`DOB: ${dobStr}`, margin, y);
+  doc.text(`Ward/Bed: ${caseData.ward || "—"}${caseData.bed_number ? ` / ${caseData.bed_number}` : ""}`, pageWidth - margin - 60, y);
+  y += 5;
+  if (caseData.consultant_name) {
+    doc.text(`Consultant: ${caseData.consultant_name}`, margin, y);
+    y += 5;
+  }
+  if (caseData.specialty || caseData.accepting_specialty) {
+    doc.text(`Specialty: ${caseData.specialty || caseData.accepting_specialty}`, margin, y);
+    y += 5;
+  }
+  doc.setDrawColor(200);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 7;
+
+  // === ALLERGIES BOX ===
+  ensureSpace(12);
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.setFillColor(255, 245, 230);
+  doc.rect(margin, y - 2, maxWidth, 10, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(180, 80, 0);
+  doc.text("ALLERGIES", margin + 3, y + 2);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.text(caseData.proforma_data && getProformaAllergies(caseData) ? getProformaAllergies(caseData) : "Nil known", margin + 35, y + 2);
+  y += 12;
+
+  // === MEDICATION TABLE ===
+  if (kardex?.medications?.length) {
+    ensureSpace(16);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(40);
+    doc.text("Regular Medications", margin, y);
+    y += 4;
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+
+    // Table header
+    const colWidths = [50, 30, 25, 35, maxWidth - 140];
+    const headers = ["Drug", "Dose", "Route", "Frequency", "Indication"];
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margin, y, maxWidth, 7, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(60);
+    let x = margin + 2;
+    headers.forEach((h, i) => {
+      doc.text(h, x, y + 5);
+      x += colWidths[i];
+    });
+    y += 7;
+
+    // Table rows
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(0);
+    kardex.medications.forEach((med, idx) => {
+      ensureSpace(7);
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 248, 248);
+        doc.rect(margin, y, maxWidth, 7, "F");
+      }
+      x = margin + 2;
+      doc.text(String(med.drug || "—").substring(0, 28), x, y + 5); x += colWidths[0];
+      doc.text(String(med.dose || "—").substring(0, 16), x, y + 5); x += colWidths[1];
+      doc.text(String(med.route || "—").substring(0, 12), x, y + 5); x += colWidths[2];
+      doc.text(String(med.frequency || "—").substring(0, 20), x, y + 5); x += colWidths[3];
+      doc.text(String(med.indication || "").substring(0, 30), x, y + 5);
+      y += 7;
+      doc.setDrawColor(220);
+      doc.line(margin, y, pageWidth - margin, y);
+    });
+    y += 5;
+  }
+
+  // === ALERTS ===
+  if (kardex?.alerts?.length) {
+    ensureSpace(8 + kardex.alerts.length * 5);
+    doc.setFillColor(253, 242, 242);
+    doc.rect(margin, y - 2, maxWidth, 4 + kardex.alerts.length * 5 + 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(200, 30, 30);
+    doc.text("⚠ Contraindication Alerts", margin + 3, y + 2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(180, 30, 30);
+    kardex.alerts.forEach((a, i) => {
+      y += 5;
+      doc.text(`• ${a}`, margin + 5, y + 2);
+    });
+    y += 8;
+  }
+
+  // === IV FLUIDS ===
+  if (kardex?.iv_fluids || caseData.iv_fluid_plan) {
+    ensureSpace(12);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(80);
+    doc.text("IV FLUID PLAN", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    const fluidText = kardex?.iv_fluids || caseData.iv_fluid_plan;
+    const fluidLines = doc.splitTextToSize(fluidText, maxWidth);
+    fluidLines.forEach(line => {
+      ensureSpace(5);
+      doc.text(line, margin, y);
+      y += 5;
+    });
+    y += 4;
+  }
+
+  // === TREATMENT PLAN ===
+  const planText = kardex?.treatment_plan || caseData.treatment_plan;
+  if (planText) {
+    ensureSpace(12);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(80);
+    doc.text("TREATMENT PLAN", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    const planLines = doc.splitTextToSize(planText, maxWidth);
+    planLines.forEach(line => {
+      ensureSpace(5);
+      doc.text(line, margin, y);
+      y += 5;
+    });
+    y += 4;
+  }
+
+  // === SIGNATURE BLOCK ===
+  ensureSpace(20);
+  y += 6;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + 70, y);
+  doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Prescriber Signature / IMC", margin, y);
+  doc.text("Date / Time", pageWidth - margin - 70, y);
+
+  // === FOOTER ===
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(
+      `HIVE Surgical Assistant — Page ${i} of ${pageCount} — AI-assisted, verify clinically`,
+      margin,
+      pageHeight - 8
+    );
+  }
+
+  const fileName = `Kardex_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
+  doc.save(fileName);
+}
+
+function getProformaAllergies(caseData) {
+  if (!caseData.proforma_data) return null;
+  for (const [key, entry] of Object.entries(caseData.proforma_data)) {
+    if (key.toLowerCase().includes("allerg") && entry.answer === "yes" && entry.detail?.trim()) {
+      return entry.detail.trim();
+    }
+  }
+  return null;
+}
+
+/**
+ * Generates a polished Discharge Summary PDF with GP referral letter
+ * and patient education sheet — clean titles, professional formatting.
+ */
+export function downloadDischargeSummaryPDF(caseData, docs) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed = 8) => {
+    if (y + needed > pageHeight - margin - 8) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const writeSectionTitle = (text) => {
+    ensureSpace(10);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30);
+    doc.text(text, margin, y);
+    y += 2;
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 7;
+  };
+
+  const writeBody = (text) => {
+    if (!text) return;
+    const clean = String(text)
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "");
+    const lines = doc.splitTextToSize(clean, maxWidth);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(20);
+    lines.forEach(line => {
+      ensureSpace(5.5);
+      doc.text(line, margin, y);
+      y += 5.5;
+    });
+    y += 4;
+  };
+
+  // === PAGE 1: GP DISCHARGE LETTER ===
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text("HIVE SURGICAL ASSISTANT", margin, y);
+  y += 8;
+  doc.setFontSize(20);
+  doc.setTextColor(15);
+  doc.text("Discharge Summary", margin, y);
+  y += 6;
+  doc.setFontSize(11);
+  doc.setTextColor(80);
+  doc.text("GP Referral Letter", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(`Date: ${new Date().toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}`, margin, y);
+  y += 3;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 8;
+
+  // Patient demographics box
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.setFillColor(245, 245, 245);
+  doc.rect(margin, y, maxWidth, 22, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(80);
+  doc.text("PATIENT DETAILS", margin + 3, y + 4);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  const dobStr = caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—";
+  doc.text(`Name: ${caseData.patient_name || "—"}`, margin + 3, y + 9);
+  doc.text(`MRN: ${caseData.patient_mrn || "—"}`, margin + 90, y + 9);
+  doc.text(`DOB: ${dobStr}`, margin + 3, y + 14);
+  doc.text(`Gender: ${caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"}`, margin + 90, y + 14);
+  doc.text(`Ward/Bed: ${caseData.ward || "—"}${caseData.bed_number ? ` / ${caseData.bed_number}` : ""}`, margin + 3, y + 19);
+  doc.text(`Consultant: ${caseData.consultant_name || "—"}`, margin + 90, y + 19);
+  y += 26;
+
+  // Discharge pathway
+  if (caseData.discharge_pathway && caseData.discharge_pathway !== "not_discharged") {
+    const pathwayLabel = caseData.discharge_pathway === "opd_followup" ? "OPD Follow-up" : "Home — No follow-up";
+    if (caseData.accepting_specialty) {
+      ensureSpace(6);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text(`Discharged to: ${caseData.accepting_specialty}`, margin, y);
+      y += 6;
+    } else {
+      ensureSpace(6);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text(`Discharge Pathway: ${pathwayLabel}`, margin, y);
+      y += 6;
+    }
+  }
+
+  // Admission date
+  if (caseData.admission_date) {
+    ensureSpace(5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Admitted: ${new Date(caseData.admission_date).toLocaleDateString("en-IE")}`, margin, y);
+    y += 5;
+  }
+  y += 4;
+
+  // Presenting complaint
+  if (caseData.presenting_complaint || caseData.referral_summary) {
+    writeSectionTitle("Presenting Complaint");
+    writeBody(caseData.presenting_complaint || caseData.referral_summary);
+  }
+
+  // Diagnosis / Clinical impression
+  if (caseData.triage_reasoning) {
+    writeSectionTitle("Clinical Impression & Diagnosis");
+    writeBody(caseData.triage_reasoning);
+  }
+
+  // Management plan
+  if (caseData.treatment_plan) {
+    writeSectionTitle("Management & Treatment");
+    writeBody(caseData.treatment_plan);
+  }
+
+  // GP Letter
+  if (docs.gp_letter) {
+    writeSectionTitle("GP Discharge Letter");
+    writeBody(docs.gp_letter);
+  }
+
+  // === PAGE 2: PATIENT EDUCATION SHEET ===
+  if (docs.patient_education_sheet) {
+    doc.addPage();
+    y = margin;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text("HIVE SURGICAL ASSISTANT", margin, y);
+    y += 8;
+    doc.setFontSize(20);
+    doc.setTextColor(15);
+    doc.text("Patient Education", margin, y);
+    y += 6;
+    doc.setFontSize(11);
+    doc.setTextColor(80);
+    doc.text("Discharge Information Sheet", margin, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })}`, margin, y);
+    y += 3;
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    // Patient name box
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, y, maxWidth, 10, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Patient: ${caseData.patient_name || "—"}`, margin + 3, y + 7);
+    y += 16;
+
+    writeBody(docs.patient_education_sheet);
+  }
+
+  // === SIGNATURE BLOCK ===
+  ensureSpace(20);
+  y += 6;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + 70, y);
+  doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
+  y += 4;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Doctor Signature / IMC", margin, y);
+  doc.text("Date / Time", pageWidth - margin - 70, y);
+  if (caseData.note_author_name) {
+    y += 5;
+    doc.setTextColor(120);
+    doc.text(`Prepared by: ${caseData.note_author_name}${caseData.note_author_grade ? ` (${caseData.note_author_grade})` : ""}${caseData.note_author_imc ? `, IMC: ${caseData.note_author_imc}` : ""}`, margin, y);
+  }
+
+  // === FOOTER ===
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(
+      `HIVE Surgical Assistant — Page ${i} of ${pageCount} — AI-assisted, verify clinically`,
+      margin,
+      pageHeight - 8
+    );
+  }
+
+  const fileName = `DischargeSummary_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
+  doc.save(fileName);
+}

@@ -9,7 +9,7 @@ import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
 import ImagingReports from "@/components/ImagingReports";
-import { downloadCallNotePDF } from "@/lib/pdfExport";
+import { downloadCallNotePDF, downloadKardexPDF, downloadDischargeSummaryPDF } from "@/lib/pdfExport";
 import ReviewInvestigations from "@/components/ReviewInvestigations";
 import BeeMonitor from "@/components/BeeMonitor";
 import ExportShareDialog from "@/components/ExportShareDialog";
@@ -382,7 +382,7 @@ function KardexTab({ caseData, onUpdate, user }) {
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 text-sm">Inpatient Kardex — {caseData.patient_name}</h3>
-              <button onClick={() => window.print()} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+              <button onClick={() => downloadKardexPDF(caseData, kardex)} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200" title="Download Kardex PDF">
                 <Printer className="w-4 h-4" />
               </button>
             </div>
@@ -534,9 +534,9 @@ function DischargeTab({ caseData, onUpdate, user }) {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
               <Send className="w-4 h-4" /> Email GP
             </button>
-            <button onClick={() => window.print()}
+            <button onClick={() => downloadDischargeSummaryPDF(caseData, docs)}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
-              <Printer className="w-4 h-4" /> Print
+              <Printer className="w-4 h-4" /> Print PDF
             </button>
           </div>
         </>

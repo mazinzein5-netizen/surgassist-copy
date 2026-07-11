@@ -75,7 +75,7 @@ export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
   };
   const removeImaging = (idx) => { setImaging(prev => prev.filter((_, i) => i !== idx)); markDirty(); };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => downloadCallNotePDF(mergedData);
   const handleDownloadPDF = () => downloadCallNotePDF(mergedData);
 
   const handleEmail = async () => {
@@ -115,7 +115,7 @@ export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
           </button>
           <ShareCallNote caseData={mergedData} patientName={caseData.patient_name} />
           <button onClick={handlePrint} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-medium hover:bg-hive-gold/90">
-            <Printer className="w-3.5 h-3.5" /> Print
+            <Printer className="w-3.5 h-3.5" /> Print PDF
           </button>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80">
             <X className="w-4 h-4" />
