@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { suggestInvestigations } from "@/lib/hiveApi";
+import { suggestInvestigations, recognizeLabResults, uploadFile } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
-import { Loader2, FlaskConical, Scan, Plus, X, Sparkles, Check } from "lucide-react";
+import { Loader2, FlaskConical, Scan, Plus, X, Sparkles, Check, Camera } from "lucide-react";
 
 const BLOOD_INVESTIGATIONS = [
   "FBC", "UEC", "LFTs", "CRP", "Coagulation / INR", "Group & Save",
@@ -26,6 +26,9 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
   const [customBlood, setCustomBlood] = useState("");
   const [customImaging, setCustomImaging] = useState("");
   const [saving, setSaving] = useState(false);
+  const [scanningBloods, setScanningBloods] = useState(false);
+  const [scanMessage, setScanMessage] = useState(null);
+  const bloodsCameraRef = useRef(null);
 
   const toggleBlood = async (item) => {
     if (!canEdit) return;
@@ -87,6 +90,41 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
   const allBloodOptions = [...new Set([...BLOOD_INVESTIGATIONS, ...suggested.bloods])];
   const allImagingOptions = [...new Set([...IMAGING_OPTIONS, ...suggested.imaging])];
 
+  const handleBloodsCamera = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanningBloods(true);
+    setScanMessage(null);
+    try {
+      const uploadResult = await uploadFile(file);
+      const ocrResult = await recognizeLabResults(uploadResult.file_url);
+      const results = ocrResult.results || [];
+      if (results.length === 0) {
+        setScanMessage({ type: "error", text: "No lab results detected in the image. Try again or add manually." });
+      } else {
+        const labRecords = results.map(r => ({
+          case_id: caseData.id,
+          patient_name: caseData.patient_name || "",
+          patient_mrn: caseData.patient_mrn || "",
+          test_type: r.test_type,
+          value: r.value,
+          unit: r.unit || "",
+          collected_at: r.collected_at || new Date().toISOString(),
+          source: "ocr_ingestion",
+        }));
+        await base44.entities.LabResult.bulkCreate(labRecords);
+        const names = results.map(r => `${r.test_type}: ${r.value}${r.unit ? " " + r.unit : ""}`).join(", ");
+        setScanMessage({ type: "success", text: `Added ${results.length} lab result${results.length > 1 ? "s" : ""}: ${names}` });
+        onUpdate();
+      }
+    } catch {
+      setScanMessage({ type: "error", text: "Failed to scan blood results. Please try again." });
+    } finally {
+      setScanningBloods(false);
+      if (bloodsCameraRef.current) bloodsCameraRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -114,7 +152,28 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
 
       {/* Blood Investigations */}
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Bloods</p>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase">Bloods</p>
+          {canEdit && (
+            <div className="flex items-center gap-1.5">
+              {scanningBloods && <Loader2 className="w-3 h-3 animate-spin text-hive-gold" />}
+              <input ref={bloodsCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleBloodsCamera} />
+              <button
+                onClick={() => bloodsCameraRef.current?.click()}
+                disabled={scanningBloods}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-hive-gold/10 border border-hive-gold/30 text-hive-gold text-[10px] font-semibold hover:bg-hive-gold/20 disabled:opacity-50"
+              >
+                <Camera className="w-3 h-3" />
+                Scan Bloods
+              </button>
+            </div>
+          )}
+        </div>
+        {scanMessage && (
+          <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-xs border ${scanMessage.type === "success" ? "bg-success/10 border-success/30 text-success" : "bg-destructive/10 border-destructive/30 text-destructive"}`}>
+            {scanMessage.text}
+          </div>
+        )}
         <div className="flex flex-wrap gap-1.5">
           {allBloodOptions.map(item => {
             const selected = bloods.includes(item);
