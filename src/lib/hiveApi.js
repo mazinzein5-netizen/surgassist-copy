@@ -530,7 +530,7 @@ ANTIBIOTICS GIVEN: ${operativeData.antibiotics_given || "N/A"}
 DVT PROPHYLAXIS: ${operativeData.dvt_prophylaxis || "N/A"}
 POST-OP PLAN: ${operativeData.post_op_plan || "N/A"}
 
-Generate a professional operative note in plain text (no markdown) with these sections:
+Generate a professional operative note in plain text. Use this EXACT format — each section title on its own line in ALL CAPS, followed by the content on the next line(s), with a blank line between sections:
 
 PROCEDURE
 [procedure name and laterality]
@@ -541,50 +541,59 @@ PRE-OP DIAGNOSIS
 POST-OP DIAGNOSIS
 [diagnosis confirmed at operation]
 
+INDICATION
+[brief clinical indication for surgery]
+
 ANAESTHESIA
-[type]
+[type of anaesthesia]
 
 SURGEON
-[name, IMC]
+[name and IMC number]
 
 ASSISTANTS
 [names]
 
-INDICATION
-[brief indication for surgery]
+ANAESTHETIST
+[name]
 
 OPERATION FINDINGS
-[detailed findings at operation]
+[detailed findings at operation — anatomical details, pathology identified, tissue quality]
 
 OPERATION PERFORMED
-[step-by-step description of the procedure — patient positioning, incision, approach, key steps, haemostasis, closure]
+[step-by-step description — patient positioning, draping, incision, surgical approach, key procedural steps, haemostasis, device placement if any]
 
 CLOSURE
-[closure method — layers, suture material, skin closure]
+[wound closure — layers closed, suture material, skin closure method]
 
 BLOOD LOSS
-[estimated blood loss]
+[estimated blood loss in mL]
 
 DRAINS
-[drains placed or none]
+[drain type, size, and location, or None]
 
 SPECIMENS SENT
-[specimens sent for histology or none]
+[specimens sent for histology or microbiology, or None]
 
 COMPLICATIONS
-[intraoperative complications or none]
+[intraoperative complications or None]
 
-MEDICATIONS
-[antibiotics given, DVT prophylaxis]
+ANTIBIOTICS
+[antibiotics administered — prophylactic or therapeutic, drug and dose]
+
+DVT PROPHYLAXIS
+[VTE prophylaxis used]
 
 POST-OP PLAN
-[management plan — monitoring, analgesia, mobilisation, follow-up]
+[post-operative management — monitoring, analgesia, mobilisation, wound care, follow-up, discharge plan]
 
 Rules:
+- Each section title MUST be on its own line in ALL CAPS (e.g. "PROCEDURE", "CLOSURE")
+- Content follows on the next line(s) after the title
+- Leave a blank line between each section
 - Write in professional surgical documentation style
 - Use proper medical terminology and standard abbreviations
-- Plain text only, no markdown symbols
-- Maximum 40 lines
+- Plain text only, NO markdown symbols (no asterisks, no hashes, no dashes for emphasis)
+- If a field is unknown, write "Not documented"
 - Presentable as-is for direct chart entry`,
     response_json_schema: {
       type: "object",
