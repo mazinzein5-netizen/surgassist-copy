@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { suggestInvestigations, recognizeLabResults, uploadFile } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
-import { Loader2, FlaskConical, Scan, Plus, X, Sparkles, Check, Camera } from "lucide-react";
+import { Loader2, FlaskConical, Scan, Plus, X, Sparkles, Check, Camera, Upload } from "lucide-react";
 
 const BLOOD_INVESTIGATIONS = [
   "FBC", "UEC", "LFTs", "CRP", "Coagulation / INR", "Group & Save",
@@ -29,6 +29,7 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
   const [scanningBloods, setScanningBloods] = useState(false);
   const [scanMessage, setScanMessage] = useState(null);
   const bloodsCameraRef = useRef(null);
+  const bloodsUploadRef = useRef(null);
 
   const toggleBlood = async (item) => {
     if (!canEdit) return;
@@ -90,7 +91,7 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
   const allBloodOptions = [...new Set([...BLOOD_INVESTIGATIONS, ...suggested.bloods])];
   const allImagingOptions = [...new Set([...IMAGING_OPTIONS, ...suggested.imaging])];
 
-  const handleBloodsCamera = async (e) => {
+  const handleBloodsFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setScanningBloods(true);
@@ -122,6 +123,7 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
     } finally {
       setScanningBloods(false);
       if (bloodsCameraRef.current) bloodsCameraRef.current.value = "";
+      if (bloodsUploadRef.current) bloodsUploadRef.current.value = "";
     }
   };
 
@@ -157,7 +159,8 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
           {canEdit && (
             <div className="flex items-center gap-1.5">
               {scanningBloods && <Loader2 className="w-3 h-3 animate-spin text-hive-gold" />}
-              <input ref={bloodsCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleBloodsCamera} />
+              <input ref={bloodsCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleBloodsFile} />
+              <input ref={bloodsUploadRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleBloodsFile} />
               <button
                 onClick={() => bloodsCameraRef.current?.click()}
                 disabled={scanningBloods}
@@ -165,6 +168,14 @@ export default function ReviewInvestigations({ caseData, onUpdate, canEdit }) {
               >
                 <Camera className="w-3 h-3" />
                 Scan Bloods
+              </button>
+              <button
+                onClick={() => bloodsUploadRef.current?.click()}
+                disabled={scanningBloods}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary border border-border text-foreground text-[10px] font-semibold hover:bg-secondary/80 disabled:opacity-50"
+              >
+                <Upload className="w-3 h-3" />
+                Upload
               </button>
             </div>
           )}
