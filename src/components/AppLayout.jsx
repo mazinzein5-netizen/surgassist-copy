@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import HiveLogo from "./HiveLogo";
 import HexBadge from "./HexBadge";
 import AgentLauncher from "./AgentLauncher";
-import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, Calculator, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch, MessageSquare } from "lucide-react";
+import { LayoutDashboard, FilePlus2, FolderOpen, Stethoscope, ClipboardList, Users, User, LogOut, Menu, X, AlertTriangle, Activity, FolderSearch, MessageSquare } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -16,7 +16,6 @@ const NAV_ITEMS = [
   { to: "/theatre-log", label: "Theatre Log", icon: ClipboardList },
   { to: "/handover", label: "Handover", icon: Users },
   { to: "/patient-history", label: "Patient Memory", icon: FolderSearch },
-  { to: "/drug-calculator", label: "Drug Calculator", icon: Calculator },
   { to: "/contacts", label: "Contacts", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];

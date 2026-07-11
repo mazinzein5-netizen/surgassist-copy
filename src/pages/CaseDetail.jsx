@@ -7,7 +7,7 @@ import { generateKardex, generateDischargeDocuments, generateConsentChecklist, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
@@ -22,6 +22,7 @@ import BeeMonitor from "@/components/BeeMonitor";
 import ExportShareDialog from "@/components/ExportShareDialog";
 import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
+import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 
 const TABS = [
   { id: "summary", label: "Summary", icon: FileText },
@@ -43,6 +44,7 @@ export default function CaseDetail() {
   const [photos, setPhotos] = useState([]);
   const [showPrintNote, setShowPrintNote] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showDrugCalc, setShowDrugCalc] = useState(false);
 
   useEffect(() => {
     loadCase();
@@ -128,6 +130,13 @@ export default function CaseDetail() {
                 Print Call Note & Plan
               </button>
             )}
+            <button
+              onClick={() => setShowDrugCalc(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/20 transition-colors"
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              Drug Calculator
+            </button>
           </div>
         </div>
       </div>
@@ -176,6 +185,10 @@ export default function CaseDetail() {
 
       {showExport && (
         <ExportShareDialog caseData={caseData} onClose={() => setShowExport(false)} />
+      )}
+
+      {showDrugCalc && (
+        <DrugCalculatorPanel caseData={caseData} onClose={() => setShowDrugCalc(false)} />
       )}
     </div>
   );
