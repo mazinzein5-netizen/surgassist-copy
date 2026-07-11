@@ -6,29 +6,29 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 220 15% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
-    --primary: 220 15% 15%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 15% 15%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 15% 15%;
+    --background: 229 60% 10%;
+    --foreground: 45 30% 92%;
+    --card: 229 55% 14%;
+    --card-foreground: 45 30% 92%;
+    --popover: 229 55% 14%;
+    --popover-foreground: 45 30% 92%;
+    --primary: 45 96% 58%;
+    --primary-foreground: 229 80% 18%;
+    --secondary: 229 45% 18%;
+    --secondary-foreground: 45 30% 92%;
+    --muted: 229 45% 18%;
+    --muted-foreground: 225 15% 65%;
+    --accent: 229 50% 20%;
+    --accent-foreground: 45 30% 92%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 220 15% 15%;
+    --border: 229 40% 22%;
+    --input: 229 45% 18%;
+    --ring: 45 96% 58%;
     --radius: 0.5rem;
     --hive-navy: 229 80% 26%;
     --hive-gold: 45 96% 58%;
@@ -37,14 +37,14 @@
     --font-body: 'Inter', sans-serif;
     --font-display: 'Inter', sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 15% 15%;
-    --sidebar-primary: 220 15% 15%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 15% 15%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 220 15% 15%;
+    --sidebar-background: 229 65% 8%;
+    --sidebar-foreground: 45 30% 92%;
+    --sidebar-primary: 45 96% 58%;
+    --sidebar-primary-foreground: 229 80% 18%;
+    --sidebar-accent: 229 50% 16%;
+    --sidebar-accent-foreground: 45 30% 92%;
+    --sidebar-border: 229 40% 18%;
+    --sidebar-ring: 45 96% 58%;
   }
 }
 
