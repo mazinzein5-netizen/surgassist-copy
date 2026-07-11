@@ -23,6 +23,7 @@ import ExportShareDialog from "@/components/ExportShareDialog";
 import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
+import BloodsCameraButton from "@/components/BloodsCameraButton";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 
 const TABS = [
@@ -138,6 +139,7 @@ export default function CaseDetail() {
               <Calculator className="w-3.5 h-3.5" />
               Drug Calculator
             </button>
+            <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
           </div>
         </div>
       </div>
