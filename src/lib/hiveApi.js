@@ -505,6 +505,92 @@ Only populate fields where the information is clearly legible. Leave fields empt
   return result;
 }
 
+export async function generateInpatientNote(caseData, labResults, photos, user) {
+  // Build lab results summary
+  const labSummary = labResults.length > 0
+    ? labResults.map(l => `${l.test_type}: ${l.value}${l.unit || ""} (${new Date(l.collected_at).toLocaleDateString("en-IE")})`).join("; ")
+    : "No lab results on file";
+
+  // Build imaging summary from photos
+  const imagingPhotos = photos.filter(p => p.photo_type === "xray" || p.photo_type === "ecg" || p.photo_type === "other");
+  const imagingSummary = imagingPhotos.length > 0
+    ? imagingPhotos.map(p => `${p.photo_type.replace("_", " ")}${p.caption ? ` — ${p.caption}` : ""}`).join("; ")
+    : "No imaging on file";
+
+  // Build medications summary
+  const medsSummary = caseData.kardex_data?.medications?.length > 0
+    ? caseData.kardex_data.medications.map(m => `${m.drug} ${m.dose} ${m.frequency}`).join("; ")
+    : "No kardex data";
+
+  // Build proforma summary
+  let proformaSummary = "No proforma data";
+  if (caseData.proforma_data) {
+    const compiled = compileProformaLines(caseData.proforma_data, caseData);
+    const lines = compiled.flatMap(g => g.lines);
+    proformaSummary = lines.length > 0 ? lines.join("; ") : "No proforma data";
+  }
+
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are HIVE Surgical Assistant. Generate a COMPREHENSIVE INPATIENT PROGRESS NOTE for this surgical patient. This is an ongoing record entry — not the initial admission note.
+
+PATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}
+DEPARTMENT: ${caseData.department}
+WARD/BED: ${caseData.ward || "N/A"} / ${caseData.bed_number || "N/A"}
+CONSULTANT: ${caseData.consultant_name || "N/A"}
+ADMISSION DATE: ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString("en-IE") : "N/A"}
+POST-OP STATUS: ${caseData.pre_op_status || "N/A"}
+PROCEDURE: ${caseData.procedure_name || "N/A"}
+POST-OP DAY: ${caseData.pod ?? "N/A"}
+
+PRESENTING COMPLAINT: ${caseData.presenting_complaint || "N/A"}
+WORKING DIAGNOSIS: ${caseData.referral_summary || caseData.presenting_complaint || "N/A"}
+
+LAB RESULTS:
+${labSummary}
+
+IMAGING:
+${imagingSummary}
+
+CURRENT MEDICATIONS (KARDEX):
+${medsSummary}
+
+IV FLUID PLAN: ${caseData.iv_fluid_plan || "N/A"}
+TREATMENT PLAN: ${caseData.treatment_plan || "N/A"}
+
+PROFORMA FINDINGS: ${proformaSummary}
+
+INEWS SCORE: ${caseData.inews_score ?? "N/A"}
+INEWS DATA: ${caseData.inews_data ? JSON.stringify(caseData.inews_data) : "N/A"}
+
+Generate a professional inpatient progress note in plain text (no markdown) with these sections:
+
+CLINICAL PROGRESS
+[2-4 sentences describing the patient's current status, progress since admission, and any changes]
+
+INVESTIGATIONS REVIEW
+Bloods: [summarize key lab results with abnormal values flagged, trends if multiple results]
+Imaging: [summarize imaging findings]
+
+ASSESSMENT
+[working diagnosis, current issues, response to treatment]
+
+PLAN
+- [bullet points: ongoing management, pending investigations, planned procedures, discharge criteria, escalation triggers — max 6 bullets]
+
+MEDICATIONS
+[brief summary of key medications and any changes needed]
+
+Generate the note now. Use proper medical terminology and standard abbreviations. Plain text only, no markdown symbols. Maximum 30 lines.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        inpatient_note: { type: "string" }
+      }
+    }
+  });
+  return result.inpatient_note;
+}
+
 export async function suggestManagementPlan(caseData) {
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `You are a senior surgical registrar. Generate a concise, bulleted management plan for this inpatient.
