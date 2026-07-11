@@ -5,6 +5,7 @@ import { generateInpatientNote } from "@/lib/hiveApi";
 import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Pill, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
+import ProgressTimeline from "@/components/ProgressTimeline";
 
 export default function InpatientNotePanel({ caseData, caseId, onClose, onUpdate }) {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function InpatientNotePanel({ caseData, caseId, onClose, onUpdate
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showData, setShowData] = useState(false);
+  const [activeTab, setActiveTab] = useState("progress");
 
   useEffect(() => {
     loadData();
@@ -126,118 +128,140 @@ export default function InpatientNotePanel({ caseData, caseId, onClose, onUpdate
             </div>
           </div>
 
-          {/* Collapsible data sources */}
-          <button onClick={() => setShowData(!showData)}
-            className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
-            <span className="flex items-center gap-2">
-              {showData ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              Data Sources ({labResults.length} labs, {photos.length} images)
-            </span>
-          </button>
+          {/* Tab switcher */}
+          <div className="flex items-center gap-1 border-b border-gray-200">
+            <button onClick={() => setActiveTab("progress")}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === "progress" ? "border-hive-gold text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+              Progress Timeline
+            </button>
+            <button onClick={() => setActiveTab("note")}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === "note" ? "border-hive-gold text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+              Generate Note
+            </button>
+          </div>
 
-          {showData && (
-            <div className="space-y-3">
-              {/* Lab results */}
-              <div className="bg-white border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <FlaskConical className="w-4 h-4 text-gray-500" />
-                  <h4 className="font-semibold text-gray-900 text-sm">Lab Results</h4>
-                </div>
-                {labResults.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">No lab results on file</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {Object.entries(labsByType).map(([testType, results]) => (
-                      <div key={testType} className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-gray-700 capitalize w-32">{testType}</span>
-                        {results.map((r, i) => (
-                          <span key={i} className="text-gray-600">
-                            {r.value}{r.unit || ""} <span className="text-gray-400">({new Date(r.collected_at).toLocaleDateString("en-IE")})</span>
-                            {i < results.length - 1 && " · "}
-                          </span>
+          {/* Progress Timeline tab */}
+          {activeTab === "progress" && (
+            <ProgressTimeline caseData={caseData} caseId={caseId} onUpdate={onUpdate} />
+          )}
+
+          {/* Generate Note tab */}
+          {activeTab === "note" && (
+            <>
+              {/* Collapsible data sources */}
+              <button onClick={() => setShowData(!showData)}
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <span className="flex items-center gap-2">
+                  {showData ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  Data Sources ({labResults.length} labs, {photos.length} images)
+                </span>
+              </button>
+
+              {showData && (
+                <div className="space-y-3">
+                  {/* Lab results */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FlaskConical className="w-4 h-4 text-gray-500" />
+                      <h4 className="font-semibold text-gray-900 text-sm">Lab Results</h4>
+                    </div>
+                    {labResults.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">No lab results on file</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {Object.entries(labsByType).map(([testType, results]) => (
+                          <div key={testType} className="flex items-center gap-2 text-xs">
+                            <span className="font-medium text-gray-700 capitalize w-32">{testType}</span>
+                            {results.map((r, i) => (
+                              <span key={i} className="text-gray-600">
+                                {r.value}{r.unit || ""} <span className="text-gray-400">({new Date(r.collected_at).toLocaleDateString("en-IE")})</span>
+                                {i < results.length - 1 && " · "}
+                              </span>
+                            ))}
+                          </div>
                         ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Imaging */}
-              <div className="bg-white border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Scan className="w-4 h-4 text-gray-500" />
-                  <h4 className="font-semibold text-gray-900 text-sm">Imaging & Clinical Photos</h4>
-                </div>
-                {photos.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">No imaging on file</p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {photos.map(p => (
-                      <div key={p.id} className="relative">
-                        <img src={p.photo_url} alt={p.photo_type} className="w-full h-16 rounded-lg object-cover border border-gray-200" />
-                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-[9px] text-white px-1 py-0.5 rounded-b-lg capitalize">{p.photo_type.replace(/_/g, " ")}</span>
+                  {/* Imaging */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Scan className="w-4 h-4 text-gray-500" />
+                      <h4 className="font-semibold text-gray-900 text-sm">Imaging & Clinical Photos</h4>
+                    </div>
+                    {photos.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">No imaging on file</p>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2">
+                        {photos.map(p => (
+                          <div key={p.id} className="relative">
+                            <img src={p.photo_url} alt={p.photo_type} className="w-full h-16 rounded-lg object-cover border border-gray-200" />
+                            <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-[9px] text-white px-1 py-0.5 rounded-b-lg capitalize">{p.photo_type.replace(/_/g, " ")}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Medications */}
-              <div className="bg-white border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Pill className="w-4 h-4 text-gray-500" />
-                  <h4 className="font-semibold text-gray-900 text-sm">Current Medications</h4>
+                  {/* Medications */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Pill className="w-4 h-4 text-gray-500" />
+                      <h4 className="font-semibold text-gray-900 text-sm">Current Medications</h4>
+                    </div>
+                    {caseData.kardex_data?.medications?.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {caseData.kardex_data.medications.map((m, i) => (
+                          <p key={i} className="text-xs text-gray-700">{m.drug} {m.dose} {m.route} {m.frequency}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No kardex data</p>
+                    )}
+                  </div>
                 </div>
-                {caseData.kardex_data?.medications?.length > 0 ? (
-                  <div className="space-y-0.5">
-                    {caseData.kardex_data.medications.map((m, i) => (
-                      <p key={i} className="text-xs text-gray-700">{m.drug} {m.dose} {m.route} {m.frequency}</p>
-                    ))}
+              )}
+
+              {/* Generate button */}
+              <button onClick={handleGenerate} disabled={generating}
+                className="w-full px-4 py-3 rounded-lg bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 flex items-center justify-center gap-2 disabled:opacity-50">
+                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {note ? "Re-generate Inpatient Note" : "Generate Inpatient Progress Note"}
+              </button>
+
+              {/* Note preview */}
+              {note && (
+                <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <AIBadge />
+                      <h4 className="font-bold text-gray-900 text-sm">Inpatient Progress Note</h4>
+                      {editing ? (
+                        <button onClick={handleSaveEdit} className="text-xs text-blue-600 hover:underline ml-2">Done editing</button>
+                      ) : (
+                        <button onClick={() => { setEditedNote(note); setEditing(true); }} className="text-xs text-blue-600 hover:underline ml-2">Edit</button>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-xs text-gray-400 italic">No kardex data</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Generate button */}
-          <button onClick={handleGenerate} disabled={generating}
-            className="w-full px-4 py-3 rounded-lg bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 flex items-center justify-center gap-2 disabled:opacity-50">
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {note ? "Re-generate Inpatient Note" : "Generate Inpatient Progress Note"}
-          </button>
-
-          {/* Note preview */}
-          {note && (
-            <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <AIBadge />
-                  <h4 className="font-bold text-gray-900 text-sm">Inpatient Progress Note</h4>
                   {editing ? (
-                    <button onClick={handleSaveEdit} className="text-xs text-blue-600 hover:underline ml-2">Done editing</button>
+                    <textarea value={editedNote} onChange={(e) => setEditedNote(e.target.value)} rows={24}
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 font-mono resize-y focus:outline-none focus:border-gray-400" />
                   ) : (
-                    <button onClick={() => { setEditedNote(note); setEditing(true); }} className="text-xs text-blue-600 hover:underline ml-2">Edit</button>
+                    <FormattedAdmissionNote note={note} />
                   )}
                 </div>
-              </div>
-              {editing ? (
-                <textarea value={editedNote} onChange={(e) => setEditedNote(e.target.value)} rows={24}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 font-mono resize-y focus:outline-none focus:border-gray-400" />
-              ) : (
-                <FormattedAdmissionNote note={note} />
               )}
-            </div>
-          )}
 
-          {/* Save to record */}
-          {note && (
-            <button onClick={handleSaveToRecord} disabled={saving}
-              className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save to Patient Record
-            </button>
+              {/* Save to record */}
+              {note && (
+                <button onClick={handleSaveToRecord} disabled={saving}
+                  className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 flex items-center justify-center gap-2 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save to Patient Record
+                </button>
+              )}
+            </>
           )}
         </div>
 
