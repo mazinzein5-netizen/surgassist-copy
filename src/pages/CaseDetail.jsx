@@ -7,7 +7,7 @@ import { generateKardex, generateDischargeDocuments, generateConsentChecklist, g
 import AIBadge from "@/components/AIBadge";
 import HexBadge from "@/components/HexBadge";
 
-import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, FileText, Pill, FileCheck, Send, Printer, Stethoscope, Activity, ClipboardCheck, Eye, Hand, AlertTriangle, CheckCircle2, Edit3, ShieldCheck, ListChecks, Scan, ScrollText, Sparkles, FlaskConical, ChevronUp, ChevronDown, Download, Users, Lock, Calculator, Clock } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import ShareNoteButtons from "@/components/ShareNoteButtons";
@@ -24,6 +24,7 @@ import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
+import CaseTimeline from "@/components/CaseTimeline";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 
 const TABS = [
@@ -34,6 +35,7 @@ const TABS = [
   { id: "consent", label: "Consent", icon: ShieldCheck },
   { id: "review", label: "Review", icon: ClipboardCheck },
   { id: "discharge", label: "Discharge", icon: FileCheck },
+  { id: "timeline", label: "Timeline", icon: Clock },
 ];
 
 export default function CaseDetail() {
@@ -179,6 +181,7 @@ export default function CaseDetail() {
           {activeTab === "discharge" && <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />}
           {activeTab === "consent" && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
           {activeTab === "review" && <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />}
+          {activeTab === "timeline" && <CaseTimeline caseData={caseData} />}
         </div>
       </div>
 
