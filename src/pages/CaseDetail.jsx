@@ -25,6 +25,7 @@ import WorkflowStepper from "@/components/WorkflowStepper";
 import TriageChat from "@/components/TriageChat";
 import PathwayActions from "@/components/PathwayActions";
 import StatusPill from "@/components/StatusPill";
+import ProformaModal from "@/components/ProformaModal";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 
@@ -46,6 +47,7 @@ export default function CaseDetail() {
   const [showPrintNote, setShowPrintNote] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showDrugCalc, setShowDrugCalc] = useState(false);
+  const [showProforma, setShowProforma] = useState(false);
 
   useEffect(() => { loadCase(); }, [id]);
 
@@ -123,6 +125,10 @@ export default function CaseDetail() {
             <button onClick={() => setShowDrugCalc(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Calculator className="w-3.5 h-3.5" /> Drug Calculator
+            </button>
+            <button onClick={() => setShowProforma(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+              <Stethoscope className="w-3.5 h-3.5" /> Proforma
             </button>
             <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
           </div>
@@ -242,6 +248,7 @@ export default function CaseDetail() {
       {showPrintNote && <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />}
       {showExport && <ExportShareDialog caseData={caseData} onClose={() => setShowExport(false)} />}
       {showDrugCalc && <DrugCalculatorPanel caseData={caseData} onClose={() => setShowDrugCalc(false)} />}
+      {showProforma && <ProformaModal caseData={caseData} caseId={id} onClose={() => setShowProforma(false)} onUpdate={loadCase} />}
     </div>
   );
 }
