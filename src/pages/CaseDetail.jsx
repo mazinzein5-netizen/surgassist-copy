@@ -261,7 +261,7 @@ export default function CaseDetail() {
                   </div>
                 }
               >
-                <InpatientOverview caseData={caseData} />
+                <InpatientOverview caseData={caseData} onAddNote={() => setShowInpatientNote(true)} />
               </CollapsibleCard>
               <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}
                 collapsedSummary={<p className="text-xs text-gray-400">Tap to view chronological notes</p>}
