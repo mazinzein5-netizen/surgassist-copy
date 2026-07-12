@@ -157,17 +157,22 @@ export default function CaseDetail() {
       {/* Content — single scroll with collapsible sections */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-3">
-          {/* 1. AI Triage Chat — always open */}
-          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare} defaultOpen={true}>
+          {/* 1. Clinical Proforma — at the top, tailored to complaint & status */}
+          <CollapsibleCard title="Clinical Proforma" icon={Stethoscope} defaultOpen={true}>
+            <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+          </CollapsibleCard>
+
+          {/* 2. AI Triage Chat */}
+          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare}>
             <TriageChat caseId={id} caseData={caseData} />
           </CollapsibleCard>
 
-          {/* 2. Patient Info */}
+          {/* 3. Patient Info */}
           <CollapsibleCard title="Patient Info" icon={User}>
             <PatientInfoEditor caseData={caseData} onUpdate={loadCase} />
           </CollapsibleCard>
 
-          {/* 3. Referral Summary */}
+          {/* 4. Referral Summary */}
           <CollapsibleCard title="Referral Summary" icon={FileText}>
             <div className="space-y-3">
               {caseData.presenting_complaint && (
@@ -220,11 +225,6 @@ export default function CaseDetail() {
                 </div>
               )}
             </div>
-          </CollapsibleCard>
-
-          {/* 4. Clinical Proforma */}
-          <CollapsibleCard title="Clinical Proforma" icon={Stethoscope}>
-            <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
           </CollapsibleCard>
 
           {/* 5. Investigations */}

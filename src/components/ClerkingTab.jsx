@@ -5,6 +5,7 @@ import { Loader2, Camera, Stethoscope, Activity, Eye, Hand, AlertTriangle } from
 import OrthoProforma from "@/components/OrthoProforma";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import PeriopAlertsPanel from "@/components/PeriopAlertsPanel";
+import ProformaContextBanner from "@/components/ProformaContextBanner";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
 
 export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
@@ -35,6 +36,9 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) 
 
   return (
     <div className="space-y-4">
+      {/* Tailored context banner */}
+      <ProformaContextBanner caseData={caseData} />
+
       {/* Yes/No Proforma */}
       <OrthoProforma caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
 
