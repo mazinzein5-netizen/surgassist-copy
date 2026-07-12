@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "@/components/HiveLogo";
-import { Loader2, Save, Stethoscope, Building2, BadgeCheck } from "lucide-react";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
+import { Loader2, Save, Stethoscope, Building2, BadgeCheck, AlertTriangle, Trash2 } from "lucide-react";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
@@ -18,6 +19,7 @@ export default function Profile() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -94,10 +96,30 @@ export default function Profile() {
         </button>
       </div>
 
+      {/* Delete Account */}
+      <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6">
+        <h2 className="font-bold text-destructive text-sm flex items-center gap-2 mb-1">
+          <AlertTriangle className="w-4 h-4" /> Delete Account
+        </h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Permanently remove your account and profile data. This action cannot be undone.
+        </p>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive/10 text-destructive border border-destructive/30 text-sm font-medium hover:bg-destructive/20 transition-colors min-h-[44px]"
+        >
+          <Trash2 className="w-4 h-4" /> Delete My Account
+        </button>
+      </div>
+
       <div className="text-center">
         <HiveLogo size={32} showText />
         <p className="text-[10px] text-muted-foreground mt-3">AI Decision Support — Verify All Output Clinically</p>
       </div>
+
+      {showDeleteModal && (
+        <DeleteAccountModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} />
+      )}
     </div>
   );
 }

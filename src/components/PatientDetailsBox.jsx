@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { User, ChevronDown, ChevronUp, Sparkles, ScanLine, Camera, Upload, Loader2 } from "lucide-react";
 import { uploadFile, recognizePatientDemographics } from "@/lib/hiveApi";
+import SelectSheet from "@/components/SelectSheet";
 
 const GENDERS = [
   { value: "male", label: "Male" },
@@ -139,16 +140,13 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Gender</label>
-              <select
+              <SelectSheet
                 value={value.patient_gender || ""}
-                onChange={(e) => update("patient_gender", e.target.value)}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-              >
-                <option value="">Select…</option>
-                {GENDERS.map((g) => (
-                  <option key={g.value} value={g.value}>{g.label}</option>
-                ))}
-              </select>
+                options={GENDERS}
+                onChange={(v) => update("patient_gender", v)}
+                placeholder="Select…"
+                label="Gender"
+              />
             </div>
           </div>
         </div>

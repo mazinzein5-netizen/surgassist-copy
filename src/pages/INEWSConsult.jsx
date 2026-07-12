@@ -12,6 +12,7 @@ import { recognizeVitals } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
 import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import ReasoningBullets from "@/components/ReasoningBullets";
+import SelectSheet from "@/components/SelectSheet";
 import { Camera, Loader2, AlertTriangle, Stethoscope, Activity, Send, Phone, FlaskConical, Pill, ClipboardList, ChevronDown, ChevronUp, Info } from "lucide-react";
 
 const TOP_10 = [
@@ -107,6 +108,22 @@ const SYMPTOM_GROUPS = [
       "Falls (mechanical vs medical)",
     ],
   },
+];
+
+const GERIATRIC_OPTIONS = [
+  { value: "Not applicable — not geriatric", label: "Not applicable — not geriatric" },
+  { value: "Orthogeriatric review completed", label: "Orthogeriatric review completed" },
+  { value: "Pre-op optimization in progress", label: "Pre-op optimization in progress" },
+  { value: "Optimized — awaiting surgery", label: "Optimized — awaiting surgery" },
+  { value: "Not yet optimized", label: "Not yet optimized" },
+  { value: "Post-op — under orthogeriatric care", label: "Post-op — under orthogeriatric care" },
+];
+
+const AVPU_OPTIONS = [
+  { value: "A", label: "Alert" },
+  { value: "V", label: "Voice" },
+  { value: "P", label: "Pain" },
+  { value: "U", label: "Unresponsive" },
 ];
 
 export default function INEWSConsult() {
@@ -338,19 +355,13 @@ export default function INEWSConsult() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">Geriatric Optimization</label>
-                <select
+                <SelectSheet
                   value={geriatricOptimized}
-                  onChange={(e) => setGeriatricOptimized(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-                >
-                  <option value="">Select if applicable…</option>
-                  <option value="Not applicable — not geriatric">Not applicable — not geriatric</option>
-                  <option value="Orthogeriatric review completed">Orthogeriatric review completed</option>
-                  <option value="Pre-op optimization in progress">Pre-op optimization in progress</option>
-                  <option value="Optimized — awaiting surgery">Optimized — awaiting surgery</option>
-                  <option value="Not yet optimized">Not yet optimized</option>
-                  <option value="Post-op — under orthogeriatric care">Post-op — under orthogeriatric care</option>
-                </select>
+                  options={GERIATRIC_OPTIONS}
+                  onChange={(v) => setGeriatricOptimized(v)}
+                  placeholder="Select if applicable…"
+                  label="Geriatric Optimization"
+                />
               </div>
             </div>
 
@@ -458,12 +469,13 @@ export default function INEWSConsult() {
               <VitalsInput label="Temp (°C)" value={vitals.temp} onChange={v => setVitals(p => ({ ...p, temp: v }))} quickValues={["36.0", "36.5", "37.5", "38.5", "39.5"]} />
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">AVPU</label>
-                <select value={vitals.avpu} onChange={e => setVitals(p => ({ ...p, avpu: e.target.value }))} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50">
-                  <option value="A">Alert</option>
-                  <option value="V">Voice</option>
-                  <option value="P">Pain</option>
-                  <option value="U">Unresponsive</option>
-                </select>
+                <SelectSheet
+                  value={vitals.avpu}
+                  options={AVPU_OPTIONS}
+                  onChange={(v) => setVitals(p => ({ ...p, avpu: v }))}
+                  placeholder="Select…"
+                  label="AVPU"
+                />
               </div>
             </div>
           </Section>

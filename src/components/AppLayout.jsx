@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import AgentLauncher from "./AgentLauncher";
+import MotionOutlet from "./MotionOutlet";
 import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard } from "lucide-react";
 
 const MAIN_NAV = [
@@ -100,12 +101,12 @@ export default function AppLayout() {
       </aside>
 
       {/* Mobile bottom tab bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar border-t border-sidebar-border z-40 flex">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar border-t border-sidebar-border z-40 flex safe-bottom">
         {MAIN_NAV.map(item => {
           const Icon = item.icon;
           return (
             <Link key={item.to} to={item.to}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 ${
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 min-h-[44px] justify-center ${
                 isActive(item.to) ? "text-hive-gold" : "text-muted-foreground"
               }`}>
               <Icon className="w-5 h-5" />
@@ -114,7 +115,7 @@ export default function AppLayout() {
           );
         })}
         <button onClick={() => setMoreOpen(true)}
-          className="flex-1 flex flex-col items-center gap-1 py-2.5 text-muted-foreground">
+          className="flex-1 flex flex-col items-center gap-1 py-2.5 min-h-[44px] justify-center text-muted-foreground">
           <MoreHorizontal className="w-5 h-5" />
           <span className="text-[10px] font-medium">More</span>
         </button>
@@ -124,10 +125,10 @@ export default function AppLayout() {
       {moreOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMoreOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl p-4 pb-8 border-t border-border">
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl p-4 pb-8 safe-bottom border-t border-border">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-card-foreground">More</h2>
-              <button onClick={() => setMoreOpen(false)} className="text-muted-foreground">
+              <button onClick={() => setMoreOpen(false)} className="text-muted-foreground min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -154,8 +155,8 @@ export default function AppLayout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 md:pb-0">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto scrollbar-thin pb-16 md:pb-0 safe-top">
+          <MotionOutlet />
         </main>
       </div>
 

@@ -54,6 +54,13 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, nav, aside, [role="tablist"], [role="tab"], a, label, .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -86,6 +93,12 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: hsl(220 13% 80%);
     border-radius: 3px;
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
