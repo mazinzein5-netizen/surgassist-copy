@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import StatusPill from "@/components/StatusPill";
 import { getStage, formatTimestamp, timeAgo } from "@/lib/workflow";
-import { FilePlus2, Search, ChevronRight, Check } from "lucide-react";
+import { FilePlus2, Search, ChevronRight, Check, ClipboardCheck } from "lucide-react";
 
 export default function CaseList() {
   const { user } = useAuth();
@@ -73,6 +73,14 @@ export default function CaseList() {
                     <p className="text-sm text-muted-foreground truncate mt-0.5">
                       {c.presenting_complaint || c.referral_summary || "No complaint recorded"}
                     </p>
+                    {c.treatment_plan && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <ClipboardCheck className="w-3 h-3 text-hive-gold flex-shrink-0" />
+                        <p className="text-xs text-hive-gold font-medium truncate">
+                          {c.treatment_plan.split("\n")[0].slice(0, 80)}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mt-2">
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                         c.department === "orthopaedics"

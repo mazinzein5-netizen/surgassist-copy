@@ -30,6 +30,7 @@ import AdmissionNotePanel from "@/components/AdmissionNotePanel";
 import InpatientNotePanel from "@/components/InpatientNotePanel";
 import OperativeNotePanel from "@/components/OperativeNotePanel";
 import PatientInfoEditor from "@/components/PatientInfoEditor";
+import InpatientOverview from "@/components/InpatientOverview";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 
@@ -88,6 +89,9 @@ export default function CaseDetail() {
   }
 
   const clinicalHistory = extractClinicalHistory(caseData);
+  const isAdmitted = ["admitted", "discharge_ready", "discharged"].includes(caseData.status);
+  const hasNewNursingIssue = caseData.status === "inews_consult";
+  const shouldShowProforma = !isAdmitted || hasNewNursingIssue;
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -157,10 +161,21 @@ export default function CaseDetail() {
       {/* Content — single scroll with collapsible sections */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-3">
-          {/* 1. Clinical Proforma — at the top, tailored to complaint & status */}
-          <CollapsibleCard title="Clinical Proforma" icon={Stethoscope} defaultOpen={true}>
-            <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
-          </CollapsibleCard>
+          {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
+          {isAdmitted && !hasNewNursingIssue ? (
+            <>
+              <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={true}>
+                <InpatientOverview caseData={caseData} />
+              </CollapsibleCard>
+              <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}>
+                <ChronologicalNotes caseData={caseData} />
+              </CollapsibleCard>
+            </>
+          ) : (
+            <CollapsibleCard title={hasNewNursingIssue ? "Clinical Proforma — New Issue" : "Clinical Proforma"} icon={Stethoscope} defaultOpen={true}>
+              <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+            </CollapsibleCard>
+          )}
 
           {/* 2. AI Triage Chat */}
           <CollapsibleCard title="AI Triage Chat" icon={MessageSquare}>
