@@ -9,14 +9,14 @@ import PeriopAlertsPanel from "@/components/PeriopAlertsPanel";
 import ProformaContextBanner from "@/components/ProformaContextBanner";
 import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
 
-export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded }) {
+export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded, onProformaSaved }) {
   return (
     <div className="space-y-4">
       {/* Tailored context banner */}
       <ProformaContextBanner caseData={caseData} />
 
       {/* Yes/No Proforma */}
-      <OrthoProforma caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
+      <OrthoProforma caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} onSaved={onProformaSaved} />
 
       {/* Perioperative Safety Alerts */}
       <PeriopAlertsWrapper caseData={caseData} />

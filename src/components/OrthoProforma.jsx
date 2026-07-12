@@ -200,7 +200,7 @@ export function compileProformaLines(answers, caseData) {
   return lines;
 }
 
-export default function OrthoProforma({ caseData, caseId, onUpdate }) {
+export default function OrthoProforma({ caseData, caseId, onUpdate, onSaved }) {
   const department = caseData.department;
   const [answers, setAnswers] = useState(() => buildInitialAnswers(caseData.proforma_data, department));
   const [saving, setSaving] = useState(false);
@@ -281,6 +281,7 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
         status: "clerking",
       });
       onUpdate();
+      onSaved?.();
     } catch {
       alert("Failed to save proforma.");
     } finally {

@@ -1,5 +1,28 @@
 import React, { useState } from "react";
-import { Stethoscope, Eye, Hand, Activity, Heart, AlertTriangle, Plus, X } from "lucide-react";
+import { Stethoscope, Eye, Hand, Activity, Heart, AlertTriangle, Plus, X, Zap, Check } from "lucide-react";
+
+// Quick "all normal" findings — one click to add the key negatives
+const ORTHO_NORMAL_FINDINGS = [
+  "Patient alert and oriented in time, place and person",
+  "Patient comfortable at rest, no acute distress",
+  "No neurovascular deficit distal to the injury",
+  "Distal pulses palpable and symmetric",
+  "Sensation intact distally in all dermatomes",
+  "Motor function intact — normal power (MRC 5/5)",
+  "Capillary refill less than 2 seconds",
+  "No signs of compartment syndrome — compartment soft and compressible",
+];
+
+const GEN_SURG_NORMAL_FINDINGS = [
+  "Patient alert and oriented in time, place and person",
+  "Patient comfortable at rest, no acute distress",
+  "Abdomen soft and non-tender on palpation",
+  "Bowel sounds present and normal",
+  "No palpable masses or organomegaly",
+  "Hernial orifices intact — no palpable herniae",
+  "All peripheral pulses palpable and symmetric",
+  "Capillary refill less than 2 seconds",
+];
 
 const ORTHO_FINDINGS = {
   general: [
@@ -99,6 +122,8 @@ export default function ClinicalExamFindings({ selected, onToggle, department })
   const [openCategory, setOpenCategory] = useState("general");
   const findings = department === "general_surgery" ? GEN_SURG_FINDINGS : ORTHO_FINDINGS;
 
+  const normalFindings = department === "general_surgery" ? GEN_SURG_NORMAL_FINDINGS : ORTHO_NORMAL_FINDINGS;
+
   const toggle = (finding) => {
     if (selected.includes(finding)) {
       onToggle(selected.filter(f => f !== finding));
@@ -107,11 +132,31 @@ export default function ClinicalExamFindings({ selected, onToggle, department })
     }
   };
 
+  const quickNormal = () => {
+    const merged = [...selected];
+    for (const f of normalFindings) {
+      if (!merged.includes(f)) merged.push(f);
+    }
+    onToggle(merged);
+  };
+
+  const allNormalsSelected = normalFindings.every(f => selected.includes(f));
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-1">
-        <Eye className="w-4 h-4 text-gray-500" />
-        <p className="text-xs text-gray-500">Tap findings to add them in clinical language to the admission note.</p>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <Eye className="w-4 h-4 text-gray-500" />
+          <p className="text-xs text-gray-500">Tap findings to add them in clinical language to the admission note.</p>
+        </div>
+        <button onClick={quickNormal}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
+            allNormalsSelected
+              ? "bg-green-500/15 text-green-600 border-green-500/20"
+              : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400"
+          }`}>
+          <Zap className="w-3 h-3" /> Quick Normal
+        </button>
       </div>
 
       {/* Selected findings chips */}

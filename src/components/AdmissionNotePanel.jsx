@@ -3,12 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { generateAdmissionNote, recognizeLabResults, recognizeGpLetter, classifyAndInterpretImaging, uploadFile } from "@/lib/hiveApi";
 import { compileProformaLines } from "@/components/OrthoProforma";
-import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Camera, Download, Share2, Stethoscope } from "lucide-react";
+import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Camera, Download, Share2, Stethoscope, AlertTriangle, Siren } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import ClinicalExamFindings from "@/components/ClinicalExamFindings";
 import { exportAdmissionNotePDF, downloadAdmissionNotePDF } from "@/lib/pdfExport";
 import { buildShiftContext } from "@/lib/shiftContext";
+import { detectTimeSensitiveConditions, hasCriticalFlag } from "@/lib/timeSensitiveCases";
 
 export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate }) {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
   const [selectedImaging, setSelectedImaging] = useState([]);
   const [comorbidities, setComorbidities] = useState("");
   const [examFindings, setExamFindings] = useState([]);
+  const [labResults, setLabResults] = useState([]);
   const [note, setNote] = useState(caseData.admission_note || "");
   const [editing, setEditing] = useState(false);
   const [editedNote, setEditedNote] = useState(note);
@@ -32,11 +34,24 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
   const gpCameraRef = useRef(null);
   const imagingCameraRef = useRef(null);
 
+  const timeSensitiveFlags = detectTimeSensitiveConditions(caseData);
+  const isCritical = hasCriticalFlag(caseData);
+
   useEffect(() => {
     const invData = caseData.investigation_data || {};
     if (Array.isArray(invData.bloods) && invData.bloods.length > 0) setSelectedBloods(invData.bloods);
     if (Array.isArray(invData.imaging) && invData.imaging.length > 0) setSelectedImaging(invData.imaging);
   }, [caseData.id]);
+
+  useEffect(() => {
+    base44.entities.LabResult.filter({ case_id: caseId }, "-collected_at", 20)
+      .then(setLabResults)
+      .catch(() => {});
+  }, [caseData.id]);
+
+  const bloodsPending = selectedBloods.length === 0 && labResults.length === 0;
+  const examPending = examFindings.length === 0;
+  const canAdmit = !bloodsPending && !examPending;
 
   const toggleBlood = (item) => setSelectedBloods(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
   const toggleImaging = (item) => setSelectedImaging(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
@@ -136,6 +151,13 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
   const handleSaveToRecord = async () => {
     const finalNote = editing ? editedNote : note;
     if (!finalNote) return;
+    if (!canAdmit) {
+      const missing = [];
+      if (bloodsPending) missing.push("blood investigations");
+      if (examPending) missing.push("clinical examination findings");
+      alert(`Cannot admit — ${missing.join(" and ")} must be completed first.`);
+      return;
+    }
     setSaving(true);
     try {
       await base44.entities.CaseFile.update(caseId, {
@@ -256,6 +278,26 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
 
         {/* Body */}
         <div className="p-5 space-y-4">
+          {/* Time-sensitive case flags */}
+          {timeSensitiveFlags.length > 0 && (
+            <div className={`rounded-lg p-3 border ${isCritical ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Siren className={`w-4 h-4 ${isCritical ? "text-red-600" : "text-amber-600"}`} />
+                <span className={`text-xs font-bold uppercase tracking-wider ${isCritical ? "text-red-600" : "text-amber-600"}`}>
+                  Time-Sensitive Case
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {timeSensitiveFlags.map(f => (
+                  <div key={f.key} className="text-xs">
+                    <span className={`font-semibold ${f.severity === "critical" ? "text-red-700" : "text-amber-700"}`}>{f.label}:</span>
+                    <span className="text-gray-700"> {f.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {scanMessage && (
             <div className={`px-3 py-2 rounded-lg text-xs border ${scanMessage.type === "success" ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
               {scanMessage.text}
@@ -263,8 +305,16 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
           )}
 
           {/* Blood Investigations with camera */}
-          <div>
+          <div className={`rounded-lg p-3 ${bloodsPending && isCritical ? "border-2 border-red-400 animate-border-blink-red" : bloodsPending && timeSensitiveFlags.length > 0 ? "border border-amber-300" : ""}`}>
             <SectionHeader icon={FlaskConical} title="Blood Investigations" cameraRef={bloodsCameraRef} onCamera={handleBloodsCamera} scanning={scanningBloods} cameraLabel="Scan Bloods" />
+            {bloodsPending && timeSensitiveFlags.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <AlertTriangle className={`w-3 h-3 ${isCritical ? "text-red-500 animate-text-blink-red" : "text-amber-500"}`} />
+                <p className={`text-xs font-semibold ${isCritical ? "text-red-500" : "text-amber-600"}`}>
+                  Bloods required — time-sensitive case pending
+                </p>
+              </div>
+            )}
             <div className="flex flex-wrap gap-1.5">
               {["FBC", "UEC", "LFTs", "CRP", "Coagulation / INR", "Group & Save", "Amylase", "Lactate", "β-hCG", "Troponin", "D-dimer", "Blood cultures", "VBG / ABG", "Calcium", "Magnesium", "Phosphate"].map(item => (
                 <button key={item} onClick={() => toggleBlood(item)}
@@ -275,6 +325,15 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
                 </button>
               ))}
             </div>
+            {labResults.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {labResults.map(l => (
+                  <span key={l.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    {l.test_type}: {l.value}{l.unit ? ` ${l.unit}` : ""}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Imaging with camera */}
@@ -322,10 +381,11 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
           </div>
 
           {/* Clinical Examination Findings */}
-          <div>
+          <div className={`rounded-lg p-3 ${examPending ? "border border-amber-200" : ""}`}>
             <div className="flex items-center gap-2 mb-2">
               <Stethoscope className="w-4 h-4 text-gray-500" />
               <h3 className="font-semibold text-gray-900 text-sm">Clinical Examination Findings</h3>
+              {examPending && <span className="text-xs text-amber-500 font-semibold">Required for admission</span>}
             </div>
             <ClinicalExamFindings selected={examFindings} onToggle={setExamFindings} department={caseData.department} />
           </div>
@@ -365,11 +425,24 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
 
           {/* Save to record */}
           {note && (
-            <button onClick={handleSaveToRecord} disabled={saving}
-              className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-              Save to Patient Record (Locked)
-            </button>
+            <div>
+              {!canAdmit && (
+                <div className="mb-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                  <p className="font-semibold mb-1">Complete required steps to admit:</p>
+                  <ul className="space-y-0.5">
+                    {bloodsPending && <li>• Blood investigations required</li>}
+                    {examPending && <li>• Clinical examination findings required</li>}
+                  </ul>
+                </div>
+              )}
+              <button onClick={handleSaveToRecord} disabled={saving}
+                className={`w-full px-4 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 ${
+                  canAdmit ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                Save to Patient Record (Locked)
+              </button>
+            </div>
           )}
         </div>
 

@@ -21,6 +21,7 @@ import ChronologicalNotes from "@/components/ChronologicalNotes";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import CollapsibleCard from "@/components/CollapsibleCard";
+import { detectTimeSensitiveConditions } from "@/lib/timeSensitiveCases";
 import WorkflowStepper from "@/components/WorkflowStepper";
 import TriageChat from "@/components/TriageChat";
 import PathwayActions from "@/components/PathwayActions";
@@ -57,6 +58,7 @@ export default function CaseDetail() {
   const [showInpatientNote, setShowInpatientNote] = useState(false);
   const [showOperativeNote, setShowOperativeNote] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [proformaOpen, setProformaOpen] = useState(true);
 
   useEffect(() => { loadCase(); }, [id]);
 
@@ -103,6 +105,10 @@ export default function CaseDetail() {
   const isAdmitted = ["admitted", "discharge_ready", "discharged"].includes(caseData.status);
   const hasNewNursingIssue = caseData.status === "inews_consult";
   const shouldShowProforma = !isAdmitted || hasNewNursingIssue;
+  const timeSensitiveFlags = detectTimeSensitiveConditions(caseData);
+  const hasLabs = caseData.investigation_data?.bloods?.length > 0;
+  const hasExam = (caseData.proforma_data && Object.values(caseData.proforma_data).some(a => a.answer !== null)) || caseData.admission_note;
+  const hasAdmissionNote = !!caseData.admission_note;
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -183,31 +189,81 @@ export default function CaseDetail() {
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
           {isAdmitted && !hasNewNursingIssue ? (
             <>
-              <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={true}>
+              <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={true}
+                collapsedSummary={
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-gray-900">{caseData.patient_name}</span>
+                    <span className="text-gray-400">·</span>
+                    <span className="text-gray-500">{caseData.diagnosis || caseData.presenting_complaint || "No diagnosis"}</span>
+                    {caseData.ward && <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">{caseData.ward}{caseData.bed_number ? ` · Bed ${caseData.bed_number}` : ""}</span>}
+                  </div>
+                }
+              >
                 <InpatientOverview caseData={caseData} />
               </CollapsibleCard>
-              <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}>
+              <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}
+                collapsedSummary={<p className="text-xs text-gray-400">Tap to view chronological notes</p>}
+              >
                 <ChronologicalNotes caseData={caseData} />
               </CollapsibleCard>
             </>
           ) : (
-            <CollapsibleCard title={hasNewNursingIssue ? "Clinical Proforma — New Issue" : "Clinical Proforma"} icon={Stethoscope} defaultOpen={true}>
-              <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
+            <CollapsibleCard
+              title={hasNewNursingIssue ? "Clinical Proforma — New Issue" : "Clinical Proforma"}
+              icon={Stethoscope}
+              open={proformaOpen}
+              onOpenChange={setProformaOpen}
+              variant={timeSensitiveFlags.length > 0 ? "alert" : "default"}
+              badge={timeSensitiveFlags.length > 0 ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-600 border border-red-500/20">
+                  {timeSensitiveFlags.length} FLAG{timeSensitiveFlags.length > 1 ? "S" : ""}
+                </span>
+              ) : null}
+              collapsedSummary={
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  {timeSensitiveFlags.length > 0 && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
+                      {timeSensitiveFlags.map(f => f.label).join(" · ")}
+                    </span>
+                  )}
+                  {hasAdmissionNote ? (
+                    <span className="text-green-600 font-medium">✓ Admission note ready</span>
+                  ) : (
+                    <span className="text-amber-500 font-medium">{hasExam ? "Exam done" : "Waiting for exam"} {!hasLabs && "· Bloods pending"}</span>
+                  )}
+                </div>
+              }
+            >
+              <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} onProformaSaved={() => setProformaOpen(false)} />
             </CollapsibleCard>
           )}
 
           {/* 2. AI Triage Chat */}
-          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare}>
+          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare}
+            collapsedSummary={<p className="text-xs text-gray-400">Tap to open AI triage conversation</p>}
+          >
             <TriageChat caseId={id} caseData={caseData} />
           </CollapsibleCard>
 
           {/* 3. Patient Info */}
-          <CollapsibleCard title="Patient Info" icon={User}>
+          <CollapsibleCard title="Patient Info" icon={User}
+            collapsedSummary={
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
+                {caseData.patient_dob && <span>· DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
+                {caseData.consultant_name && <span>· {caseData.consultant_name}</span>}
+              </div>
+            }
+          >
             <PatientInfoEditor caseData={caseData} onUpdate={loadCase} />
           </CollapsibleCard>
 
           {/* 4. Referral Summary */}
-          <CollapsibleCard title="Referral Summary" icon={FileText}>
+          <CollapsibleCard title="Referral Summary" icon={FileText}
+            collapsedSummary={
+              <p className="text-xs text-gray-500 truncate">{caseData.presenting_complaint || caseData.referral_summary || "No summary"}</p>
+            }
+          >
             <div className="space-y-3">
               {caseData.presenting_complaint && (
                 <Field label="Presenting Complaint" value={caseData.presenting_complaint} />
@@ -262,7 +318,12 @@ export default function CaseDetail() {
           </CollapsibleCard>
 
           {/* 5. Investigations */}
-          <CollapsibleCard title="Investigations" icon={FlaskConical}>
+          <CollapsibleCard title="Investigations" icon={FlaskConical}
+            badge={hasLabs ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">BLOODS</span> : null}
+            collapsedSummary={
+              <p className="text-xs text-gray-500">{hasLabs ? `${caseData.investigation_data.bloods.length} blood panels selected` : "No bloods added yet"}</p>
+            }
+          >
             <div className="space-y-4">
               <LabsImagingDiscovery caseData={caseData} />
               <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
@@ -271,7 +332,12 @@ export default function CaseDetail() {
           </CollapsibleCard>
 
           {/* 6. Admission & Plan */}
-          <CollapsibleCard title="Admission & Plan" icon={ClipboardCheck}>
+          <CollapsibleCard title="Admission & Plan" icon={ClipboardCheck}
+            badge={hasAdmissionNote ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-200">✓ ADMITTED</span> : null}
+            collapsedSummary={
+              <p className="text-xs text-gray-500">{hasAdmissionNote ? "Admission note saved" : caseData.treatment_plan ? "Plan in progress" : "Waiting for admission"}</p>
+            }
+          >
             <div className="space-y-4">
               <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} />
               <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
@@ -282,7 +348,10 @@ export default function CaseDetail() {
           </CollapsibleCard>
 
           {/* 7. Discharge */}
-          <CollapsibleCard title="Discharge" icon={FileCheck}>
+          <CollapsibleCard title="Discharge" icon={FileCheck}
+            badge={caseData.status === "discharged" ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-200">DONE</span> : null}
+            collapsedSummary={<p className="text-xs text-gray-400">{caseData.status === "discharged" ? "Patient discharged" : "Not yet discharged"}</p>}
+          >
             <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />
           </CollapsibleCard>
         </div>
