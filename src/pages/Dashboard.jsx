@@ -48,11 +48,13 @@ export default function Dashboard() {
     .filter((c) => ["referral_intake", "triage"].includes(c.status))
     .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
+  const hasTimeSensitiveAlert = inewsAlerts.length > 0 || pendingReferrals.length > 0;
+
   const stats = [
-    { label: "Active Cases", value: activeCases.length, icon: FolderOpen, color: "text-accent", to: "/cases" },
-    { label: "INEWS Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor" },
-    { label: "Pending Referrals", value: pendingReferrals.length, icon: Clock, color: "text-warning", to: "/cases" },
-    { label: "Pending Review", value: pendingReview.length, icon: Activity, color: "text-hive-gold", to: "/cases" },
+    { label: "Active Cases", value: activeCases.length, icon: FolderOpen, color: "text-accent", to: "/cases", flash: hasTimeSensitiveAlert },
+    { label: "INEWS Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor", flash: false },
+    { label: "Pending Referrals", value: pendingReferrals.length, icon: Clock, color: "text-warning", to: "/cases", flash: false },
+    { label: "Pending Review", value: pendingReview.length, icon: Activity, color: "text-hive-gold", to: "/cases", flash: false },
   ];
 
   const quickActions = [
@@ -102,11 +104,7 @@ export default function Dashboard() {
 
       {/* Shift Settings */}
       <div className="mb-6">
-       <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-         <ClipboardList className="w-4 h-4 text-hive-gold" />
-         Shift & Department Settings
-       </h2>
-       <DashboardSettings />
+        <DashboardSettings />
       </div>
 
       <CollapsibleSections>
@@ -169,12 +167,13 @@ export default function Dashboard() {
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} to={stat.to} className="bg-card border border-border rounded-xl p-4 hover:border-hive-gold/30 transition-colors group">
+                <Link key={stat.label} to={stat.to} className={`bg-card border rounded-xl p-4 hover:border-hive-gold/30 transition-colors group relative overflow-hidden ${stat.flash ? "border-red-500/50 animate-border-blink-red" : "border-border"}`}>
+                  {stat.flash && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                   <div className="flex items-center justify-between mb-2">
-                    <Icon className={`w-5 h-5 ${stat.color}`} />
+                    <Icon className={`w-5 h-5 ${stat.flash ? "text-red-500" : stat.color}`} />
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
-                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                  <div className={`text-2xl font-bold ${stat.flash ? "text-red-500 animate-text-blink-red" : "text-foreground"}`}>{stat.value}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
                 </Link>
               );

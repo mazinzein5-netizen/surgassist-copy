@@ -361,7 +361,7 @@ export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, 
   return result;
 }
 
-export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities, examFindings = []) {
+export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities, examFindings = [], shiftContext = "") {
   // Build concise proforma summary from yes/no answers using tailored generic statements
   let proformaSummary = "No proforma data";
   if (caseData.proforma_data) {
@@ -374,8 +374,12 @@ export async function generateAdmissionNote(caseData, selectedBloods, selectedIm
     ? examFindings.map((f, i) => `${i + 1}. ${f}`).join("\n")
     : "No specific exam findings documented — use proforma answers for exam section";
 
+  const shiftBlock = shiftContext
+    ? `\nSHIFT CONTEXT: ${shiftContext}\n\nIMPORTANT: Begin the admission note with a "Clinical Context" header line containing this shift context (hospital, department, on-call status, cross-cover if applicable, date/time). This is a medico-legal requirement. If the clinician is on-call and cross-covering another department, note that the patient is being assessed by a cross-covering on-call doctor and consider this in the assessment and plan.\n`
+    : "";
+
   const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}
+    prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}${shiftBlock}
 
 PATIENT: ${caseData.patient_name}, DOB: ${caseData.patient_dob || "N/A"}, MRN: ${caseData.patient_mrn || "N/A"}
 DEPARTMENT: ${caseData.department}

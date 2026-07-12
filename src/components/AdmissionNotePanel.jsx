@@ -8,6 +8,7 @@ import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import ClinicalExamFindings from "@/components/ClinicalExamFindings";
 import { exportAdmissionNotePDF, downloadAdmissionNotePDF } from "@/lib/pdfExport";
+import { buildShiftContext } from "@/lib/shiftContext";
 
 export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate }) {
   const { user } = useAuth();
@@ -118,7 +119,8 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const result = await generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities, examFindings);
+      const shiftContext = buildShiftContext(user);
+      const result = await generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities, examFindings, shiftContext);
       const generated = typeof result === "string" ? result : (result.admission_note || "");
       setNote(generated);
       setEditedNote(generated);
@@ -146,9 +148,13 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
         note_author_imc: user?.imc_number || "",
         note_locked_at: new Date().toISOString(),
       });
+      const shiftContext = buildShiftContext(user);
+      const noteWithContext = shiftContext
+        ? `[Clinical Context: ${shiftContext}]\n\n${finalNote}`
+        : finalNote;
       await base44.entities.CaseNote.create({
         case_id: caseId, patient_id: caseData.patient_id || "",
-        note_type: "admission", content: finalNote,
+        note_type: "admission", content: noteWithContext,
         author_name: user?.full_name || "Unknown", author_id: user?.id || "",
         author_grade: user?.clinical_grade || "nchd", author_imc: user?.imc_number || "",
         is_locked: true,
