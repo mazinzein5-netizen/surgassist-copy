@@ -4,7 +4,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import StatusPill from "@/components/StatusPill";
 import { getStage, formatTimestamp, timeAgo } from "@/lib/workflow";
-import { FilePlus2, Search, ChevronRight, Check, ClipboardCheck, BedDouble } from "lucide-react";
+import { FilePlus2, Search, ChevronRight, Check, ClipboardCheck, BedDouble, Pencil, UserCog } from "lucide-react";
+import InpatientStickerEditor from "@/components/InpatientStickerEditor";
 
 export default function CaseList() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function CaseList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("active");
+  const [editingCase, setEditingCase] = useState(null);
 
   useEffect(() => { loadCases(); }, []);
 
@@ -105,17 +107,28 @@ export default function CaseList() {
                         </p>
                       </div>
                     )}
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                        c.department === "orthopaedics"
-                          ? "bg-purple-500/15 text-purple-400 border border-purple-500/20"
-                          : c.department === "general_surgery"
-                          ? "bg-teal-500/15 text-teal-400 border border-teal-500/20"
-                          : "bg-muted text-muted-foreground border border-border"
-                      }`}>
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingCase(c); }}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold cursor-pointer hover:ring-2 hover:ring-hive-gold/40 transition-all ${
+                          c.department === "orthopaedics"
+                            ? "bg-purple-500/15 text-purple-400 border border-purple-500/20"
+                            : c.department === "general_surgery"
+                            ? "bg-teal-500/15 text-teal-400 border border-teal-500/20"
+                            : "bg-muted text-muted-foreground border border-border"
+                        }`}
+                        title="Edit department, ward, bed, consultant"
+                      >
                         {c.department === "orthopaedics" ? "Orthopaedics" : c.department === "general_surgery" ? "General Surgery" : c.department?.replace("_", " ") || "Unknown"}
-                      </span>
+                        <Pencil className="w-2.5 h-2.5 opacity-60" />
+                      </button>
                       <StatusPill caseData={c} />
+                      {isInpatient(c) && c.consultant_name && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          <UserCog className="w-3 h-3" />
+                          {c.consultant_name}
+                        </span>
+                      )}
                       {isInpatient(c) && (c.ward || c.bed_number) && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-hive-gold/15 text-hive-gold border border-hive-gold/30">
                           <BedDouble className="w-3 h-3" />
@@ -136,7 +149,7 @@ export default function CaseList() {
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-500/15 text-green-400">
-                        <Check className="w-3 h-3" /> Done
+                        <Check className="w-3 h-3" /> Discharged
                       </span>
                     )}
                   </div>
@@ -145,6 +158,14 @@ export default function CaseList() {
             );
           })}
         </div>
+      )}
+
+      {editingCase && (
+        <InpatientStickerEditor
+          caseData={editingCase}
+          onClose={() => setEditingCase(null)}
+          onUpdated={loadCases}
+        />
       )}
     </div>
   );
