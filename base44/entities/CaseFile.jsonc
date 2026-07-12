@@ -20,6 +20,18 @@
         "other"
       ]
     },
+    "patient_address": {
+      "type": "string",
+      "description": "Patient home address"
+    },
+    "patient_phone": {
+      "type": "string",
+      "description": "Patient contact phone number"
+    },
+    "patient_email": {
+      "type": "string",
+      "description": "Patient email address"
+    },
     "patient_id": {
       "type": "string",
       "description": "Links to Patient entity for cross-visit cloud memory"

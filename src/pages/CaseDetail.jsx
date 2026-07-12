@@ -58,6 +58,7 @@ export default function CaseDetail() {
   const [showAdmissionNote, setShowAdmissionNote] = useState(false);
   const [showInpatientNote, setShowInpatientNote] = useState(false);
   const [showOperativeNote, setShowOperativeNote] = useState(false);
+  const [showPatientInfo, setShowPatientInfo] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [proformaOpen, setProformaOpen] = useState(true);
 
@@ -123,6 +124,11 @@ export default function CaseDetail() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg md:text-xl font-bold text-gray-900">{caseData.patient_name}</h1>
+                <button onClick={() => setShowPatientInfo(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                  title="Edit patient details">
+                  <User className="w-3.5 h-3.5" /> Edit Info
+                </button>
                 <button onClick={handleDelete} disabled={deleting}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
                   title="Delete case">
@@ -305,19 +311,6 @@ export default function CaseDetail() {
             </CollapsibleCard>
           )}
 
-          {/* 3. Patient Info */}
-          <CollapsibleCard title="Patient Info" icon={User}
-            collapsedSummary={
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
-                {caseData.patient_dob && <span>· DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
-                {caseData.consultant_name && <span>· {caseData.consultant_name}</span>}
-              </div>
-            }
-          >
-            <PatientInfoEditor caseData={caseData} onUpdate={loadCase} />
-          </CollapsibleCard>
-
           {/* 5. Investigations */}
           <CollapsibleCard title="Investigations" icon={FlaskConical}
             badge={hasLabs ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">BLOODS</span> : null}
@@ -366,6 +359,7 @@ export default function CaseDetail() {
       {showAdmissionNote && <AdmissionNotePanel caseData={caseData} caseId={id} onClose={() => setShowAdmissionNote(false)} onUpdate={loadCase} />}
       {showInpatientNote && <InpatientNotePanel caseData={caseData} caseId={id} onClose={() => setShowInpatientNote(false)} onUpdate={loadCase} />}
       {showOperativeNote && <OperativeNotePanel caseData={caseData} caseId={id} onClose={() => setShowOperativeNote(false)} onUpdate={loadCase} />}
+      {showPatientInfo && <PatientInfoEditor caseData={caseData} onClose={() => setShowPatientInfo(false)} onUpdate={loadCase} />}
     </div>
   );
 }
