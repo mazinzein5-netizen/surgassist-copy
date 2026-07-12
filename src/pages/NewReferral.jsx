@@ -9,17 +9,8 @@ import OnCallTeamBar from "@/components/OnCallTeamBar";
 import ReferrerDetails from "@/components/ReferrerDetails";
 import PatientDetailsBox from "@/components/PatientDetailsBox";
 import PatientStatusSelector from "@/components/PatientStatusSelector";
-import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users, Type, ScanLine, Monitor, Upload, Bluetooth } from "lucide-react";
-
-const INPUT_MODES = [
-{ id: "text", label: "Text", icon: Type },
-{ id: "audio", label: "Audio", icon: Mic },
-{ id: "photo", label: "Clinical Photo", icon: Camera },
-{ id: "camera_scan", label: "Camera Scan", icon: ScanLine },
-{ id: "document_scan", label: "Document Scan", icon: FileText },
-{ id: "screen_scan", label: "Screen Scan", icon: Monitor },
-{ id: "upload", label: "Upload Device", icon: Upload },
-{ id: "bluetooth", label: "Bluetooth", icon: Bluetooth }];
+import { Send, Mic, Camera, Loader2, X, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import CameraCaptureModal from "@/components/CameraCaptureModal";
 
 
 export default function NewReferral() {
@@ -44,11 +35,11 @@ export default function NewReferral() {
   const [patientAutoFilled, setPatientAutoFilled] = useState(false);
   const [referringHospital, setReferringHospital] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [clinicalPhotos, setClinicalPhotos] = useState([]);
   const expandedRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -145,21 +136,17 @@ export default function NewReferral() {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLoading(true);
-    try {
-      const uploadResult = await uploadFile(file);
-      setAttachments((prev) => [...prev, uploadResult.file_url]);
-      setMessages((prev) => [...prev, { role: "user", content: `[Image uploaded: ${file.name}]` }]);
-    } catch (err) {
-      alert("Failed to upload file. Please try again.");
-    } finally {
-      setLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
-    }
+  const handlePhotoCapture = (photo) => {
+    setClinicalPhotos((prev) => [...prev, photo]);
+    setAttachments((prev) => [...prev, photo.photo_url]);
+    const dangerCount = photo.danger_alerts?.filter(a => a.severity === "red").length || 0;
+    const alertText = dangerCount > 0
+      ? ` ⚠ ${dangerCount} RED alert${dangerCount > 1 ? "s" : ""} — review below.`
+      : "";
+    setMessages((prev) => [...prev, {
+      role: "assistant",
+      content: `📷 Clinical photo captured — "${photo.label}"\nClassified as: ${photo.detected_type?.replace(/_/g, " ")}\n${photo.summary || ""}${alertText}`
+    }]);
   };
 
   const handleCreateCase = async () => {
@@ -215,7 +202,7 @@ export default function NewReferral() {
         consultant_name: patientStatusInfo.inpatientConsultant || "",
         patient_status: patientStatusInfo.patientStatus || "",
         status: patientStatusInfo.patientStatus === "inpatient" ? "admitted" : triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
-        referral_mode: mode,
+        referral_mode: clinicalPhotos.length > 0 ? "camera" : "text",
         referral_summary: triageResult.referral_summary || messages.map((m) => m.content).join("\n"),
         presenting_complaint: triageResult.presenting_complaint || "",
         mechanism_of_injury: triageResult.mechanism_of_injury || "",
@@ -244,6 +231,15 @@ export default function NewReferral() {
           role: msg.role,
           content: msg.content,
           message_type: "text"
+        });
+      }
+      // Save classified clinical photos to the patient record
+      for (const photo of clinicalPhotos) {
+        await base44.entities.ClinicalPhoto.create({
+          case_id: created.id,
+          photo_type: photo.detected_type || "other",
+          photo_url: photo.photo_url,
+          caption: photo.label,
         });
       }
       navigate(`/cases/${created.id}`);
@@ -376,13 +372,24 @@ export default function NewReferral() {
       {/* Input Bar */}
       <div className="border-t border-border px-4 md:px-8 py-4 bg-card/50">
         <div className="max-w-4xl mx-auto">
-          {/* Attachments preview */}
-          {attachments.length > 0 &&
-          <div className="flex gap-2 mb-2">
-              {attachments.map((url, i) =>
-            <div key={i} className="relative">
-                  <img src={url} alt="attachment" className="w-16 h-16 rounded-lg object-cover border border-border" />
-                  <button onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+          {/* Captured photos preview */}
+          {clinicalPhotos.length > 0 &&
+          <div className="flex gap-2 mb-2 flex-wrap">
+              {clinicalPhotos.map((photo, i) =>
+            <div key={i} className="relative group">
+                  <img src={photo.photo_url} alt={photo.label} className="w-16 h-16 rounded-lg object-cover border border-border" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 rounded-b-lg px-1 py-0.5">
+                    <p className="text-[9px] text-white truncate">{photo.label}</p>
+                  </div>
+                  {photo.danger_alerts?.some(a => a.severity === "red") && (
+                    <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-destructive border border-white" />
+                  )}
+                  <button
+                    onClick={() => {
+                      setClinicalPhotos(prev => prev.filter((_, idx) => idx !== i));
+                      setAttachments(prev => prev.filter((_, idx) => idx !== i));
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -390,110 +397,57 @@ export default function NewReferral() {
             </div>
           }
 
-          {/* Mode selector */}
-          <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-thin pb-1">
-            {INPUT_MODES.map((m) => {
-              const Icon = m.icon;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => setMode(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                  mode === m.id ? "bg-hive-gold/15 text-hive-gold border border-hive-gold/30" : "text-muted-foreground hover:text-foreground"}`
-                  }>
-                  
-                  <Icon className="w-3.5 h-3.5" />
-                  {m.label}
-                </button>);
-
-            })}
-          </div>
-
-          {/* Input area */}
+          {/* Input area — Text + Audio + Camera only */}
           <div className="flex items-end gap-2">
-            {(mode === "photo" || mode === "camera_scan") &&
-            <>
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
-                <button
-                onClick={() => cameraInputRef.current?.click()}
-                className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
-                title={mode === "photo" ? "Take clinical photo" : "Scan with camera"}>
-                
-                  {mode === "photo" ? <Camera className="w-5 h-5" /> : <ScanLine className="w-5 h-5" />}
-                </button>
-              </>
-            }
-
-            {(mode === "document_scan" || mode === "screen_scan" || mode === "upload") &&
-            <>
-                <input ref={fileInputRef} type="file" accept={mode === "upload" ? "image/*,.pdf" : "image/*"} className="hidden" onChange={handleFileUpload} />
-                <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
-                title={mode === "document_scan" ? "Scan document" : mode === "screen_scan" ? "Upload screenshot" : "Upload from device"}>
-                
-                  {mode === "document_scan" ? <FileText className="w-5 h-5" /> : mode === "screen_scan" ? <Monitor className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
-                </button>
-              </>
-            }
-
-            {mode === "bluetooth" &&
+            {/* Camera */}
             <button
-              onClick={() => alert("Bluetooth file transfer is not yet available on this device.")}
-              className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
-              title="Bluetooth transfer">
-              
-                <Bluetooth className="w-5 h-5" />
-              </button>
-            }
+              onClick={() => setShowCamera(true)}
+              disabled={loading}
+              className="p-3 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors flex-shrink-0 disabled:opacity-50"
+              title="Capture clinical photo">
+              <Camera className="w-5 h-5" />
+            </button>
 
-            {mode === "audio" &&
+            {/* Audio */}
             <button
               onClick={recording ? handleStopRecording : handleStartRecording}
               className={`p-3 rounded-lg flex-shrink-0 transition-colors ${recording ? "bg-destructive text-destructive-foreground animate-pulse-gold" : "bg-secondary text-foreground hover:bg-secondary/80"}`}
               title={recording ? "Stop recording" : "Start recording"}>
-              
-                {recording ? <div className="w-5 h-5 rounded bg-destructive-foreground" /> : <Mic className="w-5 h-5" />}
-              </button>
-            }
+              {recording ? <div className="w-5 h-5 rounded bg-destructive-foreground" /> : <Mic className="w-5 h-5" />}
+            </button>
 
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onFocus={() => setExpanded(true)}
-              placeholder="Type referral details or AI responses..."
+              placeholder="Type referral details..."
               rows={1}
               className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-none max-h-32" />
-            
 
             {expanded &&
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
               onClick={() => setExpanded(false)}>
-              
-                <div
+              <div
                 className="flex flex-col w-full max-w-lg bg-card/90 border border-border rounded-xl shadow-2xl overflow-hidden"
                 style={{ height: "min(60vh, 400px)" }}
                 onClick={(e) => e.stopPropagation()}>
-                
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <span className="text-sm font-semibold text-foreground">Referral Details</span>
-                    <div className="flex items-center gap-2">
-                      <button
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <span className="text-sm font-semibold text-foreground">Referral Details</span>
+                  <div className="flex items-center gap-2">
+                    <button
                       onClick={() => setExpanded(false)}
                       className="px-4 py-1.5 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90 transition-colors">
-                      
-                        Done
-                      </button>
-                      <button
+                      Done
+                    </button>
+                    <button
                       onClick={() => setExpanded(false)}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary">
-                      
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <textarea
+                </div>
+                <textarea
                   ref={expandedRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -504,23 +458,29 @@ export default function NewReferral() {
                       setExpanded(false);
                     }
                   }}
-                  placeholder="Type referral details or AI responses..."
+                  placeholder="Type referral details..."
                   className="flex-1 w-full bg-transparent border-0 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none resize-none" />
-                
-                </div>
               </div>
+            </div>
             }
 
             <button
               onClick={handleSend}
               disabled={loading || !input.trim() && attachments.length === 0}
               className="p-3 rounded-lg bg-hive-gold text-hive-gold-foreground hover:bg-hive-gold/90 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-              
               <Send className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
+
+      {showCamera && (
+        <CameraCaptureModal
+          patientInfo={patientInfo}
+          onCapture={handlePhotoCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
     </div>);
 
 }

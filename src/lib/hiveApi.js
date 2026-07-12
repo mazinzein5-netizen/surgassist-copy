@@ -715,3 +715,45 @@ Provide a practical, actionable management plan as bullet points. Include: immed
   });
   return result.plan;
 }
+
+export async function classifyClinicalPhoto(imageUrl, label, patientInfo) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are Jack, the HIVE Safety & Guidelines Guardian. A clinician has captured a clinical photo and labeled it: "${label}".
+
+PATIENT: ${patientInfo.patient_name || "Unknown"}, DOB: ${patientInfo.patient_dob || "N/A"}, MRN: ${patientInfo.patient_mrn || "N/A"}
+
+Analyze this image and provide:
+
+1. CLASSIFY: Determine what type of clinical data this image contains. Choose the single best match from: wound, xray, ecg, medication_list, patient_id, other
+2. EXTRACT: If the image contains lab results, medication lists, vital signs, or other structured clinical data — extract the key values. If it's a wound or X-ray, note key visual findings.
+3. DANGER CHECK: Reevaluate the patient's safety based on what you see in this image. Flag any dangers:
+   - RED: Immediate danger (critical lab values like K+ > 6.0, Hb < 7, signs of compartment syndrome, sepsis, necrotic tissue, grossly abnormal ECG, etc.)
+   - AMBER: Caution (abnormal results needing follow-up, missing documentation, results trending wrong direction)
+   - GREEN: No concerns identified
+4. SUMMARY: One-line summary of what the image contains
+
+Be direct about danger. Patient safety is not negotiable.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        detected_type: { type: "string", enum: ["wound", "xray", "ecg", "medication_list", "patient_id", "other"] },
+        confidence: { type: "string", enum: ["high", "medium", "low"] },
+        extracted_data: { type: "string", description: "Key data extracted from the image (lab values, medication names, visual findings, etc.) or 'N/A'" },
+        danger_alerts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              severity: { type: "string", enum: ["red", "amber", "green"] },
+              alert: { type: "string" },
+              recommendation: { type: "string" }
+            }
+          }
+        },
+        summary: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
