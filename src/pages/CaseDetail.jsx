@@ -246,6 +246,11 @@ export default function CaseDetail() {
                 </div>
               )}
             </div>
+
+            {/* Triage Chat pinned to referral inputs */}
+            <div className="pt-3 border-t border-gray-100">
+              <TriageChat caseId={id} caseData={caseData} />
+            </div>
           </CollapsibleCard>
 
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
@@ -299,13 +304,6 @@ export default function CaseDetail() {
               <ClerkingTab caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} onProformaSaved={() => setProformaOpen(false)} />
             </CollapsibleCard>
           )}
-
-          {/* 2. AI Triage Chat */}
-          <CollapsibleCard title="AI Triage Chat" icon={MessageSquare}
-            collapsedSummary={<p className="text-xs text-gray-400">Tap to open AI triage conversation</p>}
-          >
-            <TriageChat caseId={id} caseData={caseData} />
-          </CollapsibleCard>
 
           {/* 3. Patient Info */}
           <CollapsibleCard title="Patient Info" icon={User}
