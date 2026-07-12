@@ -1010,8 +1010,9 @@ export function downloadDischargeSummaryPDF(caseData, docs) {
 /**
  * Generates a polished Admission Note PDF with patient demographics,
  * clinical note content, and signature block.
+ * Returns the jsPDF doc instance.
  */
-export function downloadAdmissionNotePDF(caseData, note) {
+export function exportAdmissionNotePDF(caseData, note) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -1114,6 +1115,10 @@ export function downloadAdmissionNotePDF(caseData, note) {
 
   const fileName = `AdmissionNote_${(caseData.patient_name || "Unknown").replace(/\s/g, "_")}${caseData.patient_mrn ? "_" + caseData.patient_mrn : ""}.pdf`;
   doc.save(fileName);
+}
+
+export function downloadAdmissionNotePDF(caseData, note) {
+  exportAdmissionNotePDF(caseData, note);
 }
 
 /**

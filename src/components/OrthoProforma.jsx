@@ -437,31 +437,6 @@ export default function OrthoProforma({ caseData, caseId, onUpdate }) {
         );
       })}
 
-      {/* Live compiled preview */}
-      {compiled.length > 0 && (
-        <div className="bg-card border-2 border-hive-gold/20 rounded-xl p-4">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Compiled Note Lines</h4>
-          <div className="space-y-2">
-            {compiled.map((group, gi) => (
-              <div key={gi}>
-                <p className="text-xs font-semibold text-accent">{group.section}</p>
-                {group.lines.map((line, li) => (
-                  <p key={li} className="text-sm text-foreground pl-3">- {line}</p>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full px-4 py-3 rounded-lg bg-hive-gold text-hive-gold-foreground font-semibold text-sm hover:bg-hive-gold/90 flex items-center justify-center gap-2"
-      >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        Save Proforma
-      </button>
     </div>
   );
 }

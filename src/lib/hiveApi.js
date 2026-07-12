@@ -361,7 +361,7 @@ export async function calculateDrugDose(drugName, weight, age, eGFR, allergies, 
   return result;
 }
 
-export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities) {
+export async function generateAdmissionNote(caseData, selectedBloods, selectedImaging, comorbidities, examFindings = []) {
   // Build concise proforma summary from yes/no answers using tailored generic statements
   let proformaSummary = "No proforma data";
   if (caseData.proforma_data) {
@@ -369,6 +369,10 @@ export async function generateAdmissionNote(caseData, selectedBloods, selectedIm
     const lines = compiled.flatMap(g => g.lines);
     proformaSummary = lines.length > 0 ? lines.join("; ") : "No proforma data";
   }
+
+  const examFindingsText = examFindings.length > 0
+    ? examFindings.map((f, i) => `${i + 1}. ${f}`).join("\n")
+    : "No specific exam findings documented — use proforma answers for exam section";
 
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `${ADMISSION_NOTE_SYSTEM_PROMPT}
@@ -383,11 +387,96 @@ SELECTED BLOOD INVESTIGATIONS: ${selectedBloods.join(", ") || "None selected"}
 SELECTED IMAGING: ${selectedImaging.join(", ") || "None selected"}
 COMORBIDITIES: ${comorbidities || "Not specified"}
 
-Generate the SHORT admission note. Maximum 20 lines. Use the proforma answers for the EXAM and KEY FINDINGS sections.`,
+CLINICAL EXAMINATION FINDINGS (incorporate ALL of these into the CLINICAL EXAMINATION section as flowing clinical prose):
+${examFindingsText}
+
+Generate the admission note in STRUCTURED READING FORM with clearly labeled sections and flowing clinical prose. Maximum 30 lines.`,
     response_json_schema: {
       type: "object",
       properties: {
         admission_note: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function recognizeGpLetter(imageUrl) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical document recognition AI. Examine this image — it is likely a GP referral letter, medical certificate, or clinical document.
+
+Extract the following:
+1. Comorbidities / past medical history — as a semicolon-separated list (e.g., "Type 2 Diabetes Mellitus; Hypertension; Atrial fibrillation on warfarin")
+2. Current medications — as a semicolon-separated list with drug name, dose, and frequency (e.g., "Apixaban 5mg BD; Metformin 1g BD; Aspirin 75mg OD")
+3. Allergies — if mentioned, otherwise "NKDA"
+4. Other relevant clinical information — social history, smoking/alcohol, functional status, etc.
+
+If the image does not contain a GP letter or medical document, return empty fields. Always provide raw_text with the full transcription of all text visible in the image.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        comorbidities: { type: "string", description: "Semicolon-separated list of comorbidities" },
+        medications: { type: "string", description: "Semicolon-separated list of medications with dose and frequency" },
+        allergies: { type: "string" },
+        other_info: { type: "string" },
+        raw_text: { type: "string", description: "Full transcription of the letter" }
+      }
+    }
+  });
+  return result;
+}
+
+export async function classifyAndInterpretImaging(imageUrl, patientInfo) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are HIVE Surgical Assistant with expertise in medical imaging interpretation and classification. Analyze this image carefully.
+
+PATIENT: ${patientInfo.patient_name || "Unknown"}, DOB: ${patientInfo.patient_dob || "N/A"}, MRN: ${patientInfo.patient_mrn || "N/A"}
+DEPARTMENT: ${patientInfo.department || "N/A"}
+PRESENTING COMPLAINT: ${patientInfo.presenting_complaint || "N/A"}
+
+STEP 1 — CLASSIFY: Determine if this image is:
+- A RADIOLOGY REPORT (text-based report from PACS/RIS/hospital system)
+- An ACTUAL IMAGING STUDY (X-ray, CT, MRI, ultrasound image on a screen or film)
+- NOT_IMAGING (not a radiological image at all)
+
+STEP 2 — If actual imaging, identify:
+- Modality: X-ray, CT, MRI, or Ultrasound
+- Body region: e.g., "Left wrist", "Chest", "Abdomen/Pelvis", "Right knee"
+- View/sequence: e.g., "AP and lateral", "Axial", "Coronal", "Sagittal"
+
+STEP 3 — INTERPRET (for actual imaging) or EXTRACT (for reports):
+For ACTUAL IMAGING: Provide a structured radiological interpretation using standard terminology:
+- Describe the image quality and adequacy
+- Identify the modality, region, and view
+- Describe key findings: fractures (describe pattern, displacement, angulation), dislocations, joint effusions, soft tissue swelling, degenerative changes, lucencies, sclerosis, alignment, etc.
+- Provide an impression/diagnosis
+- Flag any urgent or critical findings requiring immediate escalation
+
+For RADIOLOGY REPORTS: Summarize the key findings and impression from the report text.
+
+STEP 4 — DANGER CHECK: Flag any critical findings:
+- Compartment syndrome signs
+- Free air on abdominal X-ray
+- Tension pneumothorax
+- Massive pleural effusion
+- Displaced fractures requiring urgent intervention
+- Any finding requiring immediate surgical or orthopaedic intervention
+
+Be precise, clinically accurate, and use standard radiological terminology. If image quality is insufficient for confident interpretation, state this clearly. Do not fabricate findings.`,
+    file_urls: [imageUrl],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        image_type: { type: "string", enum: ["radiology_report", "actual_imaging", "not_imaging"] },
+        modality: { type: "string", description: "X-ray, CT, MRI, Ultrasound, or N/A" },
+        body_region: { type: "string" },
+        view: { type: "string", description: "AP, lateral, axial, coronal, sagittal, etc." },
+        findings: { type: "string", description: "Key findings in clinical/radiological language" },
+        impression: { type: "string", description: "Radiological impression/diagnosis" },
+        urgency: { type: "string", enum: ["routine", "urgent", "critical"] },
+        danger_alerts: { type: "string", description: "Any critical findings requiring escalation, or 'None'" },
+        summary: { type: "string" }
       }
     }
   });
