@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, FlaskConical, ClipboardCheck, Activity, User, Pill, ChevronDown } from "lucide-react";
+import { FileText, FlaskConical, ClipboardCheck, Activity, User, Pill, ChevronDown, ChevronRight, AlertTriangle, Zap, ShieldAlert } from "lucide-react";
 
 /**
  * Parses a raw AI-generated admission note into structured sections
@@ -25,6 +25,11 @@ const SECTION_ICONS = {
   management: ClipboardCheck,
   medications: Pill,
   medication: Pill,
+  immediate: Zap,
+  urgent: AlertTriangle,
+  red: ShieldAlert,
+  flags: ShieldAlert,
+  actions: ClipboardCheck,
 };
 
 const SECTION_LABELS = {
@@ -39,7 +44,14 @@ const SECTION_LABELS = {
   management: "Management Plan",
   medications: "Medications",
   medication: "Medications",
+  immediate: "Immediate Actions",
+  urgent: "Urgent Considerations",
+  red: "Red Flags",
+  flags: "Red Flags",
+  actions: "Actions Required",
 };
+
+const PRIORITY_SECTIONS = ["immediate", "urgent", "red", "flags", "actions"];
 
 function detectSectionKey(header) {
   const lower = header.toLowerCase();
@@ -124,10 +136,12 @@ function parseNote(text) {
   return sections;
 }
 
-function NoteSection({ section }) {
+function NoteSection({ section, forceOpen }) {
   const [open, setOpen] = useState(true);
+  const isOpen = forceOpen !== undefined ? forceOpen : open;
   const Icon = SECTION_ICONS[section.key] || FileText;
   const label = SECTION_LABELS[section.key] || section.title;
+  const isPriority = PRIORITY_SECTIONS.includes(section.key);
 
   const items = section.items.filter((item, idx) => {
     if (item.type === "break") {
@@ -139,60 +153,66 @@ function NoteSection({ section }) {
 
   if (items.length === 0) return null;
 
+  const containerCls = isPriority
+    ? "rounded-lg border border-red-300/60 bg-red-50/5 overflow-hidden"
+    : "rounded-lg border border-border/60 bg-background/30 overflow-hidden";
+  const headerCls = isPriority
+    ? "w-full flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/15 transition-colors"
+    : "w-full flex items-center gap-2 px-3 py-2 bg-secondary/40 hover:bg-secondary/60 transition-colors";
+  const iconCls = isPriority ? "w-3.5 h-3.5 text-red-500 flex-shrink-0" : "w-3.5 h-3.5 text-hive-gold flex-shrink-0";
+  const titleCls = isPriority
+    ? "text-xs font-bold text-red-500 uppercase tracking-wider flex-1 text-left"
+    : "text-xs font-bold text-hive-gold uppercase tracking-wider flex-1 text-left";
+  const itemColor = isPriority ? "text-red-700 dark:text-red-300" : "text-foreground";
+  const markerColor = isPriority ? "text-red-500" : "text-accent";
+  const numColor = isPriority ? "text-red-500" : "text-hive-gold";
+
   return (
-    <div className="rounded-lg border border-border/60 bg-background/30 overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-secondary/40 hover:bg-secondary/60 transition-colors"
-      >
-        <Icon className="w-3.5 h-3.5 text-hive-gold flex-shrink-0" />
-        <h5 className="text-xs font-bold text-hive-gold uppercase tracking-wider flex-1 text-left">{label}</h5>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
+    <div className={containerCls}>
+      <button onClick={() => setOpen(v => !v)} className={headerCls}>
+        <Icon className={iconCls} />
+        <h5 className={titleCls}>{label}</h5>
+        <ChevronDown className={isOpen ? "w-3.5 h-3.5 text-muted-foreground transition-transform" : "w-3.5 h-3.5 text-muted-foreground transition-transform -rotate-90"} />
       </button>
-      {open && (
+      {isOpen && (
         <div className="px-4 py-3 space-y-1.5">
           {items.map((item, ii) => {
-            switch (item.type) {
-              case "numbered":
-                return (
-                  <div key={ii} className="flex gap-2 text-sm text-foreground">
-                    <span className="text-hive-gold font-bold flex-shrink-0 min-w-[1.2em]">{item.num}.</span>
-                    <span className="flex-1 leading-relaxed">{item.text}</span>
-                  </div>
-                );
-              case "bullet":
-                return (
-                  <div key={ii} className="flex gap-2 text-sm text-foreground">
-                    <span className="text-accent flex-shrink-0 mt-0.5">•</span>
-                    <span className="flex-1 leading-relaxed">{item.text}</span>
-                  </div>
-                );
-              case "sub":
-                return (
-                  <div key={ii} className="flex gap-2 text-sm text-muted-foreground pl-4">
-                    <span className="text-muted-foreground flex-shrink-0">›</span>
-                    <span className="flex-1">{item.text}</span>
-                  </div>
-                );
-              case "kv":
-                return (
-                  <div key={ii} className="text-sm text-foreground">
-                    <span className="font-semibold text-foreground">{item.label}:</span>{" "}
-                    <span className="text-muted-foreground">{item.value}</span>
-                  </div>
-                );
-              case "paragraph":
-                return (
-                  <div key={ii} className="flex gap-2 text-sm text-foreground">
-                    <span className="text-accent flex-shrink-0 mt-0.5">•</span>
-                    <span className="flex-1 leading-relaxed">{item.text}</span>
-                  </div>
-                );
-              case "break":
-                return <div key={ii} className="h-1" />;
-              default:
-                return null;
+            if (item.type === "numbered") {
+              return (
+                <div key={ii} className="flex gap-2 text-sm">
+                  <span className={numColor + " font-bold flex-shrink-0 min-w-[1.2em]"}>{item.num}.</span>
+                  <span className={"flex-1 leading-relaxed " + itemColor}>{item.text}</span>
+                </div>
+              );
             }
+            if (item.type === "bullet" || item.type === "paragraph") {
+              return (
+                <div key={ii} className="flex gap-2 text-sm">
+                  <span className={markerColor + " flex-shrink-0 mt-0.5"}>•</span>
+                  <span className={"flex-1 leading-relaxed " + itemColor}>{item.text}</span>
+                </div>
+              );
+            }
+            if (item.type === "sub") {
+              return (
+                <div key={ii} className="flex gap-2 text-sm text-muted-foreground pl-4">
+                  <span className="text-muted-foreground flex-shrink-0">›</span>
+                  <span className="flex-1">{item.text}</span>
+                </div>
+              );
+            }
+            if (item.type === "kv") {
+              return (
+                <div key={ii} className={"text-sm " + itemColor}>
+                  <span className="font-semibold">{item.label}:</span>{" "}
+                  <span className="text-muted-foreground">{item.value}</span>
+                </div>
+              );
+            }
+            if (item.type === "break") {
+              return <div key={ii} className="h-1" />;
+            }
+            return null;
           })}
         </div>
       )}
@@ -201,15 +221,60 @@ function NoteSection({ section }) {
 }
 
 export default function FormattedAdmissionNote({ note }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!note) return null;
 
   const sections = parseNote(note);
+  if (sections.length === 0) return null;
+
+  // Build a compact summary from the first section's text items
+  const summaryParts = [];
+  for (const section of sections) {
+    for (const item of section.items) {
+      if (item.type === "break") continue;
+      const text = item.text || item.value || "";
+      if (text) summaryParts.push(text);
+      if (summaryParts.length >= 2) break;
+    }
+    if (summaryParts.length >= 2) break;
+  }
+  const summaryText = summaryParts.join(" · ");
+  const hasMultipleSections = sections.length > 1;
 
   return (
-    <div className="space-y-2">
-      {sections.map((section, si) => (
-        <NoteSection key={si} section={section} />
-      ))}
+    <div className="rounded-xl border border-border/60 overflow-hidden">
+      {/* Master toggle bar */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-secondary/50 hover:bg-secondary/70 transition-colors border-b border-border/60"
+      >
+        {expanded
+          ? <ChevronDown className="w-4 h-4 text-hive-gold flex-shrink-0" />
+          : <ChevronRight className="w-4 h-4 text-hive-gold flex-shrink-0" />}
+        <span className="text-xs font-semibold text-muted-foreground flex-1 text-left">
+          {hasMultipleSections ? `${sections.length} sections` : "Document"}
+        </span>
+        <span className="text-[10px] text-hive-gold font-medium uppercase tracking-wider">
+          {expanded ? "Collapse" : "Expand"}
+        </span>
+      </button>
+
+      {/* Collapsed: compact summary */}
+      {!expanded && (
+        <div className="px-4 py-2.5">
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{summaryText}</p>
+        </div>
+      )}
+
+      {/* Expanded: full readable document */}
+      {expanded && (
+        <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto scrollbar-thin">
+          {sections.map((section, si) => (
+            <NoteSection key={si} section={section} forceOpen={true} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
