@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { User, ChevronDown, ChevronUp, Sparkles, ScanLine, Camera, Upload, Loader2 } from "lucide-react";
-import { uploadFile, recognizePatientDemographics } from "@/lib/hiveApi";
+import { User, ChevronDown, ChevronUp, Sparkles, ScanLine, Camera, Upload, Loader2, Mic, Square } from "lucide-react";
+import { uploadFile, recognizePatientDemographics, recognizePatientDemographicsFromText, transcribeAudio } from "@/lib/hiveApi";
 import SelectSheet from "@/components/SelectSheet";
 
 const GENDERS = [
@@ -13,8 +13,12 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
   const [open, setOpen] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [showScanMenu, setShowScanMenu] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [voiceProcessing, setVoiceProcessing] = useState(false);
   const cameraRef = useRef(null);
   const fileRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const update = (field, val) => onChange({ ...value, [field]: val });
 
@@ -22,29 +26,31 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
     (f) => value[f]
   ).length;
 
+  const mergeFields = (result) => {
+    const merged = { ...value };
+    let changed = false;
+    const fields = [
+      ["patient_name", result.patient_name],
+      ["patient_dob", result.patient_dob],
+      ["patient_mrn", result.patient_mrn],
+      ["patient_gender", result.patient_gender],
+    ];
+    for (const [key, val] of fields) {
+      if (val && !value[key]) {
+        merged[key] = val;
+        changed = true;
+      }
+    }
+    if (changed) onChange(merged);
+  };
+
   const handleScan = async (file) => {
     setShowScanMenu(false);
     setScanning(true);
     try {
       const uploadResult = await uploadFile(file);
       const result = await recognizePatientDemographics(uploadResult.file_url);
-
-      // Only fill empty fields — don't overwrite manual edits
-      const merged = { ...value };
-      let changed = false;
-      const fields = [
-        ["patient_name", result.patient_name],
-        ["patient_dob", result.patient_dob],
-        ["patient_mrn", result.patient_mrn],
-        ["patient_gender", result.patient_gender],
-      ];
-      for (const [key, val] of fields) {
-        if (val && !value[key]) {
-          merged[key] = val;
-          changed = true;
-        }
-      }
-      if (changed) onChange(merged);
+      mergeFields(result);
     } catch (err) {
       alert("Failed to scan demographics. Please try again or enter manually.");
     } finally {
@@ -53,6 +59,45 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        setVoiceProcessing(true);
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const audioFile = new File([audioBlob], "patient_demographics.webm", { type: "audio/webm" });
+          const uploadResult = await uploadFile(audioFile);
+          const transcript = await transcribeAudio(uploadResult.file_url);
+          const result = await recognizePatientDemographicsFromText(transcript);
+          mergeFields(result);
+        } catch {
+          alert("Failed to process voice. Please try again or enter manually.");
+        } finally {
+          setVoiceProcessing(false);
+        }
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      alert("Microphone access denied. Please allow microphone access or use photo/text input.");
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+      setRecording(false);
+    }
+  };
+
+  const isBusy = scanning || voiceProcessing || recording;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
@@ -77,18 +122,19 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
 
       {open && (
         <div className="mt-3">
-          {/* Scan Demographics button */}
-          <div className="flex items-center gap-2 mb-3">
+          {/* Input method buttons */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {/* Photo / handwriting scan */}
             <button
               type="button"
-              disabled={scanning}
+              disabled={isBusy}
               onClick={() => setShowScanMenu(v => !v)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 text-accent border border-accent/30 text-xs font-medium hover:bg-accent/25 transition-colors disabled:opacity-50"
             >
               {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanLine className="w-3.5 h-3.5" />}
-              {scanning ? "Scanning..." : "Scan Demographics"}
+              {scanning ? "Scanning..." : "Photo / Handwriting"}
             </button>
-            {showScanMenu && !scanning && (
+            {showScanMenu && !isBusy && (
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -105,6 +151,32 @@ export default function PatientDetailsBox({ value, onChange, autoFilled }) {
                   <Upload className="w-3.5 h-3.5" /> Upload
                 </button>
               </div>
+            )}
+
+            {/* Voice input */}
+            {!recording && !voiceProcessing && (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={handleStartRecording}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 text-accent border border-accent/30 text-xs font-medium hover:bg-accent/25 transition-colors disabled:opacity-50"
+              >
+                <Mic className="w-3.5 h-3.5" /> Voice
+              </button>
+            )}
+            {recording && (
+              <button
+                type="button"
+                onClick={handleStopRecording}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive border border-destructive/30 text-xs font-medium animate-pulse"
+              >
+                <Square className="w-3.5 h-3.5" /> Stop & Transcribe
+              </button>
+            )}
+            {voiceProcessing && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-medium">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Transcribing...
+              </span>
             )}
           </div>
 

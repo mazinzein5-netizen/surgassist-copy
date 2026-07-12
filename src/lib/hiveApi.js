@@ -505,6 +505,45 @@ Only populate fields where the information is clearly legible. Leave fields empt
   return result;
 }
 
+export async function recognizePatientDemographicsFromText(text) {
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are a medical assistant. A clinician has dictated patient demographics verbally. The speech has been transcribed below. Extract the following patient demographics if mentioned:
+
+TRANSCRIPTION:
+"${text}"
+
+Extract:
+- patient_name: Full patient name
+- patient_dob: Date of birth in ISO format YYYY-MM-DD (convert from DD/MM/YYYY or DD-MM-YYYY if needed)
+- patient_mrn: Medical Record Number / hospital number
+- patient_gender: male, female, or other (infer from name/Title like Mr/Mrs/Ms only if clearly indicated; leave empty if ambiguous)
+
+Also extract if mentioned:
+- hospital: Hospital name
+- ward: Ward/department
+- bed_number: Bed number
+- known_allergies: Any allergy information
+- presenting_complaint: Any complaint/reason for visit
+
+Only populate fields where the information is clearly stated. Leave fields empty if not found.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        patient_name: { type: "string" },
+        patient_dob: { type: "string", description: "ISO date YYYY-MM-DD" },
+        patient_mrn: { type: "string" },
+        patient_gender: { type: "string", enum: ["male", "female", "other"] },
+        hospital: { type: "string" },
+        ward: { type: "string" },
+        bed_number: { type: "string" },
+        known_allergies: { type: "string" },
+        presenting_complaint: { type: "string" }
+      }
+    }
+  });
+  return result;
+}
+
 export async function generateOperativeNote(caseData, operativeData, user) {
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `You are HIVE Surgical Assistant. Generate a PROFESSIONAL OPERATIVE NOTE for this surgical patient. This is a formal operative documentation record.
