@@ -18,7 +18,7 @@ const MORE_NAV = [
   { to: "/inpatient-monitor", label: "Inpatient Monitor", icon: Activity },
   { to: "/handover", label: "Handover", icon: BedDouble },
   { to: "/patient-history", label: "Patient Memory", icon: FolderOpen },
-  { to: "/contacts", label: "Contacts", icon: MessageSquare },
+  { to: "/contacts", label: "Communication", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
@@ -37,10 +37,10 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen bg-background overflow-hidden hex-pattern">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="px-5 py-6 border-b border-sidebar-border">
-          <h1 className="text-lg font-bold text-hive-gold">HIVE</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Surgical Assistant</p>
+      <aside className="hidden md:flex w-48 flex-col bg-sidebar border-r border-sidebar-border">
+        <div className="px-4 py-4 border-b border-sidebar-border">
+          <h1 className="text-base font-bold text-hive-gold">HIVE</h1>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Surgical Assistant</p>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {MAIN_NAV.map(item => {

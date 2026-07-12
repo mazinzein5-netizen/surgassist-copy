@@ -8,6 +8,7 @@ import HoneycombTitle from "@/components/HoneycombTitle";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
 import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren, ChevronDown, Radio } from "lucide-react";
 import DashboardSettings from "@/components/DashboardSettings";
+import { fetchRecentCases } from "@/lib/recentCases";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
@@ -24,9 +25,7 @@ export default function Dashboard() {
 
   const loadCases = async () => {
     try {
-      const data = await base44.entities.CaseFile.filter({}, "-created_date", 50);
-      // Sanitize to plain JSON — the SDK may attach non-cloneable wrapper props
-      // that break the dev-preview telemetry (postMessage structured clone).
+      const data = await fetchRecentCases(50);
       setCases(JSON.parse(JSON.stringify(data)));
     } catch (err) {
       console.error("Dashboard loadCases failed:", err?.message || String(err));
@@ -230,9 +229,18 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
+                    {c._activity_label && (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${
+                        c._activity_type === "flagged" ? "bg-red-500/15 text-red-400 border border-red-500/20" :
+                        c._activity_type === "commented" ? "bg-teal-500/15 text-teal-400 border border-teal-500/20" :
+                        "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                      }`}>
+                        {c._activity_label}
+                      </span>
+                    )}
                     <HexBadge status={c.status} />
                     <span className="text-xs text-muted-foreground hidden sm:block">
-                      {new Date(c.created_date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
+                      {new Date(c._latest_activity || c.created_date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
                     </span>
                   </div>
                 </Link>

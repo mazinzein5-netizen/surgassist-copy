@@ -1,21 +1,31 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import StatusPill from "@/components/StatusPill";
 import { formatTimestamp, timeAgo, getStage } from "@/lib/workflow";
 import { isReferralIncomplete, isAwaitingAction, getAwaitingReason, SEVERITY_COLORS, DISCHARGE_PATHWAY_LABELS } from "@/lib/referralStatus";
-import { ChevronRight, Check, ClipboardCheck, BedDouble, Pencil, UserCog, AlertTriangle, FlaskConical } from "lucide-react";
+import { ChevronRight, Check, ClipboardCheck, BedDouble, Pencil, UserCog, AlertTriangle, FlaskConical, Flag, MessageSquare, ArrowRightLeft } from "lucide-react";
 
 const DEPT_LABELS = {
   orthopaedics: "Orthopaedics",
   general_surgery: "General Surgery",
 };
 
+const ACTIVITY_STYLES = {
+  edited: { icon: Pencil, class: "bg-blue-500/15 text-blue-400 border border-blue-500/20" },
+  commented: { icon: MessageSquare, class: "bg-teal-500/15 text-teal-400 border border-teal-500/20" },
+  flagged: { icon: Flag, class: "bg-red-500/15 text-red-400 border border-red-500/20 animate-border-blink-red" },
+  reviewed: { icon: Check, class: "bg-green-500/15 text-green-400 border border-green-500/20" },
+};
+
 export default function CaseCard({ caseData: c, onEdit, mode = "referral" }) {
+  const navigate = useNavigate();
   const incomplete = mode === "referral" && isReferralIncomplete(c);
   const awaiting = mode === "referral" && isAwaitingAction(c);
   const awaitingReason = awaiting ? getAwaitingReason(c) : null;
   const stage = getStage(c);
   const sevColor = SEVERITY_COLORS[c.diagnosis_severity] || null;
+  const activityStyle = c._activity_type ? ACTIVITY_STYLES[c._activity_type] : null;
+  const ActivityIcon = activityStyle?.icon;
 
   const cardClass = [
     "block bg-card border rounded-xl p-4 transition-colors",
@@ -110,6 +120,12 @@ export default function CaseCard({ caseData: c, onEdit, mode = "referral" }) {
 
             <StatusPill caseData={c} />
 
+            {activityStyle && ActivityIcon && (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${activityStyle.class}`}>
+                <ActivityIcon className="w-3 h-3" /> {c._activity_label}
+              </span>
+            )}
+
             {/* Inpatient: consultant */}
             {mode === "inpatient" && c.consultant_name && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/20">
@@ -137,8 +153,8 @@ export default function CaseCard({ caseData: c, onEdit, mode = "referral" }) {
           </div>
         </div>
 
-        {/* Right side: stage indicator */}
-        <div className="flex-shrink-0">
+        {/* Right side: stage indicator + handover */}
+        <div className="flex-shrink-0 flex flex-col items-end gap-2">
           {stage < 3 ? (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
               stage === 0 ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"
@@ -150,6 +166,14 @@ export default function CaseCard({ caseData: c, onEdit, mode = "referral" }) {
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-500/15 text-green-400">
               <Check className="w-3 h-3" /> Discharged
             </span>
+          )}
+          {mode !== "discharged" && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate("/handover"); }}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-hive-gold/10 text-hive-gold border border-hive-gold/20 hover:bg-hive-gold/20 transition-colors"
+            >
+              <ArrowRightLeft className="w-3 h-3" /> Handover
+            </button>
           )}
         </div>
       </div>

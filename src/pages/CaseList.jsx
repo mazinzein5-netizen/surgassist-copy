@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import CaseCard from "@/components/CaseCard";
 import InpatientStickerEditor from "@/components/InpatientStickerEditor";
 import { groupInpatients, INPATIENT_GROUP_CONFIG } from "@/lib/referralStatus";
-import { FilePlus2, Search, BedDouble, Scissors, Clock, Heart, Check } from "lucide-react";
+import { FilePlus2, Search, BedDouble, Scissors, Clock, Heart, Check, Activity } from "lucide-react";
+import { fetchRecentCases } from "@/lib/recentCases";
 
 const GROUP_ICONS = {
   theatre: Scissors,
@@ -17,11 +18,28 @@ export default function CaseList() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("referrals");
+  const [tab, setTab] = useState("recent");
   const [dischargeSubTab, setDischargeSubTab] = useState("opd");
   const [editingCase, setEditingCase] = useState(null);
+  const [recentCases, setRecentCases] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
 
   useEffect(() => { loadCases(); }, []);
+
+  const loadRecentCases = async () => {
+    setLoadingRecent(true);
+    try {
+      const data = await fetchRecentCases(30);
+      setRecentCases(data);
+    } catch (err) { console.error(err); }
+    finally { setLoadingRecent(false); }
+  };
+
+  useEffect(() => {
+    if (tab === "recent" && recentCases.length === 0 && !loadingRecent) {
+      loadRecentCases();
+    }
+  }, [tab]);
 
   const loadCases = async () => {
     try {
@@ -60,7 +78,7 @@ export default function CaseList() {
   const filteredDischarged = currentDischargedList.filter(matchSearch);
 
   const totalDischarged = dischargedOpd.length + dischargedTci.length + dischargedHome.length + declined.length;
-  const headings = { referrals: "Active Referrals", inpatients: "Inpatient Board", discharged: "Discharged Patients" };
+  const headings = { recent: "Recent Activity", referrals: "Active Referrals", inpatients: "Inpatient Board", discharged: "Discharged Patients" };
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
@@ -79,6 +97,11 @@ export default function CaseList() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 mb-4 border-b border-border overflow-x-auto">
+        <button onClick={() => setTab("recent")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === "recent" ? "border-hive-gold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <Activity className="w-3.5 h-3.5 inline mr-1" />
+          Recent
+        </button>
         <button onClick={() => setTab("referrals")}
           className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === "referrals" ? "border-hive-gold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
           Referrals
@@ -123,7 +146,21 @@ export default function CaseList() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {tab === "recent" ? (
+        loadingRecent ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-4 border-border border-t-hive-gold rounded-full animate-spin" />
+          </div>
+        ) : recentCases.length === 0 ? (
+          <EmptyState message="No recent activity." />
+        ) : (
+          <div className="space-y-2">
+            {recentCases.map(c => (
+              <CaseCard key={c.id} caseData={c} onEdit={setEditingCase} mode="recent" />
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-4 border-border border-t-hive-gold rounded-full animate-spin" />
         </div>
