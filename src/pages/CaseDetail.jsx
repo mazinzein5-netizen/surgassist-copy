@@ -29,6 +29,7 @@ import ProformaModal from "@/components/ProformaModal";
 import AdmissionNotePanel from "@/components/AdmissionNotePanel";
 import InpatientNotePanel from "@/components/InpatientNotePanel";
 import OperativeNotePanel from "@/components/OperativeNotePanel";
+import PatientInfoEditor from "@/components/PatientInfoEditor";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 
@@ -163,17 +164,7 @@ export default function CaseDetail() {
 
           {/* 2. Patient Info */}
           <CollapsibleCard title="Patient Info" icon={User}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <InfoItem label="Name" value={caseData.patient_name} />
-              <InfoItem label="DOB" value={caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-GB") : "—"} />
-              <InfoItem label="MRN" value={caseData.patient_mrn || "—"} />
-              <InfoItem label="Gender" value={caseData.patient_gender ? caseData.patient_gender.charAt(0).toUpperCase() + caseData.patient_gender.slice(1) : "—"} />
-              <InfoItem label="Hospital" value={caseData.hospital || "—"} />
-              <InfoItem label="Ward" value={caseData.ward || "—"} />
-              <InfoItem label="Bed" value={caseData.bed_number || "—"} />
-              <InfoItem label="Consultant" value={caseData.consultant_name || "—"} />
-              <InfoItem label="Specialty" value={caseData.specialty || caseData.accepting_specialty || "—"} />
-            </div>
+            <PatientInfoEditor caseData={caseData} onUpdate={loadCase} />
           </CollapsibleCard>
 
           {/* 3. Referral Summary */}
