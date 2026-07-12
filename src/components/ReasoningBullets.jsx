@@ -89,7 +89,7 @@ export default function ReasoningBullets({ text, className = "" }) {
         return (
           <div key={i} className="flex items-start gap-2 mb-1">
             <span className="text-hive-gold mt-1.5 flex-shrink-0 w-1 h-1 rounded-full bg-hive-gold" />
-            <p className="text-sm text-foreground">{item.text}</p>
+            <p className="text-sm text-amber-600">{item.text}</p>
           </div>
         );
       })}
