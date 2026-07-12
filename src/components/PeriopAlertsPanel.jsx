@@ -92,7 +92,7 @@ export default function PeriopAlertsPanel({ meds = [], comorbidities = "", caseD
               </span>
             </div>
 
-            <h4 className="text-sm font-bold text-foreground mb-1">{alert.title}</h4>
+            <h4 className="text-sm font-bold text-purple-900 mb-1">{alert.title}</h4>
             <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{alert.detail}</p>
 
             {alert.action && (
