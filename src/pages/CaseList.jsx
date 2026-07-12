@@ -4,13 +4,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import StatusPill from "@/components/StatusPill";
 import { getStage, formatTimestamp, timeAgo } from "@/lib/workflow";
-import { FilePlus2, Search, ChevronRight, Check, ClipboardCheck } from "lucide-react";
+import { FilePlus2, Search, ChevronRight, Check, ClipboardCheck, BedDouble } from "lucide-react";
 
 export default function CaseList() {
   const { user } = useAuth();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("active");
 
   useEffect(() => { loadCases(); }, []);
 
@@ -22,7 +23,13 @@ export default function CaseList() {
     finally { setLoading(false); }
   };
 
+  const isInpatient = (c) => ["admitted", "inews_consult", "discharge_ready"].includes(c.status);
+
   const filtered = cases.filter(c => {
+    // Tab filter
+    if (tab === "inpatients" && !isInpatient(c)) return false;
+    if (tab === "active" && isInpatient(c)) return false;
+    // Search filter
     if (!search) return true;
     const q = search.toLowerCase();
     return c.patient_name?.toLowerCase().includes(q) ||
@@ -30,16 +37,33 @@ export default function CaseList() {
       c.presenting_complaint?.toLowerCase().includes(q);
   });
 
+  const inpatientCount = cases.filter(isInpatient).length;
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-foreground">Referrals</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{cases.length} total</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{cases.length} total · {inpatientCount} inpatient{inpatientCount !== 1 ? "s" : ""}</p>
         </div>
         <Link to="/new-referral" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-hive-gold text-hive-navy font-semibold text-sm hover:bg-hive-gold/90">
           <FilePlus2 className="w-4 h-4" /> New Referral
         </Link>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-4 border-b border-border">
+        <button onClick={() => setTab("active")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${tab === "active" ? "border-hive-gold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          Active Referrals
+          <span className="ml-1.5 text-xs text-muted-foreground">({cases.length - inpatientCount})</span>
+        </button>
+        <button onClick={() => setTab("inpatients")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${tab === "inpatients" ? "border-hive-gold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <BedDouble className="w-3.5 h-3.5 inline mr-1" />
+          Inpatient List
+          <span className="ml-1.5 text-xs text-muted-foreground">({inpatientCount})</span>
+        </button>
       </div>
 
       <div className="relative mb-6">
@@ -92,6 +116,12 @@ export default function CaseList() {
                         {c.department === "orthopaedics" ? "Orthopaedics" : c.department === "general_surgery" ? "General Surgery" : c.department?.replace("_", " ") || "Unknown"}
                       </span>
                       <StatusPill caseData={c} />
+                      {isInpatient(c) && (c.ward || c.bed_number) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-hive-gold/15 text-hive-gold border border-hive-gold/30">
+                          <BedDouble className="w-3 h-3" />
+                          {c.ward || "Ward"}{c.bed_number ? ` · Bed ${c.bed_number}` : ""}
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">{timeAgo(c.created_date)}</span>
                       <span className="text-xs text-muted-foreground">{formatTimestamp(c.created_date)}</span>
                     </div>
