@@ -12,6 +12,8 @@ export default function InpatientStickerEditor({ caseData, onClose, onUpdated })
   const [ward, setWard] = useState(caseData.ward || "");
   const [bedNumber, setBedNumber] = useState(caseData.bed_number || "");
   const [consultantName, setConsultantName] = useState(caseData.consultant_name || "");
+  const [diagnosis, setDiagnosis] = useState(caseData.diagnosis || "");
+  const [diagnosisSeverity, setDiagnosisSeverity] = useState(caseData.diagnosis_severity || "none");
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -22,6 +24,8 @@ export default function InpatientStickerEditor({ caseData, onClose, onUpdated })
         ward,
         bed_number: bedNumber,
         consultant_name: consultantName,
+        diagnosis,
+        diagnosis_severity: diagnosisSeverity,
       });
       onUpdated?.();
       onClose();
@@ -76,6 +80,24 @@ export default function InpatientStickerEditor({ caseData, onClose, onUpdated })
                 placeholder="e.g. 12"
                 className={inputClass} />
             </div>
+          </div>
+
+          <div>
+            <label className={`${labelClass} block mb-1.5`}>Diagnosis</label>
+            <input value={diagnosis} onChange={e => setDiagnosis(e.target.value)}
+              placeholder="e.g. #Right NOF fracture"
+              className={inputClass} />
+          </div>
+
+          <div>
+            <label className={`${labelClass} block mb-1.5`}>Severity</label>
+            <select value={diagnosisSeverity} onChange={e => setDiagnosisSeverity(e.target.value)} className={inputClass}>
+              <option value="none">Not Set</option>
+              <option value="low">Low</option>
+              <option value="moderate">Moderate</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
           </div>
         </div>
 

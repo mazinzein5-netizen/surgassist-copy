@@ -128,6 +128,22 @@
     "presenting_complaint": {
       "type": "string"
     },
+    "diagnosis": {
+      "type": "string",
+      "description": "Working diagnosis"
+    },
+    "diagnosis_severity": {
+      "type": "string",
+      "enum": [
+        "none",
+        "low",
+        "moderate",
+        "high",
+        "critical"
+      ],
+      "default": "none",
+      "description": "Severity of the diagnosis for color-coded display"
+    },
     "mechanism_of_injury": {
       "type": "string"
     },
@@ -223,8 +239,10 @@
       "enum": [
         "not_discharged",
         "opd_followup",
-        "no_followup"
-      ]
+        "no_followup",
+        "tci"
+      ],
+      "description": "not_discharged, opd_followup, no_followup (home/GP), or tci (to come in)"
     },
     "gp_letter": {
       "type": "string"

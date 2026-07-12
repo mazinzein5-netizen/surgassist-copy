@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { generateKardex, generateDischargeDocuments, suggestManagementPlan, uploadFile } from "@/lib/hiveApi";
 
-import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera, Calendar } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
@@ -479,6 +479,7 @@ function DischargeTab({ caseData, onUpdate, user }) {
     try {
       let pathwayValue = "no_followup";
       if (type === "opd") pathwayValue = "opd_followup";
+      if (type === "tci") pathwayValue = "tci";
 
       const result = await generateDischargeDocuments(caseData.presenting_complaint, caseData.referral_summary, pathwayValue, caseData.patient_name);
       setDocs(result);
@@ -522,9 +523,11 @@ function DischargeTab({ caseData, onUpdate, user }) {
       {pathway === "not_discharged" && !docs.gp_letter && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500">Select a discharge pathway:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <DischargeOption icon={FileCheck} title="Discharge Home" desc="GP letter, patient education, safety net"
               onClick={() => handleGenerate("home")} disabled={generating} />
+            <DischargeOption icon={Calendar} title="TCI — To Come In" desc="Elective admission scheduled"
+              onClick={() => handleGenerate("tci")} disabled={generating} />
             <DischargeOption icon={Share2} title="To Other Specialty" desc="Handover summary to another team"
               onClick={() => {
                 const s = prompt("Enter accepting specialty/team:");

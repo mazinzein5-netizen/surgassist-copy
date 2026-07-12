@@ -122,3 +122,25 @@
 .animate-bee-hover {
   animation: bee-hover 2s ease-in-out infinite;
 }
+
+@keyframes border-blink-pink {
+  0%, 100% { border-color: hsl(330, 80%, 70%); }
+  50% { border-color: hsl(330, 95%, 50%); }
+}
+@keyframes border-blink-red {
+  0%, 100% { border-color: hsl(0, 84%, 60%); }
+  50% { border-color: hsl(0, 84%, 45%); }
+}
+@keyframes text-blink-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-border-blink-pink {
+  animation: border-blink-pink 1.5s ease-in-out infinite;
+}
+.animate-border-blink-red {
+  animation: border-blink-red 1s ease-in-out infinite;
+}
+.animate-text-blink-red {
+  animation: text-blink-red 1s ease-in-out infinite;
+}
