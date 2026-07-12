@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import ReactMarkdown from "react-markdown";
-import { FlaskConical, Scan, Loader2, RefreshCw, ChevronDown, ChevronUp, AlertCircle, Activity, Image } from "lucide-react";
+import { FlaskConical, Scan, Loader2, RefreshCw, ChevronDown, ChevronUp, AlertCircle, Activity, Image, ArrowUp, ArrowDown } from "lucide-react";
+import { isOutOfRange, formatRange, LAB_RANGES } from "@/lib/labReferenceRanges";
 
 export default function LabsImagingDiscovery({ caseData }) {
   const [labs, setLabs] = useState([]);
@@ -174,23 +175,38 @@ Keep it concise and clinically focused. Use bullet points.`;
                     <tr className="border-b border-border text-xs text-muted-foreground">
                       <th className="text-left px-3 py-2 font-medium">Test</th>
                       <th className="text-left px-3 py-2 font-medium">Value</th>
+                      <th className="text-left px-3 py-2 font-medium">Range</th>
                       <th className="text-left px-3 py-2 font-medium">Collected</th>
                       <th className="text-left px-3 py-2 font-medium">Source</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {labs.map((lab, i) => (
-                      <tr key={i} className="border-b border-border/50">
-                        <td className="px-3 py-2 font-medium text-foreground capitalize">{lab.test_type?.replace(/_/g, " ")}</td>
-                        <td className="px-3 py-2 text-foreground">{lab.value}{lab.unit && <span className="text-xs text-muted-foreground ml-1">{lab.unit}</span>}</td>
-                        <td className="px-3 py-2 text-muted-foreground text-xs">{lab.collected_at ? new Date(lab.collected_at).toLocaleDateString("en-IE") : "—"}</td>
-                        <td className="px-3 py-2">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${lab.source === "ocr_ingestion" ? "bg-accent/15 text-accent" : "bg-secondary text-muted-foreground"}`}>
-                            {lab.source || "manual"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {labs.map((lab, i) => {
+                      const abnormal = isOutOfRange(lab.test_type, lab.value);
+                      const arrow = abnormal && lab.value < (LAB_RANGES[lab.test_type]?.min) ? "down" : abnormal ? "up" : null;
+                      return (
+                        <tr key={i} className={`border-b border-border/50 ${abnormal ? "bg-red-500/10" : ""}`}>
+                          <td className="px-3 py-2 font-medium text-foreground capitalize">{lab.test_type?.replace(/_/g, " ")}</td>
+                          <td className="px-3 py-2">
+                            <span className={`font-semibold ${abnormal ? "text-red-500" : "text-foreground"}`}>
+                              {lab.value}{lab.unit && <span className="text-xs ml-1">{lab.unit}</span>}
+                            </span>
+                            {abnormal && (
+                              <span className="ml-1.5 inline-flex text-red-500">
+                                {arrow === "up" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-muted-foreground">{formatRange(lab.test_type) || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground text-xs">{lab.collected_at ? new Date(lab.collected_at).toLocaleDateString("en-IE") : "—"}</td>
+                          <td className="px-3 py-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${lab.source === "ocr_ingestion" ? "bg-accent/15 text-accent" : "bg-secondary text-muted-foreground"}`}>
+                              {lab.source || "manual"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

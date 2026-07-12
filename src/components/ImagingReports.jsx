@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { uploadFile } from "@/lib/hiveApi";
-import { Camera, Loader2, Image as ImageIcon, FlaskConical, Scan, Plus, FileText } from "lucide-react";
+import { Camera, Loader2, Image as ImageIcon, FlaskConical, Scan, Plus, FileText, ArrowUp, ArrowDown } from "lucide-react";
+import { isOutOfRange, formatRange, LAB_RANGES } from "@/lib/labReferenceRanges";
 
 const PHOTO_TYPE_LABELS = {
   wound: "Wound",
@@ -131,13 +132,25 @@ export default function ImagingReports({ caseData, photos, caseId, onPhotoAdded 
         </div>
         {labResults && labResults.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {labResults.map((r, i) => (
-              <div key={i} className="bg-background border border-border rounded-lg px-3 py-2">
-                <p className="text-xs text-muted-foreground uppercase">{r.test_type}</p>
-                <p className="text-sm font-semibold text-foreground">{r.value} {r.unit}</p>
-                <p className="text-[10px] text-muted-foreground">{new Date(r.collected_at).toLocaleDateString("en-IE")}</p>
-              </div>
-            ))}
+            {labResults.map((r, i) => {
+              const abnormal = isOutOfRange(r.test_type, r.value);
+              const arrow = abnormal && r.value < (LAB_RANGES[r.test_type]?.min) ? "down" : "up";
+              return (
+                <div key={i} className={`bg-background border rounded-lg px-3 py-2 ${abnormal ? "border-red-500/50 bg-red-500/5" : "border-border"}`}>
+                  <p className="text-xs text-muted-foreground uppercase">{r.test_type}</p>
+                  <div className="flex items-center gap-1">
+                    <p className={`text-sm font-semibold ${abnormal ? "text-red-500" : "text-foreground"}`}>{r.value} {r.unit}</p>
+                    {abnormal && (
+                      <span className="text-red-500">
+                        {arrow === "up" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{formatRange(r.test_type) || "—"}</p>
+                  <p className="text-[10px] text-muted-foreground">{new Date(r.collected_at).toLocaleDateString("en-IE")}</p>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">No lab results recorded for this patient.</p>

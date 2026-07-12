@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { generateInpatientNote } from "@/lib/hiveApi";
-import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Pill, Activity, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Pill, Activity, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import ProgressTimeline from "@/components/ProgressTimeline";
+import { isOutOfRange, formatRange, LAB_RANGES } from "@/lib/labReferenceRanges";
 
 export default function InpatientNotePanel({ caseData, caseId, onClose, onUpdate }) {
   const { user } = useAuth();
@@ -172,14 +173,25 @@ export default function InpatientNotePanel({ caseData, caseId, onClose, onUpdate
                         {Object.entries(labsByType).map(([testType, results]) => (
                           <div key={testType} className="flex items-center gap-2 text-xs">
                             <span className="font-medium text-gray-700 capitalize w-32">{testType}</span>
-                            {results.map((r, i) => (
-                              <span key={i} className="text-gray-600">
-                                {r.value}{r.unit || ""} <span className="text-gray-400">({new Date(r.collected_at).toLocaleDateString("en-IE")})</span>
-                                {i < results.length - 1 && " · "}
-                              </span>
-                            ))}
+                            {results.map((r, i) => {
+                              const abnormal = isOutOfRange(r.test_type, r.value);
+                              const arrow = abnormal && r.value < (LAB_RANGES[r.test_type]?.min) ? "down" : "up";
+                              return (
+                                <span key={i} className={abnormal ? "text-red-600 font-semibold" : "text-gray-600"}>
+                                  {r.value}{r.unit || ""}
+                                  {abnormal && (
+                                    <span className="ml-0.5 text-red-600">
+                                      {arrow === "up" ? <ArrowUp className="w-3 h-3 inline" /> : <ArrowDown className="w-3 h-3 inline" />}
+                                    </span>
+                                  )}
+                                  <span className="text-gray-400"> ({new Date(r.collected_at).toLocaleDateString("en-IE")})</span>
+                                  {i < results.length - 1 && " · "}
+                                </span>
+                              );
+                            })}
                           </div>
                         ))}
+                        <p className="text-[10px] text-gray-400 italic mt-1">Reference: {formatRange(Object.keys(labsByType)[0]) ? "abnormal values shown in red" : ""}</p>
                       </div>
                     )}
                   </div>
