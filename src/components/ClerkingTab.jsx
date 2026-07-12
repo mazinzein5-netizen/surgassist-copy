@@ -1,13 +1,13 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { uploadFile } from "@/lib/hiveApi";
-import { Loader2, Camera, Stethoscope, Activity, Eye, Hand, AlertTriangle } from "lucide-react";
+import { Loader2, Camera, Stethoscope, Activity, AlertTriangle } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import OrthoProforma from "@/components/OrthoProforma";
 import InvestigationPrompts from "@/components/InvestigationPrompts";
 import PeriopAlertsPanel from "@/components/PeriopAlertsPanel";
 import ProformaContextBanner from "@/components/ProformaContextBanner";
-import { ExamGuideSection, DermatomeMap, MyotomeGuide, ReflexGuide, AbdominalExamGuide, VascularExamGuide, WoundAssessmentGuide } from "@/components/ExamGuides";
+import TailoredExamFindings from "@/components/TailoredExamFindings";
 
 export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded, onProformaSaved }) {
   return (
@@ -41,29 +41,11 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded, on
       {/* Investigations & Admission Note */}
       <InvestigationPrompts caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} />
 
-      {/* Exam Guides */}
+      {/* Tailored Clinical Examination */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Clinical Examination Guides</h3>
-        <p className="text-xs text-muted-foreground">Interactive reference diagrams validated against RCSI curriculum.</p>
-        <ExamGuideSection title="Dermatome Map — Sensory Testing" icon={Eye}>
-          <DermatomeMap />
-        </ExamGuideSection>
-        <ExamGuideSection title="Myotome Guide — Motor Testing" icon={Hand}>
-          <MyotomeGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Deep Tendon Reflexes" icon={Activity}>
-          <ReflexGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Abdominal Examination" icon={Stethoscope}>
-          <AbdominalExamGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Vascular Examination" icon={Activity}>
-          <VascularExamGuide />
-        </ExamGuideSection>
-        <ExamGuideSection title="Wound Assessment" icon={AlertTriangle}>
-          <WoundCameraCapture caseId={caseId} onPhotoAdded={onPhotoAdded} />
-          <WoundAssessmentGuide />
-        </ExamGuideSection>
+        <h3 className="text-sm font-semibold text-foreground">Clinical Examination</h3>
+        <p className="text-xs text-muted-foreground">Findings and guides tailored to this patient's presentation.</p>
+        <TailoredExamFindings caseData={caseData} selected={[]} onToggle={() => {}} />
       </div>
     </div>
   );

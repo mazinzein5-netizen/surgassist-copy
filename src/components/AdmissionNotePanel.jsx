@@ -6,7 +6,7 @@ import { compileProformaLines } from "@/components/OrthoProforma";
 import { Loader2, FileText, X, Save, RefreshCw, Lock, FlaskConical, Scan, Camera, Download, Share2, Stethoscope, AlertTriangle, Siren } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
-import ClinicalExamFindings from "@/components/ClinicalExamFindings";
+import TailoredExamFindings from "@/components/TailoredExamFindings";
 import { exportAdmissionNotePDF, downloadAdmissionNotePDF } from "@/lib/pdfExport";
 import { buildShiftContext } from "@/lib/shiftContext";
 import { detectTimeSensitiveConditions, hasCriticalFlag } from "@/lib/timeSensitiveCases";
@@ -387,7 +387,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
               <h3 className="font-semibold text-gray-900 text-sm">Clinical Examination Findings</h3>
               {examPending && <span className="text-xs text-amber-500 font-semibold">Required for admission</span>}
             </div>
-            <ClinicalExamFindings selected={examFindings} onToggle={setExamFindings} department={caseData.department} />
+            <TailoredExamFindings caseData={caseData} selected={examFindings} onToggle={setExamFindings} />
           </div>
 
           {/* Generate button */}
