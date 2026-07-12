@@ -394,7 +394,7 @@ COMORBIDITIES: ${comorbidities || "Not specified"}
 CLINICAL EXAMINATION FINDINGS (incorporate ALL of these into the CLINICAL EXAMINATION section as flowing clinical prose):
 ${examFindingsText}
 
-Generate the admission note in STRUCTURED READING FORM with clearly labeled sections and flowing clinical prose. Maximum 30 lines.`,
+Generate the admission note in LETTER FORM — flowing clinical narrative paragraphs under labeled section headers. For trauma: use "MODE OF TRAUMA:" as the first header. For non-trauma: use "CLINICAL HISTORY:". Every section must be flowing prose — NO bullet points, NO numbered lists. Maximum 35 lines.`,
     response_json_schema: {
       type: "object",
       properties: {
