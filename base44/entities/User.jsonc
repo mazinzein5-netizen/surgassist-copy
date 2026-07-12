@@ -31,6 +31,23 @@
         "orthopaedics",
         "general_surgery"
       ]
+    },
+    "cross_cover_departments": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "orthopaedics",
+          "general_surgery",
+          "ent"
+        ]
+      },
+      "description": "Up to 2 additional departments the user cross-covers"
+    },
+    "on_call_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the app is in on-call mode with prioritized alerts"
     }
   },
   "required": [

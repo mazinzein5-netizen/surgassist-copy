@@ -6,7 +6,8 @@ import HexBadge from "@/components/HexBadge";
 import { INEWSAlertCard, PendingReferralCard } from "@/components/DashboardAlertCard";
 import HoneycombTitle from "@/components/HoneycombTitle";
 import { CollapsibleSections, Section } from "@/components/CollapsibleSections";
-import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren, ChevronDown } from "lucide-react";
+import { FilePlus2, FolderOpen, AlertTriangle, ClipboardList, Users, Calculator, Activity, Clock, ChevronRight, BedDouble, Siren, ChevronDown, Radio } from "lucide-react";
+import DashboardSettings from "@/components/DashboardSettings";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
@@ -86,6 +87,26 @@ export default function Dashboard() {
             </>
           )}
         </div>
+      </div>
+
+      {/* On-Call Banner */}
+      {user?.on_call_mode && (
+       <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30">
+         <Radio className="w-5 h-5 text-red-400 animate-pulse" />
+         <div>
+           <p className="text-sm font-bold text-red-400">On-Call Mode Active</p>
+           <p className="text-xs text-muted-foreground">Priority alerts and referrals are highlighted below.</p>
+         </div>
+       </div>
+      )}
+
+      {/* Shift Settings */}
+      <div className="mb-6">
+       <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+         <ClipboardList className="w-4 h-4 text-hive-gold" />
+         Shift & Department Settings
+       </h2>
+       <DashboardSettings />
       </div>
 
       <CollapsibleSections>
