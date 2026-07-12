@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { generateKardex, generateDischargeDocuments, suggestManagementPlan, uploadFile } from "@/lib/hiveApi";
 
-import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera, Calendar } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera, Calendar, Trash2 } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
@@ -56,6 +56,7 @@ export default function CaseDetail() {
   const [showAdmissionNote, setShowAdmissionNote] = useState(false);
   const [showInpatientNote, setShowInpatientNote] = useState(false);
   const [showOperativeNote, setShowOperativeNote] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { loadCase(); }, [id]);
 
@@ -88,6 +89,16 @@ export default function CaseDetail() {
     );
   }
 
+  const handleDelete = async () => {
+    if (!confirm(`Delete ${caseData.patient_name}'s case file? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await base44.entities.CaseFile.delete(caseData.id);
+      navigate("/");
+    } catch { alert("Failed to delete case."); }
+    finally { setDeleting(false); }
+  };
+
   const clinicalHistory = extractClinicalHistory(caseData);
   const isAdmitted = ["admitted", "discharge_ready", "discharged"].includes(caseData.status);
   const hasNewNursingIssue = caseData.status === "inews_consult";
@@ -103,7 +114,15 @@ export default function CaseDetail() {
           </button>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-lg md:text-xl font-bold text-gray-900">{caseData.patient_name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">{caseData.patient_name}</h1>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+                  title="Delete case">
+                  {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Delete
+                </button>
+              </div>
               <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
                 {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
                 {caseData.patient_dob && <span>DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
