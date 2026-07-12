@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import AgentLauncher from "./AgentLauncher";
 import MotionOutlet from "./MotionOutlet";
-import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard } from "lucide-react";
+import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard, Hexagon } from "lucide-react";
 
 const MAIN_NAV = [
   { to: "/", label: "Referrals", icon: FolderOpen },
@@ -37,21 +37,26 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen bg-background overflow-hidden hex-pattern">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-48 flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="px-4 py-4 border-b border-sidebar-border">
-          <h1 className="text-base font-bold text-hive-gold">HIVE</h1>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Surgical Assistant</p>
+      <aside className="hidden md:flex w-16 hover:w-52 flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200 overflow-hidden group">
+        <div className="px-3 py-3 border-b border-sidebar-border flex items-center gap-2.5 h-[52px]">
+          <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center flex-shrink-0">
+            <Hexagon className="w-4 h-4 text-hive-navy" />
+          </div>
+          <div className="overflow-hidden">
+            <h1 className="text-sm font-bold text-hive-gold whitespace-nowrap leading-tight">HIVE</h1>
+            <p className="text-[9px] text-muted-foreground whitespace-nowrap leading-tight">Surgical Assistant</p>
+          </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1">
           {MAIN_NAV.map(item => {
             const Icon = item.icon;
             return (
-              <Link key={item.to} to={item.to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              <Link key={item.to} to={item.to} title={item.label}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors justify-center group-hover:justify-start ${
                   isActive(item.to) ? "bg-hive-gold text-hive-navy" : "text-sidebar-foreground hover:bg-sidebar-accent"
                 }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
-                {item.label}
+                <span className="whitespace-nowrap overflow-hidden">{item.label}</span>
               </Link>
             );
           })}
@@ -76,26 +81,26 @@ export default function AppLayout() {
               </div>
             </>
           )}
-          <button onClick={() => setMoreOpen(!moreOpen)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent w-full">
+          <button onClick={() => setMoreOpen(!moreOpen)} title="More"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent w-full justify-center group-hover:justify-start">
             <MoreHorizontal className="w-4 h-4 flex-shrink-0" />
-            More
+            <span className="whitespace-nowrap overflow-hidden">More</span>
           </button>
         </div>
 
-        <div className="px-4 py-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-hive-gold flex items-center justify-center text-hive-navy font-bold text-sm">
+        <div className="px-2 py-3 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 mb-2 px-1">
+            <div className="w-8 h-8 rounded-full bg-hive-gold flex items-center justify-center text-hive-navy font-bold text-sm flex-shrink-0">
               {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 overflow-hidden">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.full_name || "User"}</p>
             </div>
           </div>
-          <button onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors w-full">
-            <LogOut className="w-4 h-4" />
-            Sign out
+          <button onClick={handleLogout} title="Sign out"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors w-full justify-center group-hover:justify-start">
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            <span className="whitespace-nowrap overflow-hidden">Sign out</span>
           </button>
         </div>
       </aside>

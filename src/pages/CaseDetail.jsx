@@ -32,6 +32,7 @@ import InpatientNotePanel from "@/components/InpatientNotePanel";
 import OperativeNotePanel from "@/components/OperativeNotePanel";
 import PatientInfoEditor from "@/components/PatientInfoEditor";
 import InpatientOverview from "@/components/InpatientOverview";
+import CaseTimeline from "@/components/CaseTimeline";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 
@@ -183,9 +184,70 @@ export default function CaseDetail() {
         </div>
       </div>
 
-      {/* Content — single scroll with collapsible sections */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
-        <div className="max-w-4xl mx-auto space-y-3">
+      {/* Content with left timeline dock */}
+      <div className="flex-1 flex overflow-hidden">
+        <CaseTimeline caseData={caseData} />
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
+          <div className="max-w-4xl mx-auto space-y-3">
+          {/* 0. Referral Summary & Admission Note — pinned to top */}
+          <CollapsibleCard title="Referral Summary" icon={FileText} defaultOpen={true}
+            collapsedSummary={
+              <p className="text-xs text-gray-500 truncate">{caseData.presenting_complaint || caseData.referral_summary || "No summary"}</p>
+            }
+          >
+            <div className="space-y-3">
+              {caseData.presenting_complaint && (
+                <Field label="Presenting Complaint" value={caseData.presenting_complaint} />
+              )}
+              {caseData.mechanism_of_injury && (
+                <Field label="Mechanism of Injury" value={caseData.mechanism_of_injury} />
+              )}
+              {caseData.referral_summary && (
+                <Field label="Referral Summary" value={caseData.referral_summary} />
+              )}
+              {caseData.referral_mode && (
+                <Field label="Referral Mode" value={caseData.referral_mode} capitalize />
+              )}
+              {caseData.referrer_name && (
+                <Field label="Referrer" value={`${caseData.referrer_name}${caseData.referrer_grade ? ` · ${caseData.referrer_grade}` : ""}${caseData.referrer_department ? ` · ${caseData.referrer_department}` : ""}`} />
+              )}
+              {caseData.referring_team && (
+                <Field label="Referring Team" value={caseData.referring_team} />
+              )}
+
+              {/* Triage decision */}
+              {caseData.triage_decision && caseData.triage_decision !== "pending" && (
+                <div className="pt-3 border-t border-gray-100">
+                  <StatusPill caseData={caseData} />
+                </div>
+              )}
+              {caseData.triage_reasoning && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Reasoning</p>
+                  <ReasoningBullets text={caseData.triage_reasoning} />
+                </div>
+              )}
+              {caseData.triage_guideline && (
+                <Field label="Guideline Applied" value={caseData.triage_guideline} />
+              )}
+              {caseData.pre_clerking_guidance && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AIBadge />
+                    <p className="text-sm text-gray-500">Pre-Clerking Guidance</p>
+                  </div>
+                  <FormattedAdmissionNote note={caseData.pre_clerking_guidance} />
+                </div>
+              )}
+              {caseData.admission_note && (
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500 mb-1">Admission Note</p>
+                  <FormattedAdmissionNote note={caseData.admission_note} />
+                </div>
+              )}
+            </div>
+          </CollapsibleCard>
+
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
           {isAdmitted && !hasNewNursingIssue ? (
             <>
@@ -258,65 +320,6 @@ export default function CaseDetail() {
             <PatientInfoEditor caseData={caseData} onUpdate={loadCase} />
           </CollapsibleCard>
 
-          {/* 4. Referral Summary */}
-          <CollapsibleCard title="Referral Summary" icon={FileText}
-            collapsedSummary={
-              <p className="text-xs text-gray-500 truncate">{caseData.presenting_complaint || caseData.referral_summary || "No summary"}</p>
-            }
-          >
-            <div className="space-y-3">
-              {caseData.presenting_complaint && (
-                <Field label="Presenting Complaint" value={caseData.presenting_complaint} />
-              )}
-              {caseData.mechanism_of_injury && (
-                <Field label="Mechanism of Injury" value={caseData.mechanism_of_injury} />
-              )}
-              {caseData.referral_summary && (
-                <Field label="Referral Summary" value={caseData.referral_summary} />
-              )}
-              {caseData.referral_mode && (
-                <Field label="Referral Mode" value={caseData.referral_mode} capitalize />
-              )}
-              {caseData.referrer_name && (
-                <Field label="Referrer" value={`${caseData.referrer_name}${caseData.referrer_grade ? ` · ${caseData.referrer_grade}` : ""}${caseData.referrer_department ? ` · ${caseData.referrer_department}` : ""}`} />
-              )}
-              {caseData.referring_team && (
-                <Field label="Referring Team" value={caseData.referring_team} />
-              )}
-
-              {/* Triage decision */}
-              {caseData.triage_decision && caseData.triage_decision !== "pending" && (
-                <div className="pt-3 border-t border-gray-100">
-                  <StatusPill caseData={caseData} />
-                </div>
-              )}
-              {caseData.triage_reasoning && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Reasoning</p>
-                  <ReasoningBullets text={caseData.triage_reasoning} />
-                </div>
-              )}
-              {caseData.triage_guideline && (
-                <Field label="Guideline Applied" value={caseData.triage_guideline} />
-              )}
-              {caseData.pre_clerking_guidance && (
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <AIBadge />
-                    <p className="text-sm text-gray-500">Pre-Clerking Guidance</p>
-                  </div>
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{caseData.pre_clerking_guidance}</p>
-                </div>
-              )}
-              {caseData.admission_note && (
-                <div className="pt-3 border-t border-gray-100">
-                  <p className="text-sm text-gray-500 mb-1">Admission Note</p>
-                  <FormattedAdmissionNote note={caseData.admission_note} />
-                </div>
-              )}
-            </div>
-          </CollapsibleCard>
-
           {/* 5. Investigations */}
           <CollapsibleCard title="Investigations" icon={FlaskConical}
             badge={hasLabs ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">BLOODS</span> : null}
@@ -354,6 +357,7 @@ export default function CaseDetail() {
           >
             <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />
           </CollapsibleCard>
+          </div>
         </div>
       </div>
 
@@ -537,13 +541,17 @@ function KardexTab({ caseData, onUpdate, user }) {
           {kardex.iv_fluids && (
             <div>
               <p className="text-sm text-gray-500 mb-1">IV Fluid Plan</p>
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{kardex.iv_fluids}</p>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <FormattedAdmissionNote note={kardex.iv_fluids} />
+              </div>
             </div>
           )}
           {kardex.treatment_plan && (
             <div>
               <p className="text-sm text-gray-500 mb-1">Treatment Plan</p>
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{kardex.treatment_plan}</p>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <FormattedAdmissionNote note={kardex.treatment_plan} />
+              </div>
             </div>
           )}
         </>
@@ -639,7 +647,9 @@ function DischargeTab({ caseData, onUpdate, user }) {
               <AIBadge />
               <p className="text-sm text-gray-500">GP Discharge Letter</p>
             </div>
-            <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans bg-gray-50 border border-gray-200 rounded-lg p-3">{docs.gp_letter}</pre>
+            <div className="bg-card border border-border rounded-lg p-3">
+              <FormattedAdmissionNote note={docs.gp_letter} />
+            </div>
           </div>
 
           <div>
@@ -647,7 +657,9 @@ function DischargeTab({ caseData, onUpdate, user }) {
               <AIBadge />
               <p className="text-sm text-gray-500">Patient Education Sheet</p>
             </div>
-            <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans bg-gray-50 border border-gray-200 rounded-lg p-3">{docs.patient_education_sheet}</pre>
+            <div className="bg-card border border-border rounded-lg p-3">
+              <FormattedAdmissionNote note={docs.patient_education_sheet} />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">

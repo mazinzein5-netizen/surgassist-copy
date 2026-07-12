@@ -183,7 +183,10 @@ function NoteSection({ section }) {
                 );
               case "paragraph":
                 return (
-                  <p key={ii} className="text-sm text-foreground leading-relaxed">{item.text}</p>
+                  <div key={ii} className="flex gap-2 text-sm text-foreground">
+                    <span className="text-accent flex-shrink-0 mt-0.5">•</span>
+                    <span className="flex-1 leading-relaxed">{item.text}</span>
+                  </div>
                 );
               case "break":
                 return <div key={ii} className="h-1" />;
