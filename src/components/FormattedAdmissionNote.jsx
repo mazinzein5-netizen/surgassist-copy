@@ -154,25 +154,25 @@ function NoteSection({ section, forceOpen }) {
   if (items.length === 0) return null;
 
   const containerCls = isPriority
-    ? "rounded-lg border border-red-300/60 bg-red-50/5 overflow-hidden"
-    : "rounded-lg border border-border/60 bg-background/30 overflow-hidden";
+    ? "rounded-lg border border-red-300 bg-red-50 overflow-hidden"
+    : "rounded-lg border border-gray-200 bg-white overflow-hidden";
   const headerCls = isPriority
-    ? "w-full flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/15 transition-colors"
-    : "w-full flex items-center gap-2 px-3 py-2 bg-secondary/40 hover:bg-secondary/60 transition-colors";
-  const iconCls = isPriority ? "w-3.5 h-3.5 text-red-500 flex-shrink-0" : "w-3.5 h-3.5 text-hive-gold flex-shrink-0";
+    ? "w-full flex items-center gap-2 px-3 py-2 bg-red-100 hover:bg-red-150 transition-colors"
+    : "w-full flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-150 transition-colors";
+  const iconCls = isPriority ? "w-3.5 h-3.5 text-red-600 flex-shrink-0" : "w-3.5 h-3.5 text-gray-700 flex-shrink-0";
   const titleCls = isPriority
-    ? "text-xs font-bold text-red-500 uppercase tracking-wider flex-1 text-left"
-    : "text-xs font-bold text-hive-gold uppercase tracking-wider flex-1 text-left";
-  const itemColor = isPriority ? "text-red-700 dark:text-red-300" : "text-foreground";
-  const markerColor = isPriority ? "text-red-500" : "text-accent";
-  const numColor = isPriority ? "text-red-500" : "text-hive-gold";
+    ? "text-xs font-bold text-red-700 uppercase tracking-wider flex-1 text-left"
+    : "text-xs font-bold text-gray-800 uppercase tracking-wider flex-1 text-left";
+  const itemColor = isPriority ? "text-red-800" : "text-gray-900";
+  const markerColor = isPriority ? "text-red-600" : "text-gray-600";
+  const numColor = isPriority ? "text-red-600" : "text-gray-800";
 
   return (
     <div className={containerCls}>
       <button onClick={() => setOpen(v => !v)} className={headerCls}>
         <Icon className={iconCls} />
         <h5 className={titleCls}>{label}</h5>
-        <ChevronDown className={isOpen ? "w-3.5 h-3.5 text-muted-foreground transition-transform" : "w-3.5 h-3.5 text-muted-foreground transition-transform -rotate-90"} />
+        <ChevronDown className={isOpen ? "w-3.5 h-3.5 text-gray-500 transition-transform" : "w-3.5 h-3.5 text-gray-500 transition-transform -rotate-90"} />
       </button>
       {isOpen && (
         <div className="px-4 py-3 space-y-1.5">
@@ -185,7 +185,7 @@ function NoteSection({ section, forceOpen }) {
                 </div>
               );
             }
-            if (item.type === "bullet" || item.type === "paragraph") {
+            if (item.type === "bullet") {
               return (
                 <div key={ii} className="flex gap-2 text-sm">
                   <span className={markerColor + " flex-shrink-0 mt-0.5"}>•</span>
@@ -193,11 +193,16 @@ function NoteSection({ section, forceOpen }) {
                 </div>
               );
             }
+            if (item.type === "paragraph") {
+              return (
+                <p key={ii} className={"text-sm leading-relaxed " + itemColor}>{item.text}</p>
+              );
+            }
             if (item.type === "sub") {
               return (
-                <div key={ii} className="flex gap-2 text-sm text-muted-foreground pl-4">
-                  <span className="text-muted-foreground flex-shrink-0">›</span>
-                  <span className="flex-1">{item.text}</span>
+                <div key={ii} className="flex gap-2 text-sm pl-4">
+                  <span className="text-gray-500 flex-shrink-0">›</span>
+                  <span className="flex-1 text-gray-600">{item.text}</span>
                 </div>
               );
             }
@@ -205,7 +210,7 @@ function NoteSection({ section, forceOpen }) {
               return (
                 <div key={ii} className={"text-sm " + itemColor}>
                   <span className="font-semibold">{item.label}:</span>{" "}
-                  <span className="text-muted-foreground">{item.value}</span>
+                  <span className="text-gray-600">{item.value}</span>
                 </div>
               );
             }
@@ -221,7 +226,7 @@ function NoteSection({ section, forceOpen }) {
 }
 
 export default function FormattedAdmissionNote({ note }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   if (!note) return null;
 
@@ -243,19 +248,19 @@ export default function FormattedAdmissionNote({ note }) {
   const hasMultipleSections = sections.length > 1;
 
   return (
-    <div className="rounded-xl border border-border/60 overflow-hidden">
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
       {/* Master toggle bar */}
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-secondary/50 hover:bg-secondary/70 transition-colors border-b border-border/60"
+        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 transition-colors border-b border-gray-200"
       >
         {expanded
-          ? <ChevronDown className="w-4 h-4 text-hive-gold flex-shrink-0" />
-          : <ChevronRight className="w-4 h-4 text-hive-gold flex-shrink-0" />}
-        <span className="text-xs font-semibold text-muted-foreground flex-1 text-left">
+          ? <ChevronDown className="w-4 h-4 text-gray-700 flex-shrink-0" />
+          : <ChevronRight className="w-4 h-4 text-gray-700 flex-shrink-0" />}
+        <span className="text-xs font-semibold text-gray-600 flex-1 text-left">
           {hasMultipleSections ? `${sections.length} sections` : "Document"}
         </span>
-        <span className="text-[10px] text-hive-gold font-medium uppercase tracking-wider">
+        <span className="text-[10px] text-gray-700 font-medium uppercase tracking-wider">
           {expanded ? "Collapse" : "Expand"}
         </span>
       </button>
@@ -263,13 +268,13 @@ export default function FormattedAdmissionNote({ note }) {
       {/* Collapsed: compact summary */}
       {!expanded && (
         <div className="px-4 py-2.5">
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{summaryText}</p>
+          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{summaryText}</p>
         </div>
       )}
 
       {/* Expanded: full readable document */}
       {expanded && (
-        <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto scrollbar-thin">
+        <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin bg-white">
           {sections.map((section, si) => (
             <NoteSection key={si} section={section} forceOpen={true} />
           ))}

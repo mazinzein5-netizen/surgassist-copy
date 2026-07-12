@@ -77,7 +77,7 @@ export default function InpatientOverview({ caseData, onAddNote }) {
                   {lastNote.author_name}{lastNote.author_grade ? ` · ${lastNote.author_grade}` : ""}
                 </span>
               </div>
-              <div className="line-clamp-4 overflow-hidden"><FormattedAdmissionNote note={lastNote.content} /></div>
+              <FormattedAdmissionNote note={lastNote.content} />
             </div>
           ) : (
             <p className="text-sm text-gray-400 italic">No notes recorded since admission.</p>
