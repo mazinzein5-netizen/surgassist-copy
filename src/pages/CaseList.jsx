@@ -74,6 +74,15 @@ export default function CaseList() {
                       {c.presenting_complaint || c.referral_summary || "No complaint recorded"}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                        c.department === "orthopaedics"
+                          ? "bg-purple-500/15 text-purple-400 border border-purple-500/20"
+                          : c.department === "general_surgery"
+                          ? "bg-teal-500/15 text-teal-400 border border-teal-500/20"
+                          : "bg-muted text-muted-foreground border border-border"
+                      }`}>
+                        {c.department === "orthopaedics" ? "Orthopaedics" : c.department === "general_surgery" ? "General Surgery" : c.department?.replace("_", " ") || "Unknown"}
+                      </span>
                       <StatusPill caseData={c} />
                       <span className="text-xs text-muted-foreground">{timeAgo(c.created_date)}</span>
                       <span className="text-xs text-muted-foreground">{formatTimestamp(c.created_date)}</span>
