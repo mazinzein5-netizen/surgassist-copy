@@ -31,6 +31,7 @@ import AdmissionNotePanel from "@/components/AdmissionNotePanel";
 import InpatientNotePanel from "@/components/InpatientNotePanel";
 import OperativeNotePanel from "@/components/OperativeNotePanel";
 import PatientInfoEditor from "@/components/PatientInfoEditor";
+import TheatreChecklistPanel from "@/components/TheatreChecklistPanel";
 import InpatientOverview from "@/components/InpatientOverview";
 import CaseTimeline from "@/components/CaseTimeline";
 import { formatTimestamp } from "@/lib/workflow";
@@ -59,6 +60,7 @@ export default function CaseDetail() {
   const [showInpatientNote, setShowInpatientNote] = useState(false);
   const [showOperativeNote, setShowOperativeNote] = useState(false);
   const [showPatientInfo, setShowPatientInfo] = useState(false);
+  const [showTheatreChecklist, setShowTheatreChecklist] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [proformaOpen, setProformaOpen] = useState(true);
 
@@ -111,6 +113,8 @@ export default function CaseDetail() {
   const hasLabs = caseData.investigation_data?.bloods?.length > 0;
   const hasExam = (caseData.proforma_data && Object.values(caseData.proforma_data).some(a => a.answer !== null)) || caseData.admission_note;
   const hasAdmissionNote = !!caseData.admission_note;
+  const isConservative = caseData.pre_op_status === "not_applicable";
+  const isOperative = ["listed", "in_theatre", "post_op"].includes(caseData.pre_op_status);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -124,6 +128,7 @@ export default function CaseDetail() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg md:text-xl font-bold text-gray-900">{caseData.patient_name}</h1>
+                <TreatmentPathwayBadge caseData={caseData} />
                 <button onClick={() => setShowPatientInfo(true)}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
                   title="Edit patient details">
@@ -181,10 +186,12 @@ export default function CaseDetail() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Stethoscope className="w-3.5 h-3.5" /> Inpatient Note
             </button>
-            <button onClick={() => setShowOperativeNote(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
-              <FileText className="w-3.5 h-3.5" /> Operative Note
-            </button>
+            {!isConservative && (
+              <button onClick={() => setShowOperativeNote(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+                <FileText className="w-3.5 h-3.5" /> Operative Note
+              </button>
+            )}
             <BloodsCameraButton caseData={caseData} onUpdate={loadCase} />
           </div>
         </div>
@@ -333,10 +340,10 @@ export default function CaseDetail() {
             }
           >
             <div className="space-y-4">
-              <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} />
+              <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} onRequestTheatre={() => setShowTheatreChecklist(true)} />
               <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
               <JackSafetyPanel caseData={caseData} />
-              <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />
+              {!isConservative && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
               <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
             </div>
           </CollapsibleCard>
@@ -360,8 +367,32 @@ export default function CaseDetail() {
       {showInpatientNote && <InpatientNotePanel caseData={caseData} caseId={id} onClose={() => setShowInpatientNote(false)} onUpdate={loadCase} />}
       {showOperativeNote && <OperativeNotePanel caseData={caseData} caseId={id} onClose={() => setShowOperativeNote(false)} onUpdate={loadCase} />}
       {showPatientInfo && <PatientInfoEditor caseData={caseData} onClose={() => setShowPatientInfo(false)} onUpdate={loadCase} />}
+      {showTheatreChecklist && <TheatreChecklistPanel caseData={caseData} user={user} onClose={() => setShowTheatreChecklist(false)} onUpdate={loadCase} />}
     </div>
   );
+}
+
+function TreatmentPathwayBadge({ caseData }) {
+  const { pre_op_status, pod, procedure_date } = caseData;
+
+  if (pre_op_status === "not_applicable") {
+    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">CONSERVATIVE</span>;
+  }
+  if (pre_op_status === "listed") {
+    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">PRE-OP · LISTED</span>;
+  }
+  if (pre_op_status === "in_theatre") {
+    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">IN THEATRE</span>;
+  }
+  if (pre_op_status === "post_op") {
+    let day = pod;
+    if (!day && procedure_date) {
+      const diff = Math.floor((Date.now() - new Date(procedure_date).getTime()) / 86400000);
+      day = diff + 1;
+    }
+    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">POD {day || 0}</span>;
+  }
+  return null;
 }
 
 function InfoItem({ label, value }) {

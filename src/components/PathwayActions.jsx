@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { BedDouble, Scissors, Share2, Loader2 } from "lucide-react";
 
-export default function PathwayActions({ caseData, onUpdate, user }) {
+export default function PathwayActions({ caseData, onUpdate, user, onRequestTheatre }) {
   const [acting, setActing] = useState(null);
 
   const updateNote = () => ({
@@ -17,6 +17,7 @@ export default function PathwayActions({ caseData, onUpdate, user }) {
     try {
       await base44.entities.CaseFile.update(caseData.id, {
         status: "admitted",
+        pre_op_status: "not_applicable",
         admission_date: caseData.admission_date || new Date().toISOString(),
         ...updateNote(),
       });
@@ -25,17 +26,8 @@ export default function PathwayActions({ caseData, onUpdate, user }) {
     finally { setActing(null); }
   };
 
-  const handleTheatre = async () => {
-    setActing("theatre");
-    try {
-      await base44.entities.CaseFile.update(caseData.id, {
-        pre_op_status: "listed",
-        status: "admitted",
-        ...updateNote(),
-      });
-      onUpdate();
-    } catch { alert("Failed to list for theatre."); }
-    finally { setActing(null); }
+  const handleTheatre = () => {
+    onRequestTheatre?.();
   };
 
   const handleRefer = async () => {
@@ -66,14 +58,14 @@ export default function PathwayActions({ caseData, onUpdate, user }) {
           {acting === "admit" ? <Loader2 className="w-5 h-5 text-gray-500 animate-spin" /> : <BedDouble className="w-5 h-5 text-gray-700" />}
           <span className="font-semibold text-sm text-gray-900">Admit & Treat</span>
         </div>
-        <span className="text-xs text-gray-500">Admit to ward, start management</span>
+        <span className="text-xs text-gray-500">Conservative management — admit to ward</span>
       </button>
       <button onClick={handleTheatre} disabled={!!acting} className={btnClass}>
         <div className="flex items-center gap-2 mb-1">
           {acting === "theatre" ? <Loader2 className="w-5 h-5 text-gray-500 animate-spin" /> : <Scissors className="w-5 h-5 text-gray-700" />}
           <span className="font-semibold text-sm text-gray-900">Theatre / Procedure</span>
         </div>
-        <span className="text-xs text-gray-500">List for surgery or procedure</span>
+        <span className="text-xs text-gray-500">Jack reviews notes & checklist first</span>
       </button>
       <button onClick={handleRefer} disabled={!!acting} className={btnClass}>
         <div className="flex items-center gap-2 mb-1">
