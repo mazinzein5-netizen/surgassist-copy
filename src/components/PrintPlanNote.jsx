@@ -5,6 +5,7 @@ import { downloadCallNotePDF } from "@/lib/pdfExport";
 import { suggestInvestigations } from "@/lib/hiveApi";
 import ReasoningBullets from "@/components/ReasoningBullets";
 import ShareCallNote from "@/components/ShareCallNote";
+import PlanNoteEditor from "@/components/PlanNoteEditor";
 
 export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
   const [reasoning, setReasoning] = useState(caseData.triage_reasoning || "");
@@ -144,12 +145,9 @@ export default function PrintPlanNote({ caseData, onClose, onUpdate }) {
 
           {/* Section 2: Plan */}
           <EditSection title="Plan" icon="clipboard">
-            <textarea
+            <PlanNoteEditor
               value={plan}
-              onChange={e => { setPlan(e.target.value); markDirty(); }}
-              rows={6}
-              placeholder="Management plan..."
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-hive-gold/50 resize-y"
+              onChange={val => { setPlan(val); markDirty(); }}
             />
           </EditSection>
 
