@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { ClipboardCheck, FileText, Loader2, Clock, ChevronRight } from "lucide-react";
+import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 
 function fmtTimestamp(ts) {
   if (!ts) return "";
@@ -52,7 +53,7 @@ export default function InpatientOverview({ caseData }) {
           )}
         </div>
         {plan ? (
-          <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{plan}</p>
+          <FormattedAdmissionNote note={plan} />
         ) : (
           <p className="text-sm text-gray-400 italic">No plan documented yet. Add a plan in the Admission & Plan section below.</p>
         )}
@@ -84,7 +85,7 @@ export default function InpatientOverview({ caseData }) {
                 {lastNote.author_name}{lastNote.author_grade ? ` · ${lastNote.author_grade}` : ""}
               </span>
             </div>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed line-clamp-4">{lastNote.content}</p>
+            <div className="line-clamp-4 overflow-hidden"><FormattedAdmissionNote note={lastNote.content} /></div>
           </div>
         ) : (
           <p className="text-sm text-gray-400 italic">No notes recorded since admission.</p>

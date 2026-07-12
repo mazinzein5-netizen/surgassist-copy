@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Plus, Trash2, Lock, Loader2, FileText, Stethoscope, Users, MessageSquare, ShieldCheck } from "lucide-react";
+import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 
 const GRADE_LABELS = { nchd: "NCHD", sho: "SHO", registrar: "Registrar", consultant: "Consultant" };
 
@@ -138,7 +139,7 @@ export default function ChronologicalNotes({ caseData }) {
                         </span>
                       </div>
 
-                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                      <FormattedAdmissionNote note={note.content} />
 
                       <div className="flex items-center gap-2 mt-2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-[10px] font-medium text-muted-foreground">
