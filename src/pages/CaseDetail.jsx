@@ -266,6 +266,22 @@ export default function CaseDetail() {
             </div>
           </CollapsibleCard>
 
+          {/* Admission & Plan — directly below referral */}
+          <CollapsibleCard title="Admission & Plan" icon={ClipboardCheck}
+            badge={hasAdmissionNote ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-200">✓ ADMITTED</span> : null}
+            collapsedSummary={
+              <p className="text-xs text-gray-500">{hasAdmissionNote ? "Admission note saved" : caseData.treatment_plan ? "Plan in progress" : "Waiting for admission"}</p>
+            }
+          >
+            <div className="space-y-4">
+              <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} onRequestTheatre={() => setShowTheatreChecklist(true)} />
+              <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
+              <JackSafetyPanel caseData={caseData} />
+              {!isConservative && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
+              <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
+            </div>
+          </CollapsibleCard>
+
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
           {(isAdmitted || hasAdmissionNote) && !hasNewNursingIssue ? (
             <>
@@ -329,22 +345,6 @@ export default function CaseDetail() {
               <LabsImagingDiscovery caseData={caseData} />
               <ImagingReports caseData={caseData} photos={photos} caseId={id} onPhotoAdded={loadCase} />
               <ReviewInvestigations caseData={caseData} onUpdate={loadCase} canEdit={true} />
-            </div>
-          </CollapsibleCard>
-
-          {/* 6. Admission & Plan */}
-          <CollapsibleCard title="Admission & Plan" icon={ClipboardCheck}
-            badge={hasAdmissionNote ? <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-200">✓ ADMITTED</span> : null}
-            collapsedSummary={
-              <p className="text-xs text-gray-500">{hasAdmissionNote ? "Admission note saved" : caseData.treatment_plan ? "Plan in progress" : "Waiting for admission"}</p>
-            }
-          >
-            <div className="space-y-4">
-              <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} onRequestTheatre={() => setShowTheatreChecklist(true)} />
-              <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
-              <JackSafetyPanel caseData={caseData} />
-              {!isConservative && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
-              <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
             </div>
           </CollapsibleCard>
 
