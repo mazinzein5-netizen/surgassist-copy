@@ -107,6 +107,18 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
     setChecked(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const allKeys = CHECKLIST_SECTIONS.flatMap(s => s.items.map((_, i) => `${s.id}_${i}`));
+  const allChecked = allKeys.every(k => checked[k]);
+
+  const toggleAll = () => {
+    const target = !allChecked;
+    setChecked(prev => {
+      const next = { ...prev };
+      allKeys.forEach(k => { next[k] = target; });
+      return next;
+    });
+  };
+
   const totalItems = CHECKLIST_SECTIONS.reduce((n, s) => n + s.items.length, 0);
   const completedItems = Object.values(checked).filter(Boolean).length;
   const completionPct = Math.round((completedItems / totalItems) * 100);
@@ -218,6 +230,25 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
             <pre className="text-sm text-foreground whitespace-pre-wrap font-body bg-background/50 rounded-lg p-3 border border-border">{consentAid}</pre>
           </div>
         )}
+      </div>
+
+      {/* Check All bar */}
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleAll}
+          className={`w-6 h-6 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+            allChecked ? "bg-success border-success" : "border-border hover:border-hive-gold/50"
+          }`}
+        >
+          {allChecked && <CheckCircle2 className="w-4 h-4 text-success-foreground" />}
+        </button>
+        <span className="text-sm font-semibold text-foreground flex-1">
+          {allChecked ? "All items checked — Uncheck all" : "Check all items"}
+        </span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded ${allChecked ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+          {completedItems}/{totalItems}
+        </span>
       </div>
 
       {/* Checklist sections */}
