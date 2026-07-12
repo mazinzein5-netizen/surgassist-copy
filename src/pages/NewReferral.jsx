@@ -8,6 +8,7 @@ import RequiredInfoChecklist from "@/components/RequiredInfoChecklist";
 import OnCallTeamBar from "@/components/OnCallTeamBar";
 import ReferrerDetails from "@/components/ReferrerDetails";
 import PatientDetailsBox from "@/components/PatientDetailsBox";
+import PatientStatusSelector from "@/components/PatientStatusSelector";
 import { Send, Mic, Camera, FileText, Loader2, X, CheckCircle2, AlertCircle, Users, Type, ScanLine, Monitor, Upload, Bluetooth } from "lucide-react";
 
 const INPUT_MODES = [
@@ -39,6 +40,7 @@ export default function NewReferral() {
   const [onCallTeam, setOnCallTeam] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState({});
   const [patientInfo, setPatientInfo] = useState({});
+  const [patientStatusInfo, setPatientStatusInfo] = useState({});
   const [patientAutoFilled, setPatientAutoFilled] = useState(false);
   const [referringHospital, setReferringHospital] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -199,6 +201,8 @@ export default function NewReferral() {
         }
       }
 
+      const resolvedDepartment = patientStatusInfo.inpatientDepartment || triageResult.department || user?.department || "orthopaedics";
+
       const caseData = {
         patient_name: patientInfo.patient_name || triageResult.patient_name || "Unknown Patient",
         patient_dob: patientInfo.patient_dob || triageResult.patient_dob || null,
@@ -206,9 +210,11 @@ export default function NewReferral() {
         patient_gender: patientInfo.patient_gender || null,
         patient_id: patientId,
         hospital: user?.hospital || "",
-        department: triageResult.department || user?.department || "orthopaedics",
-        specialty: triageResult.accepting_specialty || "",
-        status: triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
+        department: resolvedDepartment,
+        specialty: patientStatusInfo.inpatientConsultant || triageResult.accepting_specialty || "",
+        consultant_name: patientStatusInfo.inpatientConsultant || "",
+        patient_status: patientStatusInfo.patientStatus || "",
+        status: patientStatusInfo.patientStatus === "inpatient" ? "admitted" : triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
         referral_mode: mode,
         referral_summary: triageResult.referral_summary || messages.map((m) => m.content).join("\n"),
         presenting_complaint: triageResult.presenting_complaint || "",
@@ -269,6 +275,11 @@ export default function NewReferral() {
       {/* Patient Details */}
       <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
         <PatientDetailsBox value={patientInfo} onChange={setPatientInfo} autoFilled={patientAutoFilled} />
+      </div>
+
+      {/* Patient Status */}
+      <div className="px-4 md:px-8 pt-4 max-w-4xl mx-auto w-full">
+        <PatientStatusSelector value={patientStatusInfo} onChange={setPatientStatusInfo} />
       </div>
 
       {/* Referrer Details */}

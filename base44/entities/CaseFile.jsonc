@@ -24,6 +24,15 @@
       "type": "string",
       "description": "Links to Patient entity for cross-visit cloud memory"
     },
+    "patient_status": {
+      "type": "string",
+      "enum": [
+        "ed",
+        "outpatient",
+        "inpatient"
+      ],
+      "description": "Patient location at time of referral: ED, outpatient, or already inpatient"
+    },
     "hospital": {
       "type": "string"
     },
