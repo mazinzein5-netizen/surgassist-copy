@@ -260,7 +260,7 @@ export default function CaseDetail() {
           </CollapsibleCard>
 
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
-          {isAdmitted && !hasNewNursingIssue ? (
+          {(isAdmitted || hasAdmissionNote) && !hasNewNursingIssue ? (
             <>
               <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={true}
                 collapsedSummary={
