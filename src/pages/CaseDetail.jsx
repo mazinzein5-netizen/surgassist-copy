@@ -17,7 +17,6 @@ import JackSafetyPanel from "@/components/JackSafetyPanel";
 import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
-import ChronologicalNotes from "@/components/ChronologicalNotes";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import CollapsibleCard from "@/components/CollapsibleCard";
@@ -34,9 +33,10 @@ import OperativeNotePanel from "@/components/OperativeNotePanel";
 import PatientInfoEditor from "@/components/PatientInfoEditor";
 import TheatreChecklistPanel from "@/components/TheatreChecklistPanel";
 import InpatientOverview from "@/components/InpatientOverview";
-import CaseTimeline from "@/components/CaseTimeline";
+import CaseRecordTimeline from "@/components/CaseRecordTimeline";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
+import { Scissors as ScissorsIcon } from "lucide-react";
 
 const PREOP_LABELS = {
   not_listed: "Not Listed",
@@ -146,6 +146,11 @@ export default function CaseDetail() {
                 {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
                 {caseData.patient_dob && <span>DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
                 <span className="capitalize">{caseData.department?.replace("_", " ")}</span>
+                {caseData.diagnosis && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Dx: {caseData.diagnosis}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3 mt-1.5">
                 <StatusPill caseData={caseData} />
@@ -188,6 +193,12 @@ export default function CaseDetail() {
               <Stethoscope className="w-3.5 h-3.5" /> Inpatient Note
             </button>
             {!isConservative && (
+              <button onClick={() => setShowTheatreChecklist(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 text-xs font-semibold hover:bg-orange-100 transition-colors border border-orange-200">
+                <ScissorsIcon className="w-3.5 h-3.5" /> Book for Surgery
+              </button>
+            )}
+            {!isConservative && (
               <button onClick={() => setShowOperativeNote(true)}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
                 <FileText className="w-3.5 h-3.5" /> Operative Note
@@ -198,11 +209,9 @@ export default function CaseDetail() {
         </div>
       </div>
 
-      {/* Content with left timeline dock */}
-      <div className="flex-1 flex overflow-hidden">
-        <CaseTimeline caseData={caseData} />
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
-          <div className="max-w-4xl mx-auto space-y-3">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-3">
           {/* 0. Referral Summary & Admission Note — pinned to top */}
           <CollapsibleCard title="Referral Summary" icon={FileText} defaultOpen={true}
             collapsedSummary={
@@ -247,11 +256,6 @@ export default function CaseDetail() {
                 }
               >
                 <InpatientOverview caseData={caseData} onAddNote={() => setShowInpatientNote(true)} />
-              </CollapsibleCard>
-              <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}
-                collapsedSummary={<p className="text-xs text-gray-400">Tap to view chronological notes</p>}
-              >
-                <ChronologicalNotes caseData={caseData} />
               </CollapsibleCard>
             </>
           ) : (
@@ -306,8 +310,14 @@ export default function CaseDetail() {
           >
             <DischargeTab caseData={caseData} onUpdate={loadCase} user={user} />
           </CollapsibleCard>
+
+          {/* Patient Record & Timeline — unified, minimized */}
+          <CollapsibleCard title="Patient Record & Timeline" icon={FileText} defaultOpen={false}
+            collapsedSummary={<p className="text-xs text-gray-400">Tap to view full record & notes</p>}
+          >
+            <CaseRecordTimeline caseData={caseData} />
+          </CollapsibleCard>
           </div>
-        </div>
       </div>
 
       {showPrintNote && <PrintPlanNote caseData={caseData} onClose={() => setShowPrintNote(false)} onUpdate={loadCase} />}
@@ -739,8 +749,6 @@ function ReviewTab({ caseData, onUpdate, user }) {
 
   return (
     <div className="space-y-4">
-      <ChronologicalNotes caseData={caseData} />
-
       {/* Management Plan */}
       <div>
         <div className="flex items-center justify-between mb-1">
