@@ -14,10 +14,10 @@ const MAIN_NAV = [
 const MORE_NAV = [
   { to: "/new-referral", label: "New Referral", icon: FilePlus2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/inews-consult", label: "INEWS Consult", icon: AlertTriangle },
-  { to: "/inpatient-monitor", label: "Inpatient Monitor", icon: Activity },
+  { to: "/inews-consult", label: "Inpatient Review", icon: AlertTriangle },
+  { to: "/inpatient-monitor", label: "Inpatient Board", icon: Activity },
   { to: "/handover", label: "Handover", icon: BedDouble },
-  { to: "/patient-history", label: "Patient Memory", icon: FolderOpen },
+  { to: "/patient-history", label: "Patient History", icon: FolderOpen },
   { to: "/contacts", label: "Communication", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
 ];
@@ -44,7 +44,7 @@ export default function AppLayout() {
           </div>
           <div className="overflow-hidden">
             <h1 className="text-sm font-bold text-hive-gold whitespace-nowrap leading-tight">HIVE</h1>
-            <p className="text-[9px] text-muted-foreground whitespace-nowrap leading-tight">Surgical Assistant</p>
+            <p className="text-[9px] text-muted-foreground whitespace-nowrap leading-tight">Surgical Workflow</p>
           </div>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">

@@ -159,7 +159,7 @@ export default function CaseCard({ caseData: c, onEdit, mode = "referral" }) {
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
               stage === 0 ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"
             }`}>
-              {stage === 0 ? "Triage" : stage === 1 ? "Review" : "Plan"}
+              {stage === 0 ? "Intake" : stage === 1 ? "Review" : "Plan"}
               <ChevronRight className="w-3 h-3" />
             </span>
           ) : (

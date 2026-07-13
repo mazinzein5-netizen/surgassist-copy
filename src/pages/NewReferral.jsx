@@ -19,7 +19,7 @@ export default function NewReferral() {
   const [messages, setMessages] = useState([
   {
     role: "assistant",
-    content: "Welcome to HIVE Surgical Assistant. I'm here to help you triage surgical referrals. Please provide the referral details — you can type, dictate, or upload a photo/screenshot of the referral note. I'll extract the key information and ask for anything missing."
+    content: "Welcome to HIVE. I'm here to help you document and organize surgical referrals. Please provide the referral details — you can type, dictate, or upload a photo/screenshot of the referral note. I'll extract the key information and ask for anything missing."
   }]
   );
   const [input, setInput] = useState("");
@@ -262,7 +262,7 @@ export default function NewReferral() {
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div>
             <h1 className="text-lg font-bold text-foreground">New Referral</h1>
-            <p className="text-xs text-muted-foreground">AI-powered triage & decision support — on-call team auto-tagged</p>
+            <p className="text-xs text-muted-foreground">Referral documentation assistant — on-call team auto-tagged</p>
           </div>
           <AIBadge />
         </div>
@@ -329,7 +329,7 @@ export default function NewReferral() {
           <div className="bg-card border-2 border-hive-gold/30 rounded-2xl p-5 animate-slide-up">
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="w-5 h-5 text-hive-gold" />
-                <h3 className="font-bold text-foreground">Triage Decision</h3>
+                <h3 className="font-bold text-foreground">Intake Decision</h3>
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-3 ${
             triageResult.triage_decision === "accept" ? "bg-success/15 text-success" :
@@ -344,19 +344,19 @@ export default function NewReferral() {
               </div>
               {triageResult.reasoning &&
             <div className="mb-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Reasoning</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Assessment Notes</p>
                   <p className="text-sm text-foreground">{triageResult.reasoning}</p>
                 </div>
             }
               {triageResult.guideline_used &&
             <div className="mb-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Guideline Applied</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Protocol Reference</p>
                   <p className="text-sm text-foreground">{triageResult.guideline_used}</p>
                 </div>
             }
               {triageResult.pre_clerking_guidance &&
             <div className="mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Pre-Clerking Guidance</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Intake Guidance</p>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{triageResult.pre_clerking_guidance}</p>
                 </div>
             }

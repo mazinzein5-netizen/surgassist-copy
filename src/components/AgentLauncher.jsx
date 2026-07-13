@@ -16,8 +16,8 @@ const AGENTS = [
   {
     name: "TheBee",
     label: "The Bee",
-    subtitle: "Drug Safety",
-    description: "Medication & contraindication watchdog",
+    subtitle: "Medication Reference",
+    description: "Medication reference assistant",
     color: "text-warning",
     bg: "bg-warning/10 border-warning/30",
     icon: BeeIcon,

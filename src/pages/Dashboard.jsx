@@ -51,16 +51,15 @@ export default function Dashboard() {
 
   const stats = [
     { label: "Active Cases", value: activeCases.length, icon: FolderOpen, color: "text-accent", to: "/cases", flash: hasTimeSensitiveAlert },
-    { label: "INEWS Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor", flash: false },
+    { label: "Priority Alerts", value: inewsAlerts.length, icon: Siren, color: "text-destructive", to: "/inpatient-monitor", flash: false },
     { label: "Pending Referrals", value: pendingReferrals.length, icon: Clock, color: "text-warning", to: "/cases", flash: false },
     { label: "Pending Review", value: pendingReview.length, icon: Activity, color: "text-hive-gold", to: "/cases", flash: false },
   ];
 
   const quickActions = [
-    { label: "New Referral", desc: "Process a new surgical referral", icon: FilePlus2, to: "/new-referral", color: "bg-hive-gold/10 border-hive-gold/20 text-hive-gold" },
-    { label: "INEWS Consult", desc: "Rapid inpatient consult for INEWS > 2", icon: AlertTriangle, to: "/inews-consult", color: "bg-destructive/10 border-destructive/20 text-destructive" },
+    { label: "New Referral", desc: "Document a new surgical referral", icon: FilePlus2, to: "/new-referral", color: "bg-hive-gold/10 border-hive-gold/20 text-hive-gold" },
+    { label: "Inpatient Review", desc: "Rapid inpatient consult summary", icon: AlertTriangle, to: "/inews-consult", color: "bg-destructive/10 border-destructive/20 text-destructive" },
     { label: "Handover", desc: "Generate ISBAR handover sheet", icon: Users, to: "/handover", color: "bg-accent/10 border-accent/20 text-accent" },
-    { label: "Drug Calculator", desc: "Weight & renal-adjusted dosing", icon: Calculator, to: "/drug-calculator", color: "bg-success/10 border-success/20 text-success" },
   ];
 
   return (
@@ -74,7 +73,7 @@ export default function Dashboard() {
             onClick={() => setHeaderCollapsed(v => !v)}
             className="flex items-center gap-2 mb-2 w-full text-left"
           >
-            <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Assistant</span>
+            <span className="text-xs font-semibold tracking-wider text-hive-gold uppercase">HIVE Surgical Workflow</span>
             <ChevronDown className={`w-4 h-4 text-hive-gold ml-auto transition-transform duration-200 ${headerCollapsed ? "" : "rotate-180"}`} />
           </button>
           {!headerCollapsed && (
@@ -120,7 +119,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Siren className="w-4 h-4 text-destructive" />
-                    <h2 className="text-sm font-semibold text-destructive uppercase tracking-wider">INEWS Alerts</h2>
+                    <h2 className="text-sm font-semibold text-destructive uppercase tracking-wider">Priority Alerts</h2>
                   </div>
                   <Link to="/inpatient-monitor" className="text-xs text-hive-gold hover:underline">Monitor →</Link>
                 </div>
@@ -131,7 +130,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="bg-card border border-border rounded-lg p-4 text-center">
                     <p className="text-xs text-success flex items-center justify-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-success" /> No active INEWS alerts
+                      <span className="w-1.5 h-1.5 rounded-full bg-success" /> No active priority alerts
                     </p>
                   </div>
                 )}
