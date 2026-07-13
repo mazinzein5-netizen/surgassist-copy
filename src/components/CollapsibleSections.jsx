@@ -53,7 +53,7 @@ export function CollapsibleSections({ children }) {
   );
 }
 
-export function Section({ title, icon: Icon, children, noteAuthor, noteLockedAt, defaultOpen = true }) {
+export function Section({ title, icon: Icon, children, noteAuthor, noteLockedAt, defaultOpen = false }) {
   const ctx = useContext(CollapsibleContext);
   const [localOpen, setLocalOpen] = useState(defaultOpen);
 
