@@ -95,12 +95,12 @@ export default function TriageChat({ caseId, caseData }) {
           onKeyDown={(e) => {if (e.key === "Enter" && !e.shiftKey) {e.preventDefault();handleSend();}}}
           placeholder="Continue triage conversation..."
           rows={1}
-          className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none max-h-24" />
+          className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none max-h-24 hidden" />
         
         <button
           onClick={handleSend}
           disabled={sending || !input.trim()}
-          className="p-2.5 rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 flex-shrink-0">
+          className="p-2.5 rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 flex-shrink-0 hidden">
           
           <Send className="w-4 h-4" />
         </button>
