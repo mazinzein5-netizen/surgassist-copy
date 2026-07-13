@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { processReferralChat } from "@/lib/hiveApi";
 import { Send, Loader2 } from "lucide-react";
 
-export default function TriageChat({ caseId, caseData }) {
+export default function IntakeChat({ caseId, caseData }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");

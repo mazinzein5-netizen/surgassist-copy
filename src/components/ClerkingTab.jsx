@@ -18,13 +18,13 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded, on
       {/* Yes/No Proforma */}
       <OrthoProforma caseData={caseData} caseId={caseId} onUpdate={onPhotoAdded} onSaved={onProformaSaved} />
 
-      {/* Perioperative Safety Alerts */}
+      {/* Intake Data Summary */}
       <PeriopAlertsWrapper caseData={caseData} />
 
       {/* Clinical Photos gallery */}
       {photos.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Clinical Photos</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Patient Photos</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {photos.map(p => (
               <div key={p.id} className="relative group">
@@ -43,7 +43,7 @@ export default function ClerkingTab({ caseData, photos, caseId, onPhotoAdded, on
 
       {/* Tailored Clinical Examination */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Clinical Examination</h3>
+        <h3 className="text-sm font-semibold text-foreground">Examination Documentation</h3>
         <p className="text-xs text-muted-foreground">Findings and guides tailored to this patient's presentation.</p>
         <TailoredExamFindings caseData={caseData} selected={[]} onToggle={() => {}} />
       </div>

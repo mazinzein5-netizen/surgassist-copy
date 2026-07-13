@@ -39,6 +39,7 @@ import CaseRecordTimeline from "@/components/CaseRecordTimeline";
 import { formatTimestamp } from "@/lib/workflow";
 import AIBadge from "@/components/AIBadge";
 import { Scissors as ScissorsIcon } from "lucide-react";
+import { FEATURES } from "@/lib/featureConfig";
 
 const PREOP_LABELS = {
   not_listed: "Not Listed",
@@ -175,13 +176,15 @@ export default function CaseDetail() {
                 <Printer className="w-3.5 h-3.5" /> Print Plan
               </button>
             )}
-            <button onClick={() => setShowDrugCalc(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
-              <Calculator className="w-3.5 h-3.5" /> Drug Calculator
-            </button>
+            {FEATURES.drugCalculator && (
+              <button onClick={() => setShowDrugCalc(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
+                <Calculator className="w-3.5 h-3.5" /> Drug Calculator
+              </button>
+            )}
             <button onClick={() => setShowProforma(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
-              <Stethoscope className="w-3.5 h-3.5" /> Proforma
+              <Stethoscope className="w-3.5 h-3.5" /> Intake Form
             </button>
             {!blockAdmission && (
               <button onClick={() => setShowAdmissionNote(true)}
@@ -193,13 +196,13 @@ export default function CaseDetail() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Stethoscope className="w-3.5 h-3.5" /> Inpatient Note
             </button>
-            {!isConservative && (
+            {FEATURES.theatreChecklist && !isConservative && (
               <button onClick={() => setShowTheatreChecklist(true)}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 text-xs font-semibold hover:bg-orange-100 transition-colors border border-orange-200">
                 <ScissorsIcon className="w-3.5 h-3.5" /> Book for Surgery
               </button>
             )}
-            {!isConservative && (
+            {FEATURES.operativeNote && !isConservative && (
               <button onClick={() => setShowOperativeNote(true)}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
                 <FileText className="w-3.5 h-3.5" /> Operative Note
@@ -222,9 +225,11 @@ export default function CaseDetail() {
             <ReferralSummaryCard caseData={caseData} />
 
             {/* Triage Chat pinned to referral inputs */}
-            <div className="pt-3 border-t border-gray-100">
-              <TriageChat caseId={id} caseData={caseData} />
-            </div>
+            {FEATURES.triageChat && (
+              <div className="pt-3 border-t border-gray-100">
+                <TriageChat caseId={id} caseData={caseData} />
+              </div>
+            )}
           </CollapsibleCard>
 
           {/* Admission & Plan — directly below referral */}
@@ -237,7 +242,7 @@ export default function CaseDetail() {
             <div className="space-y-4">
               <PathwayActions caseData={caseData} onUpdate={loadCase} user={user} onRequestTheatre={() => setShowTheatreChecklist(true)} />
               <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
-              <JackSafetyPanel caseData={caseData} />
+              {FEATURES.jackSafetyPanel && <JackSafetyPanel caseData={caseData} />}
               {!isConservative && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
             </div>
           </CollapsibleCard>
@@ -260,7 +265,7 @@ export default function CaseDetail() {
             </>
           ) : (
             <CollapsibleCard
-              title={hasNewNursingIssue ? "Clinical Proforma — New Issue" : "Clinical Proforma"}
+              title={hasNewNursingIssue ? "Patient Intake — New Issue" : "Patient Intake"}
               icon={Stethoscope}
               open={proformaOpen}
               onOpenChange={setProformaOpen}

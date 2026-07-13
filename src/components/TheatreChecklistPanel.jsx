@@ -273,8 +273,8 @@ Be thorough. Read every note. Patient safety is not negotiable.`;
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center text-lg">🛡️</div>
             <div>
-              <h2 className="text-sm font-bold text-gray-900">Book for Surgery — Jack Review</h2>
-              <p className="text-[10px] text-gray-500">{caseData.patient_name} · RCS protocol · Pre-op checklist</p>
+              <h2 className="text-sm font-bold text-gray-900">Surgical Booking — Intake Review</h2>
+              <p className="text-[10px] text-gray-500">{caseData.patient_name} · Pre-surgery documentation</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700">

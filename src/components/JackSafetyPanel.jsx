@@ -137,15 +137,15 @@ Present your full analysis per your output format. Remember: patient safety is n
           <JackAvatar analyzing={analyzing} />
           <div className="text-left">
             <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              Jack
-              <span className="text-xs">🛡️</span>
+              HIVE Assistant
+              <span className="text-xs">📋</span>
             </p>
             <p className="text-[10px] text-muted-foreground">
               {analyzing
-                ? "Checking guidelines & safety..."
+                ? "Reviewing intake data..."
                 : analysis
-                  ? "Safety check complete — see findings"
-                  : "Safety & Guidelines Guardian"}
+                  ? "Intake review complete — see summary"
+                  : "Intake Data Assistant"}
             </p>
           </div>
         </button>
@@ -156,7 +156,7 @@ Present your full analysis per your output format. Remember: patient safety is n
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold hover:bg-destructive/25 border border-destructive/20 transition-colors"
             >
               <RefreshCw className="w-3 h-3" />
-              {analysis ? "Re-check" : "Run Check"}
+              {analysis ? "Re-review" : "Review Intake"}
             </button>
           )}
           <button
@@ -175,9 +175,9 @@ Present your full analysis per your output format. Remember: patient safety is n
             <div className="flex items-center gap-3 py-3">
               <JackAvatar analyzing={true} size="lg" />
               <div>
-                <p className="text-sm text-foreground font-medium">Cross-referencing RCSI curriculum & guidelines...</p>
+                <p className="text-sm text-foreground font-medium">Reviewing intake documentation...</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Checking perioperative safety, labs, medications & missing data
+                  Checking intake data, documentation & missing fields
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <Dots />
@@ -219,8 +219,8 @@ Present your full analysis per your output format. Remember: patient safety is n
             <div className="flex items-center gap-3 py-2">
               <JackAvatar analyzing={false} />
               <p className="text-sm text-muted-foreground">
-                Click <span className="font-semibold text-destructive">Run Check</span> to have Jack review this case
-                against RCSI curriculum, Irish/UK guidelines, and perioperative safety standards.
+                Click <span className="font-semibold text-destructive">Review Intake</span> to have HIVE Assistant review this case
+                for documentation completeness and intake data accuracy.
               </p>
             </div>
           )}
