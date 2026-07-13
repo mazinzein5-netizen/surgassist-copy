@@ -274,7 +274,7 @@ export default function FormattedAdmissionNote({ note }) {
 
       {/* Expanded: full readable document */}
       {expanded &&
-      <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin bg-white">
+      <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto scrollbar-thin bg-white hidden">
           {sections.map((section, si) =>
         <NoteSection key={si} section={section} forceOpen={true} />
         )}
