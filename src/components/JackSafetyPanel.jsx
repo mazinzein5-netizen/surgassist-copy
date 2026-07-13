@@ -194,8 +194,22 @@ Present your full analysis per your output format. Remember: patient safety is n
           )}
 
           {analysis && (
-            <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-              <ReactMarkdown className="text-sm max-w-none text-orange-950 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:text-orange-900 [&_h1]:text-orange-900 [&_h2]:text-orange-900 [&_h3]:text-orange-900 [&_h4]:text-orange-900 [&_li]:text-orange-950 [&_p]:text-orange-950 [&_a]:text-orange-700 [&_code]:text-orange-800 [&_blockquote]:text-orange-800 [&_blockquote]:border-orange-300">
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <ReactMarkdown
+                components={{
+                  h1: ({ node, ...props }) => <h1 className="text-red-900 font-bold" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-red-900 font-bold" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-red-900 font-bold" {...props} />,
+                  h4: ({ node, ...props }) => <h4 className="text-red-900 font-bold" {...props} />,
+                  p: ({ node, ...props }) => <p className="text-red-900" {...props} />,
+                  li: ({ node, ...props }) => <li className="text-red-900" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="text-red-950" {...props} />,
+                  a: ({ node, ...props }) => <a className="text-red-700 underline" {...props} />,
+                  code: ({ node, ...props }) => <code className="text-red-800" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="text-red-800 border-red-300" {...props} />,
+                }}
+                className="text-sm max-w-none text-red-900 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              >
                 {analysis}
               </ReactMarkdown>
             </div>
