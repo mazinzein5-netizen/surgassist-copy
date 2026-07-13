@@ -158,12 +158,6 @@ function AIBlock({ caseData }) {
           <FormattedAdmissionNote note={caseData.pre_clerking_guidance} />
         </div>
       }
-      {caseData.admission_note && !["admitted", "discharge_ready", "discharged"].includes(caseData.status) &&
-      <div className="pt-3 border-t border-gray-100">
-          <p className="text-sm text-gray-500 mb-1">Admission Note</p>
-          <FormattedAdmissionNote note={caseData.admission_note} />
-        </div>
-      }
     </>);
 
 }

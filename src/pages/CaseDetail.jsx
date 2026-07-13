@@ -64,7 +64,7 @@ export default function CaseDetail() {
   const [showPatientInfo, setShowPatientInfo] = useState(false);
   const [showTheatreChecklist, setShowTheatreChecklist] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [proformaOpen, setProformaOpen] = useState(true);
+  const [proformaOpen, setProformaOpen] = useState(false);
 
   useEffect(() => { loadCase(); }, [id]);
 
@@ -214,7 +214,7 @@ export default function CaseDetail() {
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-3">
           {/* 0. Referral Summary & Admission Note — pinned to top */}
-          <CollapsibleCard title="Referral Summary" icon={FileText} defaultOpen={true}
+          <CollapsibleCard title="Referral Summary" icon={FileText} defaultOpen={false}
             collapsedSummary={
               <p className="text-xs text-gray-500 truncate">{caseData.presenting_complaint || caseData.referral_summary || "No summary"}</p>
             }
@@ -245,7 +245,7 @@ export default function CaseDetail() {
           {/* 1. Admitted patient: show inpatient overview (last note + plan); otherwise show clinical proforma */}
           {(isAdmitted || hasAdmissionNote) && !hasNewNursingIssue ? (
             <>
-              <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={true}
+              <CollapsibleCard title="Inpatient Overview" icon={ClipboardCheck} defaultOpen={false}
                 collapsedSummary={
                   <div className="flex items-center gap-2 text-xs">
                     <span className="font-medium text-gray-900">{caseData.patient_name}</span>
