@@ -18,6 +18,7 @@ import LabsImagingDiscovery from "@/components/LabsImagingDiscovery";
 import DrugCalculatorPanel from "@/components/DrugCalculatorPanel";
 import BloodsCameraButton from "@/components/BloodsCameraButton";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
+import VTEProphylaxisPanel from "@/components/VTEProphylaxisPanel";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import CollapsibleCard from "@/components/CollapsibleCard";
 import ReferralSummaryCard from "@/components/ReferralSummaryCard";
@@ -238,7 +239,6 @@ export default function CaseDetail() {
               <KardexTab caseData={caseData} onUpdate={loadCase} user={user} />
               <JackSafetyPanel caseData={caseData} />
               {!isConservative && <ConsentChecklistTab caseData={caseData} onUpdate={loadCase} user={user} />}
-              <ReviewTab caseData={caseData} onUpdate={loadCase} user={user} />
             </div>
           </CollapsibleCard>
 
@@ -403,6 +403,97 @@ function extractClinicalHistory(caseData) {
   return history;
 }
 
+// Drug class → color mapping for color-coded kardex
+const DRUG_CLASS_COLORS = {
+  antibiotic: { label: "Antibiotic", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
+  anticoagulant: { label: "Anticoagulant", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200", dot: "bg-orange-500" },
+  analgesic: { label: "Analgesic", bg: "bg-green-50", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
+  ppi: { label: "PPI/GI", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", dot: "bg-purple-500" },
+  vte: { label: "VTE Prophylaxis", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
+  insulin: { label: "Insulin/Diabetes", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200", dot: "bg-teal-500" },
+  cardiac: { label: "Cardiac", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", dot: "bg-rose-500" },
+  fluid: { label: "IV Fluid", bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200", dot: "bg-cyan-500" },
+  other: { label: "Other", bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-200", dot: "bg-gray-500" },
+};
+
+function classifyDrug(drugName, indication) {
+  const text = `${drugName || ""} ${indication || ""}`.toLowerCase();
+  if (/(amox|cefazolin|augmentin|fluclox|vancomycin|gentamicin|co-amox|metronidazole|clindamycin|piperacillin|meropenem|linezolid|teicoplanin|antibiot)/.test(text)) return "antibiotic";
+  if (/(warfarin|apixaban|rivaroxaban|dabigatran|edoxaban|enoxaparin|clexane|heparin|lmwh|clopidogrel|aspirin|anticoagul|antiplatelet|plavix)/.test(text)) return "anticoagulant";
+  if (/(paracet|morph|oxycod|fentanyl|tramad|codeine|ibuprofen|diclofenac|naproxen|ketamine|gabapen|pregab|analges|pain|opioid)/.test(text)) return "analgesic";
+  if (/(omeprazol|pantoprazol|lansoprazol|esomep|ppi|gastro|lactulos|ondansetron|antiemetic)/.test(text)) return "ppi";
+  if (/(vte|prophyla|ted|enox.*40|clexane.*40|lmwh.*prophy)/.test(text)) return "vte";
+  if (/(insulin|metformin|glargine|novorapid|humalog|lantus|diabet)/.test(text)) return "insulin";
+  if (/(bisoprolol|amlodipine|ramipril|lisinopril|losartan|atenolol|furosemide|spironolactone|digoxin|cardiac|bp|hypertens)/.test(text)) return "cardiac";
+  if (/(sodium|hartmann|ringer|saline|dextrose|iv fluid|infusion|nacl)/.test(text)) return "fluid";
+  return "other";
+}
+
+function ColorCodedKardex({ caseData, kardex, onPrint }) {
+  const meds = kardex.medications || [];
+  const classes = [...new Set(meds.map(m => classifyDrug(m.drug, m.indication)))];
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <h3 className="font-semibold text-gray-900 text-sm">Inpatient Kardex — {caseData.patient_name}</h3>
+        <button onClick={onPrint} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200" title="Download Kardex PDF">
+          <Printer className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Drug class legend */}
+      <div className="flex flex-wrap gap-1.5 px-4 py-2 bg-gray-50 border-b border-gray-200">
+        {classes.map(cls => {
+          const c = DRUG_CLASS_COLORS[cls];
+          return (
+            <span key={cls} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${c.bg} ${c.text} border ${c.border}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+              {c.label}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-200 text-xs text-gray-500">
+              <th className="text-left px-4 py-2 font-medium">Drug</th>
+              <th className="text-left px-4 py-2 font-medium">Dose</th>
+              <th className="text-left px-4 py-2 font-medium">Route</th>
+              <th className="text-left px-4 py-2 font-medium">Frequency</th>
+              <th className="text-left px-4 py-2 font-medium">Indication</th>
+              <th className="text-left px-4 py-2 font-medium">Class</th>
+            </tr>
+          </thead>
+          <tbody>
+            {meds.map((med, i) => {
+              const cls = classifyDrug(med.drug, med.indication);
+              const c = DRUG_CLASS_COLORS[cls];
+              return (
+                <tr key={i} className={`border-b border-gray-100 ${c.bg}`}>
+                  <td className="px-4 py-3 font-medium text-gray-900">{med.drug}</td>
+                  <td className="px-4 py-3 text-gray-900">{med.dose}</td>
+                  <td className="px-4 py-3 text-gray-900">{med.route}</td>
+                  <td className="px-4 py-3 text-gray-900">{med.frequency}</td>
+                  <td className="px-4 py-3 text-gray-500">{med.indication}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${c.bg} ${c.text} border ${c.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                      {c.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function KardexTab({ caseData, onUpdate, user }) {
   const [kardex, setKardex] = useState(caseData.kardex_data || null);
   const [generating, setGenerating] = useState(false);
@@ -489,37 +580,16 @@ function KardexTab({ caseData, onUpdate, user }) {
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 text-sm">Inpatient Kardex — {caseData.patient_name}</h3>
-              <button onClick={() => downloadKardexPDF(caseData, kardex)} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200" title="Download Kardex PDF">
-                <Printer className="w-4 h-4" />
-              </button>
+          <ColorCodedKardex caseData={caseData} kardex={kardex} onPrint={() => downloadKardexPDF(caseData, kardex)} />
+
+          {/* VTE Prophylaxis & Bridging Calculator */}
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ShieldCheck className="w-4 h-4 text-orange-500" />
+              <h3 className="font-semibold text-gray-900 text-sm">VTE Prophylaxis & Bridging</h3>
+              <span className="ml-auto text-[10px] font-bold text-gray-400 uppercase">Auto-calculated</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 text-xs text-gray-500">
-                    <th className="text-left px-4 py-2 font-medium">Drug</th>
-                    <th className="text-left px-4 py-2 font-medium">Dose</th>
-                    <th className="text-left px-4 py-2 font-medium">Route</th>
-                    <th className="text-left px-4 py-2 font-medium">Frequency</th>
-                    <th className="text-left px-4 py-2 font-medium">Indication</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {kardex.medications?.map((med, i) => (
-                    <tr key={i} className="border-b border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-900">{med.drug}</td>
-                      <td className="px-4 py-3 text-gray-900">{med.dose}</td>
-                      <td className="px-4 py-3 text-gray-900">{med.route}</td>
-                      <td className="px-4 py-3 text-gray-900">{med.frequency}</td>
-                      <td className="px-4 py-3 text-gray-500">{med.indication}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <VTEProphylaxisPanel caseData={caseData} kardex={kardex} user={user} onUpdate={onUpdate} />
           </div>
 
           {kardex.iv_fluids && (
@@ -527,14 +597,6 @@ function KardexTab({ caseData, onUpdate, user }) {
               <p className="text-sm text-gray-500 mb-1">IV Fluid Plan</p>
               <div className="bg-card border border-border rounded-lg p-3">
                 <FormattedAdmissionNote note={kardex.iv_fluids} />
-              </div>
-            </div>
-          )}
-          {kardex.treatment_plan && (
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Treatment Plan</p>
-              <div className="bg-card border border-border rounded-lg p-3">
-                <FormattedAdmissionNote note={kardex.treatment_plan} />
               </div>
             </div>
           )}

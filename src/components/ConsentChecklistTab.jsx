@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { generateConsentChecklist } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
-import { Loader2, FileCheck, AlertTriangle, CheckCircle2, ShieldCheck, Printer, User, FileText, HeartPulse, Ban, Utensils, Gavel } from "lucide-react";
+import DigitalConsentForm from "@/components/DigitalConsentForm";
+import { Loader2, FileCheck, AlertTriangle, CheckCircle2, ShieldCheck, Printer, User, FileText, HeartPulse, Ban, Utensils, Gavel, FileSignature } from "lucide-react";
 
 // HSE-standard surgical consent checklist sections
 const CHECKLIST_SECTIONS = [
@@ -156,6 +157,32 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
 
   const handlePrint = () => window.print();
 
+  // When checklist is complete AND saved, show the digital consent form instead of the checklist
+  const checklistSaved = caseData.consent_checklist && (() => {
+    try {
+      const parsed = typeof caseData.consent_checklist === "string" ? JSON.parse(caseData.consent_checklist) : caseData.consent_checklist;
+      return parsed?.completed_at != null;
+    } catch { return false; }
+  })();
+
+  const showDigitalConsent = isComplete && checklistSaved;
+
+  if (showDigitalConsent) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-success/10 border border-success/30 rounded-xl p-4 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-success">Consent Checklist Complete</p>
+            <p className="text-xs text-muted-foreground mt-0.5">All items verified. Digital consent below.</p>
+          </div>
+          <FileSignature className="w-5 h-5 text-success/50" />
+        </div>
+        <DigitalConsentForm caseData={caseData} user={user} onUpdate={onUpdate} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Completion banner */}
@@ -163,10 +190,10 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
         {isComplete ? <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" /> : <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />}
         <div className="flex-1">
           <p className={`text-sm font-medium ${isComplete ? "text-success" : "text-warning"}`}>
-            {isComplete ? "Consent Checklist Complete — Cleared for Theatre" : "Consent Checklist Incomplete"}
+            {isComplete ? "Consent Checklist Complete — Save to Continue" : "Consent Checklist Incomplete"}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {completedItems} of {totalItems} items verified ({completionPct}%)
+            {completedItems} of {totalItems} items verified ({completionPct}%){isComplete ? " · Save to reveal digital consent form" : ""}
           </p>
         </div>
         <div className="w-24 bg-background rounded-full h-2 flex-shrink-0">

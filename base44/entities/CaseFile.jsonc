@@ -276,7 +276,38 @@
       "type": "string"
     },
     "consent_checklist": {
-      "type": "string"
+      "type": "string",
+      "description": "JSON string of checklist state"
+    },
+    "consent_signed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether digital consent has been signed"
+    },
+    "consent_signature_url": {
+      "type": "string",
+      "description": "URL of the patient's signature image"
+    },
+    "consent_witness_name": {
+      "type": "string",
+      "description": "Name of the witnessing clinician"
+    },
+    "consent_witness_imc": {
+      "type": "string",
+      "description": "IMC number of the witnessing clinician"
+    },
+    "consent_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the digital consent was signed"
+    },
+    "consent_biometric_hash": {
+      "type": "string",
+      "description": "Hash of biometric signature data for integrity"
+    },
+    "vte_assessment": {
+      "type": "object",
+      "description": "VTE risk assessment data including bridging protocol"
     },
     "inews_score": {
       "type": "number"
