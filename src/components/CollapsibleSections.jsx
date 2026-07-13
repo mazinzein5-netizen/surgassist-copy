@@ -48,7 +48,7 @@ export function CollapsibleSections({ children }) {
           </button>
         </div>
       )}
-      {children}
+      <div className="space-y-3">{children}</div>
     </CollapsibleContext.Provider>
   );
 }
