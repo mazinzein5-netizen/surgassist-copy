@@ -154,7 +154,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
     if (!canAdmit) {
       const missing = [];
       if (bloodsPending) missing.push("blood investigations");
-      if (examPending) missing.push("clinical examination findings");
+      if (examPending) missing.push("examination findings");
       alert(`Cannot admit — ${missing.join(" and ")} must be completed first.`);
       return;
     }
@@ -194,7 +194,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
   const handleShare = async () => {
     setShowShareMenu(false);
     const patientName = caseData.patient_name || "Unknown";
-    const summary = `HIVE SURGICAL ASSISTANT — ADMISSION NOTE\nPatient: ${patientName}\nMRN: ${caseData.patient_mrn || "—"}\nDOB: ${caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"}\n\n${note}`;
+    const summary = `HIVE — ADMISSION NOTE\nPatient: ${patientName}\nMRN: ${caseData.patient_mrn || "—"}\nDOB: ${caseData.patient_dob ? new Date(caseData.patient_dob).toLocaleDateString("en-IE") : "—"}\n\n${note}`;
 
     if (navigator.share) {
       try {
@@ -354,7 +354,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
               <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <AIBadge />
-                  <span className="text-xs font-bold text-gray-900">AI Imaging Analysis</span>
+                  <span className="text-xs font-bold text-gray-900">Imaging Summary</span>
                   {imagingResult.urgency === "critical" && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">CRITICAL</span>}
                   {imagingResult.urgency === "urgent" && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">URGENT</span>}
                 </div>
@@ -384,7 +384,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
           <div className={`rounded-lg p-3 ${examPending ? "border border-amber-200" : ""}`}>
             <div className="flex items-center gap-2 mb-2">
               <Stethoscope className="w-4 h-4 text-gray-500" />
-              <h3 className="font-semibold text-gray-900 text-sm">Clinical Examination Findings</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">Examination Findings</h3>
               {examPending && <span className="text-xs text-amber-500 font-semibold">Required for admission</span>}
             </div>
             <TailoredExamFindings caseData={caseData} selected={examFindings} onToggle={setExamFindings} />
@@ -431,7 +431,7 @@ export default function AdmissionNotePanel({ caseData, caseId, onClose, onUpdate
                   <p className="font-semibold mb-1">Complete required steps to admit:</p>
                   <ul className="space-y-0.5">
                     {bloodsPending && <li>• Blood investigations required</li>}
-                    {examPending && <li>• Clinical examination findings required</li>}
+                    {examPending && <li>• Examination findings required</li>}
                   </ul>
                 </div>
               )}

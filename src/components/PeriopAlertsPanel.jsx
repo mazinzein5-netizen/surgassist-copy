@@ -52,8 +52,8 @@ export default function PeriopAlertsPanel({ meds = [], comorbidities = "", caseD
           <span className="text-success text-sm">✓</span>
         </div>
         <div>
-          <p className="text-sm font-medium text-success">No perioperative alerts</p>
-          <p className="text-xs text-muted-foreground">No high-risk medications or conditions detected. Continue standard perioperative care.</p>
+          <p className="text-sm font-medium text-success">No high-risk items flagged</p>
+          <p className="text-xs text-muted-foreground">No high-risk medications or conditions documented. Continue standard care.</p>
         </div>
       </div>
     );
@@ -65,7 +65,7 @@ export default function PeriopAlertsPanel({ meds = [], comorbidities = "", caseD
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 text-destructive" />
-        <h3 className="text-sm font-bold text-foreground">Perioperative Safety Alerts</h3>
+        <h3 className="text-sm font-bold text-foreground">Pre-List Safety Summary</h3>
         {criticalCount > 0 && (
           <span className="px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
             {criticalCount} HIGH PRIORITY
@@ -73,7 +73,7 @@ export default function PeriopAlertsPanel({ meds = [], comorbidities = "", caseD
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Auto-classified per RCSEng, RCSI, NICE NG45, AAGBI, ERAS & BOA perioperative protocols
+        Summary of documented high-risk medications and conditions for clinician review
       </p>
 
       {alerts.map((alert, i) => {
@@ -97,7 +97,7 @@ export default function PeriopAlertsPanel({ meds = [], comorbidities = "", caseD
 
             {alert.action && (
               <div className="bg-background/50 rounded-lg p-3 mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Required Action</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Suggested Checklist Item</p>
                 <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{alert.action}</p>
               </div>
             )}

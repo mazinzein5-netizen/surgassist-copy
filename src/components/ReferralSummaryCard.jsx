@@ -132,13 +132,13 @@ function TriageBlock({ caseData }) {
       <StatusPill caseData={caseData} />
       {caseData.triage_reasoning &&
       <div>
-          <p className="text-sm text-gray-500 mb-1">Reasoning</p>
+          <p className="text-sm text-gray-500 mb-1">Assessment Notes</p>
           <ReasoningBullets text={caseData.triage_reasoning} />
         </div>
       }
       {caseData.triage_guideline &&
       <div>
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Guideline Applied</p>
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Protocol Reference</p>
           <p className="text-sm text-gray-900 mt-0.5">{caseData.triage_guideline}</p>
         </div>
       }

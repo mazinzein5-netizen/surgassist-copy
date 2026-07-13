@@ -233,8 +233,8 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
           <p className="text-sm text-destructive">
-            <strong>Theatre clearance blocked.</strong> All checklist items must be verified before this case proceeds to theatre.
-            Complete outstanding items and save to clear for surgery.
+            <strong>Surgical booking blocked.</strong> All checklist items must be verified before this case is added to the surgical list.
+            Complete outstanding items and save to proceed.
           </p>
         </div>
       )}
@@ -244,7 +244,7 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
         <div className="bg-success/10 border border-success/30 rounded-xl p-4 flex items-center gap-3">
           <ShieldCheck className="w-5 h-5 text-success flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-success">Consent verified — Cleared for theatre</p>
+            <p className="text-sm font-medium text-success">Consent verified — Ready for surgical list</p>
             <p className="text-xs text-muted-foreground mt-0.5">All risks, benefits, and HSE requirements documented. Ready for procedural list.</p>
           </div>
         </div>
@@ -269,13 +269,13 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground text-sm font-medium hover:bg-hive-gold/90 disabled:opacity-50"
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-              Generate AI Consent Discussion Aid
+              Generate Consent Discussion Template
             </button>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-foreground">AI Consent Discussion Aid</h4>
+              <h4 className="text-sm font-medium text-foreground">Consent Discussion Template</h4>
               <AIBadge />
             </div>
             <pre className="text-sm text-foreground whitespace-pre-wrap font-body bg-background/50 rounded-lg p-3 border border-border">{consentAid}</pre>
