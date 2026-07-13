@@ -1,0 +1,73 @@
+{
+  "description": "When a new ClinicalPhoto is added to a case, notify the on-call team member. If they don't acknowledge (read) the message within 2 hours, escalate to the lead surgeon (consultant).",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "ClinicalPhoto"
+    }
+  },
+  "name": "Clinical Photo Alert & Escalation",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "clinical_photo_alert_escalation",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "notify_oncall": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "clinicalPhotoAlert",
+            "args": {
+              "action": "notify",
+              "case_id": "${ .trigger.data.case_id }",
+              "photo_data": {
+                "photo_type": "${ .trigger.data.photo_type }",
+                "caption": "${ .trigger.data.caption }",
+                "photo_url": "${ .trigger.data.photo_url }"
+              }
+            }
+          },
+          "then": "wait_for_acknowledgment",
+          "x-base44": {
+            "title": "Notify On-Call Team",
+            "description": "Send clinical photo alert"
+          }
+        }
+      },
+      {
+        "wait_for_acknowledgment": {
+          "wait": "PT2H",
+          "then": "check_acknowledgment",
+          "x-base44": {
+            "title": "Wait 2 Hours",
+            "description": "For acknowledgment"
+          }
+        }
+      },
+      {
+        "check_acknowledgment": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "clinicalPhotoAlert",
+            "args": {
+              "action": "escalate",
+              "original_message_id": "${ .notify_oncall.message_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Check & Escalate",
+            "description": "Escalate to lead surgeon if unacknowledged"
+          }
+        }
+      }
+    ]
+  }
+}
