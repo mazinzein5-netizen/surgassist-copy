@@ -315,8 +315,25 @@ Be thorough. Read every note. Patient safety is not negotiable.`;
                   {isNoGo ? "NO-GO — Resolve issues before listing" : isConditional ? "CONDITIONAL GO — May proceed with conditions" : "GO — Cleared for theatre listing"}
                 </span>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <ReactMarkdown className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+              <div className="rounded-lg p-4 border-2" style={{ backgroundColor: "#0b1626", borderColor: "#e3b85d" }}>
+                <ReactMarkdown
+                  components={{
+                    h1: ({ node, ...props }) => <h1 className="font-bold uppercase tracking-wider mt-3 mb-1.5" style={{ color: "#e3b85d" }} {...props} />,
+                    h2: ({ node, ...props }) => <h2 className="font-bold mt-3 mb-1.5" style={{ color: "#e3b85d" }} {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="font-bold mt-2.5 mb-1" style={{ color: "#e3b85d" }} {...props} />,
+                    h4: ({ node, ...props }) => <h4 className="font-bold mt-2 mb-1" style={{ color: "#e3b85d" }} {...props} />,
+                    p: ({ node, ...props }) => <p style={{ color: "#f2f2f2" }} {...props} />,
+                    li: ({ node, ...props }) => <li style={{ color: "#f2f2f2" }} {...props} />,
+                    strong: ({ node, ...props }) => <strong className="font-bold" style={{ color: "#e3b85d" }} {...props} />,
+                    a: ({ node, ...props }) => <a className="underline" style={{ color: "#e3b85d" }} {...props} />,
+                    code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded text-xs" style={{ color: "#e3b85d", backgroundColor: "rgba(227,184,93,0.1)" }} {...props} />,
+                    blockquote: ({ node, ...props }) => <blockquote className="pl-3 border-l-2 my-1.5" style={{ color: "#f2f2f2", borderColor: "#e3b85d" }} {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-0.5 my-1.5" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal pl-5 space-y-0.5 my-1.5" {...props} />,
+                    hr: ({ node, ...props }) => <hr className="my-2" style={{ borderColor: "rgba(227,184,93,0.3)" }} {...props} />,
+                  }}
+                  className="text-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                >
                   {analysis}
                 </ReactMarkdown>
               </div>
