@@ -65,12 +65,12 @@ export default function ReasoningBullets({ text, className = "" }) {
   const items = parseToBullets(text);
 
   if (items.length === 0) {
-    return <p className={`text-sm text-muted-foreground ${className}`}>—</p>;
+    return <p className={`text-sm text-gray-400 ${className}`}>—</p>;
   }
 
   // If only a single paragraph item, render as text
   if (items.length === 1 && items[0].type === "paragraph") {
-    return <p className={`text-sm text-foreground whitespace-pre-wrap ${className}`}>{items[0].text}</p>;
+    return <p className={`text-sm text-gray-900 whitespace-pre-wrap ${className}`}>{items[0].text}</p>;
   }
 
   return (
@@ -78,18 +78,18 @@ export default function ReasoningBullets({ text, className = "" }) {
       {items.map((item, i) => {
         if (item.type === "header") {
           return (
-            <p key={i} className="text-xs font-bold text-accent uppercase tracking-wider mt-2 mb-1 first:mt-0">
+            <p key={i} className="text-xs font-bold text-gray-700 uppercase tracking-wider mt-2 mb-1 first:mt-0">
               {item.text}
             </p>
           );
         }
         if (item.type === "paragraph") {
-          return <p key={i} className="text-sm text-foreground mb-1">{item.text}</p>;
+          return <p key={i} className="text-sm text-gray-900 mb-1">{item.text}</p>;
         }
         return (
           <div key={i} className="flex items-start gap-2 mb-1">
-            <span className="text-hive-gold mt-1.5 flex-shrink-0 w-1 h-1 rounded-full bg-hive-gold" />
-            <p className="text-sm text-amber-600">{item.text}</p>
+            <span className="mt-1.5 flex-shrink-0 w-1 h-1 rounded-full bg-amber-500" />
+            <p className="text-sm text-gray-900">{item.text}</p>
           </div>
         );
       })}

@@ -131,6 +131,30 @@ export default function ConsentChecklistTab({ caseData, onUpdate, user }) {
       await base44.entities.CaseFile.update(caseData.id, {
         consent_checklist: JSON.stringify({ checked, procedure, completed_at: isComplete ? new Date().toISOString() : null }),
       });
+
+      // Auto-create theatre list entry when consent is cleared
+      if (isComplete) {
+        try {
+          const existing = await base44.entities.TheatreLog.filter({
+            patient_mrn: caseData.patient_mrn || "",
+            procedure_name: procedure || caseData.procedure_name || "",
+          });
+          if (existing.length === 0) {
+            await base44.entities.TheatreLog.create({
+              patient_name: caseData.patient_name,
+              patient_mrn: caseData.patient_mrn || "",
+              procedure_date: caseData.procedure_date || new Date().toISOString().split("T")[0],
+              procedure_name: procedure || caseData.procedure_name || caseData.presenting_complaint || "",
+              procedure_role: "first_assistant",
+              department: caseData.department || "orthopaedics",
+              notes: `Auto-added from consent clearance. Diagnosis: ${caseData.diagnosis || "N/A"}`,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to auto-add theatre list entry:", e);
+        }
+      }
+
       onUpdate();
     } catch {
       alert("Failed to save consent checklist.");

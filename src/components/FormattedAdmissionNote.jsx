@@ -250,36 +250,34 @@ export default function FormattedAdmissionNote({ note }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
       {/* Master toggle bar */}
-      
-
-
-
-
-
-
-
-
-
-
-
-
-      
+      {hasMultipleSections && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="w-full flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
+        >
+          <FileText className="w-4 h-4 text-gray-600" />
+          <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex-1 text-left">
+            Admission Note
+          </span>
+          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expanded ? "" : "-rotate-90"}`} />
+        </button>
+      )}
 
       {/* Collapsed: compact summary */}
-      {!expanded &&
-      <div className="px-4 py-2.5">
-          
+      {!expanded && (
+        <div className="px-4 py-2.5">
+          <p className="text-sm text-gray-700 truncate">{summaryText}</p>
         </div>
-      }
+      )}
 
       {/* Expanded: full readable document */}
-      
-
-
-
-
-
-      
-    </div>);
-
+      {expanded && (
+        <div className="p-3 space-y-2">
+          {sections.map((section, i) => (
+            <NoteSection key={i} section={section} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
