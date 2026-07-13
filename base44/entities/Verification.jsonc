@@ -1,0 +1,103 @@
+{
+  "name": "Verification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Links to User entity"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Full name of the user being verified"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user being verified"
+    },
+    "id_photo_url": {
+      "type": "string",
+      "description": "URL of the uploaded photo ID (driver's license, passport, etc.)"
+    },
+    "selfie_photo_url": {
+      "type": "string",
+      "description": "URL of the selfie taken for verification"
+    },
+    "ai_match": {
+      "type": "boolean",
+      "description": "Whether the AI determined the faces match"
+    },
+    "ai_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "description": "AI confidence level in the match result"
+    },
+    "ai_notes": {
+      "type": "string",
+      "description": "AI-generated notes about the comparison"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "ai_approved",
+        "ai_rejected",
+        "admin_approved",
+        "admin_rejected"
+      ],
+      "default": "pending",
+      "description": "Current verification status"
+    },
+    "admin_reviewer_id": {
+      "type": "string",
+      "description": "User ID of the admin who reviewed"
+    },
+    "admin_reviewer_name": {
+      "type": "string",
+      "description": "Name of the admin who reviewed"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Admin notes on the verification"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the admin reviewed the verification"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_name",
+    "id_photo_url",
+    "selfie_photo_url"
+  ],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

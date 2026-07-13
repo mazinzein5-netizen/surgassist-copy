@@ -20,6 +20,8 @@ import Handover from '@/pages/Handover';
 import PatientHistory from '@/pages/PatientHistory';
 import Contacts from '@/pages/Contacts';
 import Profile from '@/pages/Profile';
+import Verify from '@/pages/Verify';
+import AdminVerifications from '@/pages/AdminVerifications';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -70,6 +72,8 @@ const AuthenticatedApp = () => {
           <Route path="/patient-history" element={<PatientHistory />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/verify" element={<Verify />} />
+          <Route path="/admin/verifications" element={<AdminVerifications />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

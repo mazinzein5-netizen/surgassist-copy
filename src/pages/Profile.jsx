@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "@/components/HiveLogo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { Loader2, Save, Stethoscope, Building2, BadgeCheck, AlertTriangle, Trash2 } from "lucide-react";
+import VerificationBadge from "@/components/VerificationBadge";
+import { Loader2, Save, Stethoscope, Building2, BadgeCheck, AlertTriangle, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 const GRADE_LABELS = { nchd: "NCHD", registrar: "Registrar", consultant: "Consultant" };
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
@@ -20,6 +22,18 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [verification, setVerification] = useState(null);
+  const [loadingVerification, setLoadingVerification] = useState(true);
+
+  useEffect(() => { loadVerification(); }, []);
+
+  const loadVerification = async () => {
+    try {
+      const data = await base44.entities.Verification.filter({ user_id: user?.id }, "-created_date", 1);
+      setVerification(data[0] || null);
+    } catch (err) { console.error(err); }
+    finally { setLoadingVerification(false); }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -52,10 +66,36 @@ export default function Profile() {
           <div className="w-16 h-16 hex-clip bg-hive-gold/20 flex items-center justify-center">
             <span className="text-hive-gold font-bold text-xl">{user?.full_name?.charAt(0)?.toUpperCase() || "U"}</span>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="font-bold text-foreground">{user?.full_name || "User"}</h2>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
             <p className="text-xs text-hive-gold mt-0.5">{GRADE_LABELS[user?.clinical_grade] || "NCHD"}</p>
+          </div>
+          <VerificationBadge verification={verification} loading={loadingVerification} />
+        </div>
+
+        {/* Identity Verification Section */}
+        <div className="bg-muted/20 rounded-lg p-4 mb-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-hive-gold" /> Identity Verification
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {verification?.status === "admin_approved"
+                  ? "Your identity has been verified."
+                  : verification?.status === "ai_approved"
+                  ? "AI confirmed your photos. An admin will review shortly."
+                  : verification?.status === "admin_rejected"
+                  ? "Your verification was not approved. Please try again."
+                  : "Verify your identity to keep your account secure."}
+              </p>
+            </div>
+            {(!verification || verification.status === "ai_rejected" || verification.status === "admin_rejected") && (
+              <Link to="/verify" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-hive-gold text-hive-gold-foreground text-xs font-semibold hover:bg-hive-gold/90 flex-shrink-0">
+                <ShieldCheck className="w-3.5 h-3.5" /> Verify Now
+              </Link>
+            )}
           </div>
         </div>
 
@@ -114,7 +154,7 @@ export default function Profile() {
 
       <div className="text-center">
         <HiveLogo size={32} showText />
-        <p className="text-[10px] text-muted-foreground mt-3">AI Decision Support — Verify All Output Clinically</p>
+        <p className="text-[10px] text-muted-foreground mt-3">Surgical Workflow Organizer — Verify All Output Clinically</p>
       </div>
 
       {showDeleteModal && (

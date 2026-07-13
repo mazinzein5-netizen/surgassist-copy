@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import AgentLauncher from "./AgentLauncher";
 import MotionOutlet from "./MotionOutlet";
-import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard, Hexagon } from "lucide-react";
+import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard, Hexagon, ShieldCheck } from "lucide-react";
 
 const MAIN_NAV = [
   { to: "/", label: "Referrals", icon: FolderOpen },
@@ -19,6 +19,7 @@ const MORE_NAV = [
   { to: "/handover", label: "Handover", icon: BedDouble },
   { to: "/patient-history", label: "Patient History", icon: FolderOpen },
   { to: "/contacts", label: "Communication", icon: MessageSquare },
+  { to: "/admin/verifications", label: "Verifications", icon: ShieldCheck, adminOnly: true },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
@@ -68,7 +69,7 @@ export default function AppLayout() {
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMoreOpen(false)} />
               <div className="absolute bottom-full left-3 right-3 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
-                {MORE_NAV.map(item => {
+                {MORE_NAV.filter(item => !item.adminOnly || user?.role === "admin").map(item => {
                   const Icon = item.icon;
                   return (
                     <Link key={item.to} to={item.to} onClick={() => setMoreOpen(false)}
@@ -138,7 +139,7 @@ export default function AppLayout() {
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              {MORE_NAV.map(item => {
+              {MORE_NAV.filter(item => !item.adminOnly || user?.role === "admin").map(item => {
                 const Icon = item.icon;
                 return (
                   <Link key={item.to} to={item.to} onClick={() => setMoreOpen(false)}
