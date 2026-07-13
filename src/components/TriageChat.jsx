@@ -63,47 +63,47 @@ export default function TriageChat({ caseId, caseData }) {
 
   return (
     <div className="space-y-3">
-      <div className="space-y-3 max-h-80 overflow-y-auto scrollbar-thin pr-1 hidden">
-        {messages.length === 0 &&
-        <p className="text-sm text-gray-400 text-center py-4">No triage conversation recorded for this case.</p>
-        }
-        {messages.map((msg, i) =>
-        <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${
-          msg.role === "user" ?
-          "bg-gray-800 text-white" :
-          "bg-gray-100 text-gray-900"}`
-          }>
-              <p className="whitespace-pre-wrap">{msg.content}</p>
-            </div>
-          </div>
-        )}
-        {sending &&
-        <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-xl px-4 py-2.5">
-              <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-            </div>
-          </div>
-        }
-        <div ref={chatEndRef} />
-      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       <div className="flex items-end gap-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {if (e.key === "Enter" && !e.shiftKey) {e.preventDefault();handleSend();}}}
-          placeholder="Continue triage conversation..."
-          rows={1}
-          className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none max-h-24 hidden" />
         
-        <button
-          onClick={handleSend}
-          disabled={sending || !input.trim()}
-          className="p-2.5 rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 flex-shrink-0 hidden">
-          
-          <Send className="w-4 h-4" />
-        </button>
+
+
+
+
+
+        
+        
+        
+
+
+
+
+
+        
       </div>
     </div>);
 

@@ -151,10 +151,10 @@ function AIBlock({ caseData }) {
     <>
       {caseData.pre_clerking_guidance &&
       <div>
-          <div className="flex items-center gap-2 mb-1 hidden">
-            <AIBadge />
-            <p className="text-sm text-gray-500">Pre-Clerking Guidance</p>
-          </div>
+          
+
+
+        
           <FormattedAdmissionNote note={caseData.pre_clerking_guidance} />
         </div>
       }
