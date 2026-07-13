@@ -118,6 +118,7 @@ export default function CaseDetail() {
   const hasAdmissionNote = !!caseData.admission_note;
   const isConservative = caseData.pre_op_status === "not_applicable";
   const isOperative = ["listed", "in_theatre", "post_op"].includes(caseData.pre_op_status);
+  const blockAdmission = ["admitted", "discharge_ready", "inews_consult"].includes(caseData.status);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -182,10 +183,12 @@ export default function CaseDetail() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Stethoscope className="w-3.5 h-3.5" /> Proforma
             </button>
-            <button onClick={() => setShowAdmissionNote(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors">
-              <FileText className="w-3.5 h-3.5" /> Admission Note
-            </button>
+            {!blockAdmission && (
+              <button onClick={() => setShowAdmissionNote(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors">
+                <FileText className="w-3.5 h-3.5" /> Admission Note
+              </button>
+            )}
             <button onClick={() => setShowInpatientNote(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">
               <Stethoscope className="w-3.5 h-3.5" /> Inpatient Note
@@ -497,6 +500,7 @@ function KardexTab({ caseData, onUpdate, user }) {
   const [medUrl, setMedUrl] = useState(null);
   const [comorbidities, setComorbidities] = useState("");
   const fileRef = useRef(null);
+  const alreadyAdmitted = ["admitted", "discharge_ready", "inews_consult"].includes(caseData.status);
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -541,7 +545,7 @@ function KardexTab({ caseData, onUpdate, user }) {
 
   return (
     <div className="space-y-3">
-      {!kardex && (
+      {!kardex && !alreadyAdmitted && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
           <h3 className="font-semibold text-gray-900 text-sm mb-2">Generate Inpatient Kardex</h3>
           <p className="text-sm text-gray-500 mb-3">Upload a photo of medications or generate a baseline kardex.</p>
