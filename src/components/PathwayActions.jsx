@@ -63,9 +63,9 @@ export default function PathwayActions({ caseData, onUpdate, user, onRequestThea
       <button onClick={handleTheatre} disabled={!!acting} className={btnClass}>
         <div className="flex items-center gap-2 mb-1">
           {acting === "theatre" ? <Loader2 className="w-5 h-5 text-gray-500 animate-spin" /> : <Scissors className="w-5 h-5 text-gray-700" />}
-          <span className="font-semibold text-sm text-gray-900">Theatre / Procedure</span>
+          <span className="font-semibold text-sm text-gray-900">Book for Surgery</span>
         </div>
-        <span className="text-xs text-gray-500">Jack reviews notes & checklist first</span>
+        <span className="text-xs text-gray-500">Jack reviews notes & RCS protocol first</span>
       </button>
       <button onClick={handleRefer} disabled={!!acting} className={btnClass}>
         <div className="flex items-center gap-2 mb-1">
