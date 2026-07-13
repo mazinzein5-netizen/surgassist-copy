@@ -134,6 +134,19 @@
         "camera"
       ]
     },
+    "referral_audio_url": {
+      "type": "string",
+      "description": "URL of the audio recording if referral was dictated"
+    },
+    "referral_transcript": {
+      "type": "string",
+      "description": "Transcribed text from audio referral"
+    },
+    "patient_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the patient was seen by the user"
+    },
     "referral_summary": {
       "type": "string"
     },

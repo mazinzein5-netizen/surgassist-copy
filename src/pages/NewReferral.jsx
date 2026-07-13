@@ -37,6 +37,7 @@ export default function NewReferral() {
   const [expanded, setExpanded] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [clinicalPhotos, setClinicalPhotos] = useState([]);
+  const [audioReferral, setAudioReferral] = useState({ url: null, transcript: "" });
   const expandedRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -113,6 +114,7 @@ export default function NewReferral() {
         try {
           const uploadResult = await uploadFile(audioFile);
           const transcript = await transcribeAudio(uploadResult.file_url);
+          setAudioReferral({ url: uploadResult.file_url, transcript });
           setInput((prev) => prev + (prev ? " " : "") + transcript);
         } catch (err) {
           setMessages((prev) => [...prev, { role: "assistant", content: "I couldn't process the audio. Please try typing the referral instead." }]);
@@ -202,7 +204,10 @@ export default function NewReferral() {
         consultant_name: patientStatusInfo.inpatientConsultant || "",
         patient_status: patientStatusInfo.patientStatus || "",
         status: patientStatusInfo.patientStatus === "inpatient" ? "admitted" : triageResult.triage_decision === "accept" ? "accepted" : triageResult.triage_decision === "decline" ? "declined" : "triage",
-        referral_mode: clinicalPhotos.length > 0 ? "camera" : "text",
+        referral_mode: audioReferral.url ? "audio" : (clinicalPhotos.length > 0 ? "camera" : "text"),
+        referral_audio_url: audioReferral.url || "",
+        referral_transcript: audioReferral.transcript || "",
+        patient_seen_at: new Date().toISOString(),
         referral_summary: triageResult.referral_summary || messages.map((m) => m.content).join("\n"),
         presenting_complaint: triageResult.presenting_complaint || "",
         mechanism_of_injury: triageResult.mechanism_of_injury || "",

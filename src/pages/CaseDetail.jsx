@@ -21,6 +21,7 @@ import ChronologicalNotes from "@/components/ChronologicalNotes";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import CollapsibleCard from "@/components/CollapsibleCard";
+import ReferralSummaryCard from "@/components/ReferralSummaryCard";
 import { detectTimeSensitiveConditions } from "@/lib/timeSensitiveCases";
 import WorkflowStepper from "@/components/WorkflowStepper";
 import TriageChat from "@/components/TriageChat";
@@ -208,57 +209,7 @@ export default function CaseDetail() {
               <p className="text-xs text-gray-500 truncate">{caseData.presenting_complaint || caseData.referral_summary || "No summary"}</p>
             }
           >
-            <div className="space-y-3">
-              {caseData.presenting_complaint && (
-                <Field label="Presenting Complaint" value={caseData.presenting_complaint} />
-              )}
-              {caseData.mechanism_of_injury && (
-                <Field label="Mechanism of Injury" value={caseData.mechanism_of_injury} />
-              )}
-              {caseData.referral_summary && (
-                <Field label="Referral Summary" value={caseData.referral_summary} />
-              )}
-              {caseData.referral_mode && (
-                <Field label="Referral Mode" value={caseData.referral_mode} capitalize />
-              )}
-              {caseData.referrer_name && (
-                <Field label="Referrer" value={`${caseData.referrer_name}${caseData.referrer_grade ? ` · ${caseData.referrer_grade}` : ""}${caseData.referrer_department ? ` · ${caseData.referrer_department}` : ""}`} />
-              )}
-              {caseData.referring_team && (
-                <Field label="Referring Team" value={caseData.referring_team} />
-              )}
-
-              {/* Triage decision */}
-              {caseData.triage_decision && caseData.triage_decision !== "pending" && (
-                <div className="pt-3 border-t border-gray-100">
-                  <StatusPill caseData={caseData} />
-                </div>
-              )}
-              {caseData.triage_reasoning && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Reasoning</p>
-                  <ReasoningBullets text={caseData.triage_reasoning} />
-                </div>
-              )}
-              {caseData.triage_guideline && (
-                <Field label="Guideline Applied" value={caseData.triage_guideline} />
-              )}
-              {caseData.pre_clerking_guidance && (
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <AIBadge />
-                    <p className="text-sm text-gray-500">Pre-Clerking Guidance</p>
-                  </div>
-                  <FormattedAdmissionNote note={caseData.pre_clerking_guidance} />
-                </div>
-              )}
-              {caseData.admission_note && (
-                <div className="pt-3 border-t border-gray-100">
-                  <p className="text-sm text-gray-500 mb-1">Admission Note</p>
-                  <FormattedAdmissionNote note={caseData.admission_note} />
-                </div>
-              )}
-            </div>
+            <ReferralSummaryCard caseData={caseData} />
 
             {/* Triage Chat pinned to referral inputs */}
             <div className="pt-3 border-t border-gray-100">
