@@ -194,8 +194,8 @@ Present your full analysis per your output format. Remember: patient safety is n
           )}
 
           {analysis && (
-            <div className="bg-card/60 rounded-lg p-3 border border-destructive/10">
-              <ReactMarkdown className="text-sm prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+            <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+              <ReactMarkdown className="text-sm max-w-none text-orange-950 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:text-orange-900 [&_h1]:text-orange-900 [&_h2]:text-orange-900 [&_h3]:text-orange-900 [&_h4]:text-orange-900 [&_li]:text-orange-950 [&_p]:text-orange-950 [&_a]:text-orange-700 [&_code]:text-orange-800 [&_blockquote]:text-orange-800 [&_blockquote]:border-orange-300">
                 {analysis}
               </ReactMarkdown>
             </div>
