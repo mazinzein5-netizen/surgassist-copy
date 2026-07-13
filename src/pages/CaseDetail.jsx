@@ -32,6 +32,7 @@ import AdmissionNotePanel from "@/components/AdmissionNotePanel";
 import InpatientNotePanel from "@/components/InpatientNotePanel";
 import OperativeNotePanel from "@/components/OperativeNotePanel";
 import PatientInfoEditor from "@/components/PatientInfoEditor";
+import DiagnosisEditor from "@/components/DiagnosisEditor";
 import TheatreChecklistPanel from "@/components/TheatreChecklistPanel";
 import InpatientOverview from "@/components/InpatientOverview";
 import CaseRecordTimeline from "@/components/CaseRecordTimeline";
@@ -147,11 +148,7 @@ export default function CaseDetail() {
                 {caseData.patient_mrn && <span>MRN: {caseData.patient_mrn}</span>}
                 {caseData.patient_dob && <span>DOB: {new Date(caseData.patient_dob).toLocaleDateString("en-GB")}</span>}
                 <span className="capitalize">{caseData.department?.replace("_", " ")}</span>
-                {caseData.diagnosis && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Dx: {caseData.diagnosis}
-                  </span>
-                )}
+                <DiagnosisEditor caseData={caseData} onUpdate={loadCase} />
               </div>
               <div className="flex items-center gap-3 mt-1.5">
                 <StatusPill caseData={caseData} />
