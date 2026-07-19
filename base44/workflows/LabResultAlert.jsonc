@@ -1,0 +1,50 @@
+{
+  "name": "Lab Result Alert",
+  "description": "When a new lab result is uploaded for a case, immediately alert the on-call clinical team with patient and result details via in-app message and email.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "LabResult"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "lab_result_alert",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "notify_team": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "labResultAlert",
+            "args": {
+              "action": "notify",
+              "case_id": "${ .trigger.data.case_id }",
+              "lab_data": {
+                "test_type": "${ .trigger.data.test_type }",
+                "value": "${ .trigger.data.value }",
+                "unit": "${ .trigger.data.unit }",
+                "patient_name": "${ .trigger.data.patient_name }",
+                "patient_mrn": "${ .trigger.data.patient_mrn }",
+                "collected_at": "${ .trigger.data.collected_at }",
+                "source": "${ .trigger.data.source }"
+              }
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Alert Clinical Team",
+            "description": "Notify on-call team of new lab result"
+          }
+        }
+      }
+    ]
+  }
+}
