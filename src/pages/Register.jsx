@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, BadgeCheck, Building2, Stethoscope } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
+import SelectSheet from "@/components/SelectSheet";
 import GoogleIcon from "@/components/GoogleIcon";
 import AppleIcon from "@/components/AppleIcon";
 import { toast } from "@/components/ui/use-toast";
@@ -228,28 +229,21 @@ export default function Register() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="grade">Grade</Label>
-            <select
-              id="grade"
+            <SelectSheet
               value={clinicalGrade}
-              onChange={(e) => setClinicalGrade(e.target.value)}
-              className="w-full h-12 bg-background border border-border rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="nchd">NCHD</option>
-              <option value="registrar">Registrar</option>
-              <option value="consultant">Consultant</option>
-            </select>
+              options={[{ value: "nchd", label: "NCHD" }, { value: "registrar", label: "Registrar" }, { value: "consultant", label: "Consultant" }]}
+              onChange={setClinicalGrade}
+              label="Grade"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="dept">Department</Label>
-            <select
-              id="dept"
+            <SelectSheet
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full h-12 bg-background border border-border rounded-md px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="orthopaedics">Orthopaedics</option>
-              <option value="general_surgery">General Surgery</option>
-            </select>
+              options={[{ value: "orthopaedics", label: "Orthopaedics" }, { value: "general_surgery", label: "General Surgery" }]}
+              onChange={setDepartment}
+              label="Department"
+            />
           </div>
         </div>
         <div className="space-y-2">

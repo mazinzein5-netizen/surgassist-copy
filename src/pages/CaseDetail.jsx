@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { generateKardex, generateDischargeDocuments, suggestManagementPlan, uploadFile } from "@/lib/hiveApi";
 
-import { ArrowLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera, Calendar, Trash2 } from "lucide-react";
+import { ChevronLeft, Loader2, FileText, Pill, FileCheck, Send, Printer, Stethoscope, ClipboardCheck, AlertTriangle, CheckCircle2, ShieldCheck, FlaskConical, Download, Calculator, MessageSquare, User, Sparkles, Share2, Camera, Calendar, Trash2 } from "lucide-react";
 import ConsentChecklistTab from "@/components/ConsentChecklistTab";
 import ClerkingTab from "@/components/ClerkingTab";
 import ReasoningBullets from "@/components/ReasoningBullets";
@@ -124,10 +124,10 @@ export default function CaseDetail() {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="border-b border-gray-200 px-4 md:px-8 py-4 bg-white">
+      <div className="sticky top-0 z-30 border-b border-gray-200 px-4 md:px-8 py-3 bg-white/95 backdrop-blur">
         <div className="max-w-4xl mx-auto">
-          <button onClick={() => navigate("/")} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 mb-2">
-            <ArrowLeft className="w-3 h-3" /> Back to Referrals
+          <button onClick={() => navigate("/")} className="flex items-center gap-1 text-sm font-semibold text-gray-900 hover:text-gray-700 -ml-1 mb-1">
+            <ChevronLeft className="w-6 h-6" /> Back
           </button>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

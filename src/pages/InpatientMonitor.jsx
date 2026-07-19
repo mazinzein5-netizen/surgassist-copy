@@ -6,6 +6,7 @@ import InpatientCard from "@/components/InpatientCard";
 import PrintPlanNote from "@/components/PrintPlanNote";
 import BloodTrendChart, { LAB_RANGES, getAbnormalStatus } from "@/components/BloodTrendChart";
 import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown, Building2, Siren } from "lucide-react";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 
@@ -148,6 +149,7 @@ export default function InpatientMonitor() {
   const selectedCase = cases.find(c => c.id === selectedCaseId);
 
   return (
+    <PullToRefresh onRefresh={loadInpatients}>
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -325,6 +327,7 @@ export default function InpatientMonitor() {
         <PrintPlanNote caseData={printCase} onClose={() => setPrintCase(null)} onUpdate={loadInpatients} />
       )}
     </div>
+    </PullToRefresh>
   );
 }
 

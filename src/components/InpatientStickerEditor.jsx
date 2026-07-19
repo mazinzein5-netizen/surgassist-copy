@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { BedDouble, Stethoscope, X, Loader2, Check } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const DEPARTMENTS = [
   { value: "orthopaedics", label: "Orthopaedics" },
@@ -55,9 +56,7 @@ export default function InpatientStickerEditor({ caseData, onClose, onUpdated })
         <div className="px-5 py-4 space-y-4">
           <div>
             <label className={`${labelClass} block mb-1.5`}>Department</label>
-            <select value={department} onChange={e => setDepartment(e.target.value)} className={inputClass}>
-              {DEPARTMENTS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
+            <SelectSheet value={department} options={DEPARTMENTS} onChange={setDepartment} label="Department" />
           </div>
 
           <div>
@@ -91,13 +90,7 @@ export default function InpatientStickerEditor({ caseData, onClose, onUpdated })
 
           <div>
             <label className={`${labelClass} block mb-1.5`}>Severity</label>
-            <select value={diagnosisSeverity} onChange={e => setDiagnosisSeverity(e.target.value)} className={inputClass}>
-              <option value="none">Not Set</option>
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
+            <SelectSheet value={diagnosisSeverity} options={[{ value: "none", label: "Not Set" }, { value: "low", label: "Low" }, { value: "moderate", label: "Moderate" }, { value: "high", label: "High" }, { value: "critical", label: "Critical" }]} onChange={setDiagnosisSeverity} label="Severity" />
           </div>
         </div>
 

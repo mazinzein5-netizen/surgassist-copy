@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    --background: 229 60% 10%;
-    --foreground: 45 30% 92%;
-    --card: 229 55% 14%;
-    --card-foreground: 45 30% 92%;
-    --popover: 229 55% 14%;
-    --popover-foreground: 45 30% 92%;
-    --primary: 45 96% 58%;
-    --primary-foreground: 229 80% 18%;
-    --secondary: 229 45% 18%;
-    --secondary-foreground: 45 30% 92%;
-    --muted: 229 45% 18%;
-    --muted-foreground: 225 15% 65%;
-    --accent: 229 50% 20%;
-    --accent-foreground: 45 30% 92%;
-    --destructive: 0 84% 60%;
+    --background: 42 38% 93%;
+    --foreground: 30 15% 12%;
+    --card: 42 30% 97%;
+    --card-foreground: 30 15% 12%;
+    --popover: 42 30% 97%;
+    --popover-foreground: 30 15% 12%;
+    --primary: 43 90% 52%;
+    --primary-foreground: 30 20% 12%;
+    --secondary: 40 25% 88%;
+    --secondary-foreground: 30 15% 12%;
+    --muted: 40 20% 86%;
+    --muted-foreground: 30 8% 42%;
+    --accent: 42 40% 90%;
+    --accent-foreground: 30 15% 12%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
-    --success: 142 71% 45%;
+    --success: 142 60% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 38 85% 45%;
     --warning-foreground: 0 0% 100%;
-    --border: 229 40% 22%;
-    --input: 229 45% 18%;
-    --ring: 45 96% 58%;
+    --border: 40 20% 80%;
+    --input: 40 20% 85%;
+    --ring: 43 90% 52%;
     --radius: 0.5rem;
-    --hive-navy: 229 80% 26%;
-    --hive-gold: 45 96% 58%;
-    --hive-gold-dark: 45 90% 45%;
+    --hive-navy: 30 25% 15%;
+    --hive-gold: 43 90% 52%;
+    --hive-gold-dark: 38 75% 38%;
     --font-heading: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
     --font-display: 'Inter', sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 229 65% 8%;
-    --sidebar-foreground: 45 30% 92%;
-    --sidebar-primary: 45 96% 58%;
-    --sidebar-primary-foreground: 229 80% 18%;
-    --sidebar-accent: 229 50% 16%;
-    --sidebar-accent-foreground: 45 30% 92%;
-    --sidebar-border: 229 40% 18%;
-    --sidebar-ring: 45 96% 58%;
+    --sidebar-background: 42 35% 90%;
+    --sidebar-foreground: 30 15% 15%;
+    --sidebar-primary: 43 90% 52%;
+    --sidebar-primary-foreground: 30 20% 12%;
+    --sidebar-accent: 42 30% 85%;
+    --sidebar-accent-foreground: 30 15% 12%;
+    --sidebar-border: 40 20% 78%;
+    --sidebar-ring: 43 90% 52%;
   }
 }
 
@@ -143,4 +143,24 @@
 }
 .animate-text-blink-red {
   animation: text-blink-red 1s ease-in-out infinite;
+}
+
+/* WebView bounce prevention */
+main {
+  overscroll-behavior-y: contain;
+}
+[role="dialog"],
+[data-vaul-drawer],
+.vaul-drawer-content {
+  overscroll-behavior-y: contain;
+}
+
+/* Hide scrollbars on mobile */
+@media (max-width: 768px) {
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }

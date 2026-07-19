@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import HandwritingOCR from "@/components/HandwritingOCR";
 import { recognizeLabResults } from "@/lib/hiveApi";
 import { FlaskConical, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const LAB_TYPES = [
   { value: "haemoglobin", label: "Haemoglobin (Hb)", unit: "g/L", normal: "120-160" },
@@ -128,13 +129,12 @@ export default function LabResultsCapture({ labResults, onChange }) {
       {showManual ? (
         <div className="bg-background/50 rounded-lg p-3 border border-border space-y-2">
           <div className="grid grid-cols-3 gap-2">
-            <select
+            <SelectSheet
               value={manualEntry.test_type}
-              onChange={e => setManualEntry(p => ({ ...p, test_type: e.target.value }))}
-              className="bg-background border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-            >
-              {LAB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+              options={LAB_TYPES.map(t => ({ value: t.value, label: t.label }))}
+              onChange={(v) => setManualEntry(p => ({ ...p, test_type: v }))}
+              label="Test Type"
+            />
             <input
               type="number"
               value={manualEntry.value}

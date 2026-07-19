@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import HandwritingOCR from "@/components/HandwritingOCR";
 import { recognizeKardex } from "@/lib/hiveApi";
 import { Pill, Plus, Trash2 } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 export default function KardexCapture({ kardexData, onChange }) {
   const [showManual, setShowManual] = useState(false);
@@ -89,19 +90,12 @@ export default function KardexCapture({ kardexData, onChange }) {
               placeholder="Dose"
               className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
             />
-            <select
+            <SelectSheet
               value={manualEntry.route}
-              onChange={e => setManualEntry(p => ({ ...p, route: e.target.value }))}
-              className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-            >
-              <option value="PO">PO</option>
-              <option value="IV">IV</option>
-              <option value="IM">IM</option>
-              <option value="SC">SC</option>
-              <option value="PR">PR</option>
-              <option value="SL">SL</option>
-              <option value="Topical">Topical</option>
-            </select>
+              options={[{ value: "PO", label: "PO" }, { value: "IV", label: "IV" }, { value: "IM", label: "IM" }, { value: "SC", label: "SC" }, { value: "PR", label: "PR" }, { value: "SL", label: "SL" }, { value: "Topical", label: "Topical" }]}
+              onChange={(v) => setManualEntry(p => ({ ...p, route: v }))}
+              label="Route"
+            />
             <input
               type="text"
               value={manualEntry.frequency}

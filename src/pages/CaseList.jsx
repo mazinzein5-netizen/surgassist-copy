@@ -6,6 +6,7 @@ import InpatientStickerEditor from "@/components/InpatientStickerEditor";
 import { groupInpatients, INPATIENT_GROUP_CONFIG } from "@/lib/referralStatus";
 import { FilePlus2, Search, BedDouble, Scissors, Clock, Heart, Check, Activity } from "lucide-react";
 import { fetchRecentCases } from "@/lib/recentCases";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const GROUP_ICONS = {
   theatre: Scissors,
@@ -81,6 +82,7 @@ export default function CaseList() {
   const headings = { recent: "Recent Activity", referrals: "Active Referrals", inpatients: "Inpatient Board", discharged: "Discharged Patients" };
 
   return (
+    <PullToRefresh onRefresh={loadCases}>
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -213,6 +215,7 @@ export default function CaseList() {
         />
       )}
     </div>
+    </PullToRefresh>
   );
 }
 

@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Loader2, Upload, Camera, ShieldCheck, AlertTriangle, CheckCircle2, User, FileCheck, RefreshCw } from "lucide-react";
+import { ChevronLeft, Loader2, Upload, Camera, ShieldCheck, AlertTriangle, CheckCircle2, User, FileCheck, RefreshCw } from "lucide-react";
 
 export default function Verify() {
   const navigate = useNavigate();
@@ -97,9 +97,11 @@ export default function Verify() {
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
-      <button onClick={() => navigate("/profile")} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="w-3 h-3" /> Back to Profile
-      </button>
+      <div className="sticky top-0 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-background/95 backdrop-blur border-b border-border mb-4">
+        <button onClick={() => navigate("/profile")} className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary -ml-1">
+          <ChevronLeft className="w-6 h-6" /> Profile
+        </button>
+      </div>
 
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">

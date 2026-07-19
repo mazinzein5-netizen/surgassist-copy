@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { UserRound, Phone, ChevronDown, ChevronUp } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const GRADES = [
   { value: "intern", label: "Intern" },
@@ -39,16 +40,13 @@ export default function ReferrerDetails({ value, onChange }) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Grade</label>
-          <select
+          <SelectSheet
             value={value.referrer_grade || ""}
-            onChange={(e) => update("referrer_grade", e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-          >
-            <option value="">Select grade…</option>
-            {GRADES.map((g) => (
-              <option key={g.value} value={g.value}>{g.label}</option>
-            ))}
-          </select>
+            options={[{ value: "", label: "Select grade…" }, ...GRADES]}
+            onChange={(v) => update("referrer_grade", v)}
+            label="Grade"
+            placeholder="Select grade…"
+          />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Department / Team</label>

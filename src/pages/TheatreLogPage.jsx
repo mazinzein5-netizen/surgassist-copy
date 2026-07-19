@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Plus, ClipboardList, Calendar, Archive, ArchiveRestore } from "lucide-react";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 const ROLE_LABELS = { primary_surgeon: "Primary Surgeon", first_assistant: "1st Assistant", second_assistant: "2nd Assistant", observing: "Observing" };
@@ -50,6 +51,7 @@ export default function TheatreLogPage() {
   const visibleLogs = logs.filter(l => showArchived ? l.archived : !l.archived);
 
   return (
+    <PullToRefresh onRefresh={loadLogs}>
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -139,6 +141,7 @@ export default function TheatreLogPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import AgentLauncher from "./AgentLauncher";
 import MotionOutlet from "./MotionOutlet";
@@ -25,11 +25,12 @@ const MORE_NAV = [
 
 export default function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (to) => {
-    if (to === "/") return location.pathname === "/";
+    if (to === "/") return location.pathname === "/" || location.pathname.startsWith("/cases");
     return location.pathname.startsWith(to);
   };
 
@@ -111,13 +112,13 @@ export default function AppLayout() {
         {MAIN_NAV.map(item => {
           const Icon = item.icon;
           return (
-            <Link key={item.to} to={item.to}
+            <button key={item.to} onClick={() => navigate(item.to)}
               className={`flex-1 flex flex-col items-center gap-1 py-2.5 min-h-[44px] justify-center ${
                 isActive(item.to) ? "text-hive-gold" : "text-muted-foreground"
               }`}>
               <Icon className="w-5 h-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
-            </Link>
+            </button>
           );
         })}
         <button onClick={() => setMoreOpen(true)}
