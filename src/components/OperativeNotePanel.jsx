@@ -5,6 +5,7 @@ import { generateOperativeNote } from "@/lib/hiveApi";
 import { Loader2, FileText, X, RefreshCw, Lock, ChevronDown, ChevronUp, Activity, Scissors, Save } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
 import FormattedAdmissionNote from "@/components/FormattedAdmissionNote";
+import SelectSheet from "@/components/SelectSheet";
 import { downloadOperativeNotePDF } from "@/lib/pdfExport";
 
 const ANAESTHETIC_OPTIONS = [
@@ -213,10 +214,12 @@ export default function OperativeNotePanel({ caseData, caseId, onClose, onUpdate
 
                 <div className="mt-3">
                   <label className="text-xs font-medium text-gray-500 block mb-1">Anaesthesia Type</label>
-                  <select value={formData.anaesthetic_type} onChange={e => handleChange("anaesthetic_type", e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400">
-                    {ANAESTHETIC_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                  </select>
+                  <SelectSheet
+                    value={formData.anaesthetic_type}
+                    options={ANAESTHETIC_OPTIONS}
+                    onChange={(v) => handleChange("anaesthetic_type", v)}
+                    label="Anaesthesia Type"
+                  />
                 </div>
 
                 <div className="mt-3 space-y-3">

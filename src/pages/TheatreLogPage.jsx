@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Plus, ClipboardList, Calendar, Archive, ArchiveRestore } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import SelectSheet from "@/components/SelectSheet";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 const ROLE_LABELS = { primary_surgeon: "Primary Surgeon", first_assistant: "1st Assistant", second_assistant: "2nd Assistant", observing: "Observing" };
@@ -78,16 +79,21 @@ export default function TheatreLogPage() {
             <FormField label="Procedure Name" value={form.procedure_name} onChange={v => setForm(p => ({ ...p, procedure_name: v }))} required />
             <div>
               <label className="text-xs font-medium text-gray-500 block mb-1">Role</label>
-              <select value={form.procedure_role} onChange={e => setForm(p => ({ ...p, procedure_role: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400">
-                {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              <SelectSheet
+                value={form.procedure_role}
+                options={Object.entries(ROLE_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+                onChange={(v) => setForm(p => ({ ...p, procedure_role: v }))}
+                label="Role"
+              />
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500 block mb-1">Department</label>
-              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400">
-                <option value="orthopaedics">Orthopaedics</option>
-                <option value="general_surgery">General Surgery</option>
-              </select>
+              <SelectSheet
+                value={form.department}
+                options={[{ value: "orthopaedics", label: "Orthopaedics" }, { value: "general_surgery", label: "General Surgery" }]}
+                onChange={(v) => setForm(p => ({ ...p, department: v }))}
+                label="Department"
+              />
             </div>
             <FormField label="Supervisor Name" value={form.supervisor_name} onChange={v => setForm(p => ({ ...p, supervisor_name: v }))} />
             <FormField label="Supervisor IMC" value={form.supervisor_imc} onChange={v => setForm(p => ({ ...p, supervisor_imc: v }))} />

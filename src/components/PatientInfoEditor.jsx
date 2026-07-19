@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Check, Loader2, X } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const FIELDS = [
   { key: "patient_name", label: "Name", type: "text" },
@@ -48,14 +49,13 @@ export default function PatientInfoEditor({ caseData, onUpdate, onClose }) {
           <div key={f.key} className={f.full ? "sm:col-span-3" : ""}>
             <label className="text-xs text-muted-foreground block mb-0.5">{f.label}</label>
             {f.type === "select" ? (
-              <select
+              <SelectSheet
                 value={values[f.key] || ""}
-                onChange={(e) => update(f.key, e.target.value)}
-                className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-              >
-                <option value="">—</option>
-                {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+                options={[{ value: "", label: "—" }, ...f.options]}
+                onChange={(v) => update(f.key, v)}
+                label={f.label}
+                placeholder="—"
+              />
             ) : (
               <input
                 type={f.type}

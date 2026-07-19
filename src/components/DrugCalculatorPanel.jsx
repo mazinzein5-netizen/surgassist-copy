@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { calculateDrugDose, generateGuidelineDrugProtocol } from "@/lib/hiveApi";
 import AIBadge from "@/components/AIBadge";
+import SelectSheet from "@/components/SelectSheet";
 import { Calculator, Loader2, AlertTriangle, Pill, Info, Ban, Activity, Stethoscope, HeartPulse, ClipboardList, BookOpen, Search, Clock, ArrowRight, CheckCircle2, X } from "lucide-react";
 
 const DRUG_CATEGORIES = {
@@ -112,10 +113,13 @@ export default function DrugCalculatorPanel({ caseData, onClose }) {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Drug</label>
-              <select value={drug} onChange={e => setDrug(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50">
-                <option value="">Select a drug...</option>
-                {DRUG_CATEGORIES[category].map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              <SelectSheet
+                value={drug}
+                options={[{ value: "", label: "Select a drug..." }, ...DRUG_CATEGORIES[category].map(d => ({ value: d, label: d }))]}
+                onChange={setDrug}
+                label="Drug"
+                placeholder="Select a drug..."
+              />
             </div>
           </div>
 
