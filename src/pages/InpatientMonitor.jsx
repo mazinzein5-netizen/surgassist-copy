@@ -7,6 +7,7 @@ import PrintPlanNote from "@/components/PrintPlanNote";
 import BloodTrendChart, { LAB_RANGES, getAbnormalStatus } from "@/components/BloodTrendChart";
 import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Search, BedDouble, TrendingUp, ChevronDown, Building2, Siren } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import SelectSheet from "@/components/SelectSheet";
 
 const DEPT_LABELS = { orthopaedics: "Orthopaedics", general_surgery: "General Surgery" };
 
@@ -262,21 +263,15 @@ export default function InpatientMonitor() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1">
                 <label className="text-xs font-medium text-muted-foreground block mb-1">Select Patient</label>
-                <div className="relative">
-                  <select
-                    value={selectedCaseId || ""}
-                    onChange={e => setSelectedCaseId(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 pr-8 text-sm text-foreground focus:outline-none focus:border-hive-gold/50 appearance-none"
-                  >
-                    {cases.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.patient_name || "Unknown"} — MRN: {c.patient_mrn || "—"}
-                        {c.inews_score != null ? ` (INEWS ${c.inews_score})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                </div>
+                <SelectSheet
+                  value={selectedCaseId || ""}
+                  options={cases.map(c => ({
+                    value: c.id,
+                    label: `${c.patient_name || "Unknown"} — MRN: ${c.patient_mrn || "—"}${c.inews_score != null ? ` (INEWS ${c.inews_score})` : ""}`,
+                  }))}
+                  onChange={setSelectedCaseId}
+                  label="Select Patient"
+                />
               </div>
               {selectedCase && (
                 <Link to={`/cases/${selectedCase.id}`} className="sm:self-end px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 text-center">

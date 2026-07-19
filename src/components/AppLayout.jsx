@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import AgentLauncher from "./AgentLauncher";
@@ -6,9 +6,9 @@ import MotionOutlet from "./MotionOutlet";
 import { FolderOpen, Users, ClipboardList, MoreHorizontal, LogOut, FilePlus2, AlertTriangle, Activity, BedDouble, MessageSquare, User, X, LayoutDashboard, Hexagon, ShieldCheck } from "lucide-react";
 
 const MAIN_NAV = [
-  { to: "/", label: "Referrals", icon: FolderOpen },
-  { to: "/patients", label: "Patients", icon: Users },
-  { to: "/theatre-log", label: "Theatre", icon: ClipboardList },
+  { to: "/", label: "Referrals", icon: FolderOpen, tabKey: "/" },
+  { to: "/patients", label: "Patients", icon: Users, tabKey: "/patients" },
+  { to: "/theatre-log", label: "Theatre", icon: ClipboardList, tabKey: "/theatre-log" },
 ];
 
 const MORE_NAV = [
@@ -28,10 +28,38 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const tabHistoryRef = useRef({ "/": "/", "/patients": "/patients", "/theatre-log": "/theatre-log" });
+
+  // Track the last sub-route for each active tab
+  useEffect(() => {
+    const path = location.pathname;
+    for (const tab of MAIN_NAV) {
+      if (tab.tabKey === "/") {
+        if (path === "/" || path.startsWith("/cases")) {
+          tabHistoryRef.current["/"] = path;
+          break;
+        }
+      } else if (path.startsWith(tab.tabKey)) {
+        tabHistoryRef.current[tab.tabKey] = path;
+        break;
+      }
+    }
+  }, [location.pathname]);
 
   const isActive = (to) => {
     if (to === "/") return location.pathname === "/" || location.pathname.startsWith("/cases");
     return location.pathname.startsWith(to);
+  };
+
+  const handleTabClick = (tab) => {
+    const isActiveTab = isActive(tab.to);
+    if (isActiveTab) {
+      // Already active — reset to root
+      navigate(tab.to);
+    } else {
+      // Navigate to last saved sub-route for this tab
+      navigate(tabHistoryRef.current[tab.tabKey] || tab.to);
+    }
   };
 
   const handleLogout = async () => { await logout(); };
@@ -112,7 +140,7 @@ export default function AppLayout() {
         {MAIN_NAV.map(item => {
           const Icon = item.icon;
           return (
-            <button key={item.to} onClick={() => navigate(item.to)}
+            <button key={item.to} onClick={() => handleTabClick(item)}
               className={`flex-1 flex flex-col items-center gap-1 py-2.5 min-h-[44px] justify-center ${
                 isActive(item.to) ? "text-hive-gold" : "text-muted-foreground"
               }`}>
