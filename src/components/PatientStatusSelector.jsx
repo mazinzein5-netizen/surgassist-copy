@@ -1,5 +1,6 @@
 import React from "react";
 import { BedDouble, UserCheck, Stethoscope, Activity } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const STATUS_OPTIONS = [
   {
@@ -69,22 +70,24 @@ export default function PatientStatusSelector({ value, onChange }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-slide-up">
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Treating Department</label>
-            <select
+            <SelectSheet
               value={inpatientDepartment || ""}
-              onChange={(e) => onChange({ ...value, inpatientDepartment: e.target.value })}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-            >
-              <option value="">Select department...</option>
-              <option value="orthopaedics">Orthopaedics</option>
-              <option value="general_surgery">General Surgery</option>
-              <option value="ent">ENT</option>
-              <option value="urology">Urology</option>
-              <option value="vascular">Vascular</option>
-              <option value="plastics">Plastics</option>
-              <option value="medicine">General Medicine</option>
-              <option value="cardiology">Cardiology</option>
-              <option value="other">Other</option>
-            </select>
+              options={[
+                { value: "", label: "Select department..." },
+                { value: "orthopaedics", label: "Orthopaedics" },
+                { value: "general_surgery", label: "General Surgery" },
+                { value: "ent", label: "ENT" },
+                { value: "urology", label: "Urology" },
+                { value: "vascular", label: "Vascular" },
+                { value: "plastics", label: "Plastics" },
+                { value: "medicine", label: "General Medicine" },
+                { value: "cardiology", label: "Cardiology" },
+                { value: "other", label: "Other" },
+              ]}
+              onChange={(v) => onChange({ ...value, inpatientDepartment: v })}
+              label="Treating Department"
+              placeholder="Select department..."
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">Treating Consultant</label>

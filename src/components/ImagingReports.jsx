@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { uploadFile, classifyAndInterpretImaging } from "@/lib/hiveApi";
 import { Camera, Loader2, Image as ImageIcon, FlaskConical, Scan, Plus, FileText, ArrowUp, ArrowDown, Sparkles, AlertTriangle } from "lucide-react";
 import AIBadge from "@/components/AIBadge";
+import SelectSheet from "@/components/SelectSheet";
 import { isOutOfRange, formatRange, LAB_RANGES } from "@/lib/labReferenceRanges";
 
 const PHOTO_TYPE_LABELS = {
@@ -157,15 +158,12 @@ export default function ImagingReports({ caseData, photos, caseId, onPhotoAdded 
           <h3 className="text-sm font-semibold text-foreground">Add Imaging / Report</h3>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <select
+          <SelectSheet
             value={photoType}
-            onChange={(e) => setPhotoType(e.target.value)}
-            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50"
-          >
-            {Object.entries(PHOTO_TYPE_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </select>
+            options={Object.entries(PHOTO_TYPE_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+            onChange={setPhotoType}
+            label="Photo Type"
+          />
           <input
             type="text"
             value={caption}

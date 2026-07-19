@@ -124,7 +124,7 @@ export default function CaseDetail() {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="sticky top-0 z-30 border-b border-gray-200 px-4 md:px-8 py-3 bg-white/95 backdrop-blur">
+      <div className="sticky top-0 z-30 safe-top border-b border-gray-200 px-4 md:px-8 py-3 bg-white/95 backdrop-blur">
         <div className="max-w-4xl mx-auto">
           <button onClick={() => navigate("/")} className="flex items-center gap-1 text-sm font-semibold text-gray-900 hover:text-gray-700 -ml-1 mb-1">
             <ChevronLeft className="w-6 h-6" /> Back

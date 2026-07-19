@@ -97,7 +97,7 @@ export default function Verify() {
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
-      <div className="sticky top-0 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-background/95 backdrop-blur border-b border-border mb-4">
+      <div className="sticky top-0 z-30 safe-top -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-background/95 backdrop-blur border-b border-border mb-4">
         <button onClick={() => navigate("/profile")} className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary -ml-1">
           <ChevronLeft className="w-6 h-6" /> Profile
         </button>

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import HiveLogo from "@/components/HiveLogo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
+import SelectSheet from "@/components/SelectSheet";
 import VerificationBadge from "@/components/VerificationBadge";
 import { Loader2, Save, Stethoscope, Building2, BadgeCheck, AlertTriangle, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
 
@@ -111,11 +112,7 @@ export default function Profile() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1">Grade</label>
-            <select value={form.clinical_grade} onChange={(e) => setForm(p => ({ ...p, clinical_grade: e.target.value }))} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50">
-              <option value="nchd">NCHD</option>
-              <option value="registrar">Registrar</option>
-              <option value="consultant">Consultant</option>
-            </select>
+            <SelectSheet value={form.clinical_grade} options={[{ value: "nchd", label: "NCHD" }, { value: "registrar", label: "Registrar" }, { value: "consultant", label: "Consultant" }]} onChange={(v) => setForm(p => ({ ...p, clinical_grade: v }))} label="Grade" />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1 flex items-center gap-1"><Building2 className="w-3 h-3" /> Hospital</label>
@@ -123,10 +120,7 @@ export default function Profile() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1">Department</label>
-            <select value={form.department} onChange={(e) => setForm(p => ({ ...p, department: e.target.value }))} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-hive-gold/50">
-              <option value="orthopaedics">Orthopaedics</option>
-              <option value="general_surgery">General Surgery</option>
-            </select>
+            <SelectSheet value={form.department} options={[{ value: "orthopaedics", label: "Orthopaedics" }, { value: "general_surgery", label: "General Surgery" }]} onChange={(v) => setForm(p => ({ ...p, department: v }))} label="Department" />
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { Building2, Stethoscope, ShieldPlus, Loader2, Save, Check, Radio, ChevronDown, ClipboardList } from "lucide-react";
+import SelectSheet from "@/components/SelectSheet";
 
 const DEPT_OPTIONS = [
   { value: "orthopaedics", label: "Orthopaedics" },
@@ -104,9 +105,7 @@ export default function DashboardSettings() {
               <label className={`${labelClass} flex items-center gap-1.5 mb-1.5`}>
                 <Stethoscope className="w-3.5 h-3.5" /> Primary Department
               </label>
-              <select value={department} onChange={e => setDepartment(e.target.value)} className={inputClass}>
-                {DEPT_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
+              <SelectSheet value={department} options={DEPT_OPTIONS} onChange={setDepartment} label="Primary Department" />
             </div>
           </div>
 
